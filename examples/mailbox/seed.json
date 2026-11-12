@@ -1,0 +1,53 @@
+{
+  "scenario_version": "0.2",
+  "id": "literal-odd-and-clear",
+  "initial": {},
+  "steps": [
+    {
+      "at_ms": 0,
+      "event": "publish",
+      "fields": {
+        "data": [
+          0,
+          128,
+          255
+        ]
+      },
+      "expect_trace": [
+        {
+          "at_ms": 0,
+          "emitted": [
+            {
+              "message": "delivered",
+              "fields": {
+                "data": [
+                  0,
+                  128,
+                  255
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 1,
+      "event": "clear",
+      "fields": {},
+      "expect_trace": [
+        {
+          "at_ms": 1,
+          "emitted": []
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "state": "READY",
+    "variables": {
+      "buffer": []
+    },
+    "timers": {}
+  }
+}

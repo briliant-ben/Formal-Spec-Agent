@@ -1,0 +1,31 @@
+name: Framework extraction and installed package
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  installed-core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install independent package
+        run: |
+          python3 -m venv /tmp/framework-venv
+          /tmp/framework-venv/bin/python -m pip install .
+      - name: Test installed package from unrelated directory, without provider calls
+        run: |
+          cd /tmp
+          /tmp/framework-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/framework-tests.log" 2>&1
+      - name: Preserve actual test output
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: framework-${{ github.sha }}
+          path: framework-tests.log
+          if-no-files-found: error

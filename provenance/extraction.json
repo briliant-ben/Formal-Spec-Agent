@@ -1,0 +1,225 @@
+{
+  "schema": "framework-extraction-v1",
+  "source_repository": "https://github.com/briliant-ben/TCPIP-Model",
+  "source_commit": "e91436f0bccc34be63c089a0c8d5584155fdf462",
+  "files": [
+    {
+      "source": "protocol_lab/__init__.py",
+      "target": "protocol_lab/__init__.py",
+      "source_sha256": "bb97e964bb7d512a84dd1f22900527dfac82a2ad05e99e7d5eaeccb0bd83ce7f",
+      "transformation": "none",
+      "extracted_sha256": "bb97e964bb7d512a84dd1f22900527dfac82a2ad05e99e7d5eaeccb0bd83ce7f"
+    },
+    {
+      "source": "protocol_lab/ir.py",
+      "target": "protocol_lab/ir.py",
+      "source_sha256": "9ad13f2218d3641eb7218a36a2edbf64f1710eee9548dde1897616e5e79bcfa7",
+      "transformation": "none",
+      "extracted_sha256": "9ad13f2218d3641eb7218a36a2edbf64f1710eee9548dde1897616e5e79bcfa7"
+    },
+    {
+      "source": "protocol_lab/symbolic.py",
+      "target": "protocol_lab/symbolic.py",
+      "source_sha256": "c0a603e005ef8cb969cb62ddf2d1cc1860f38b36fa93b908793d1a48a3126d5c",
+      "transformation": "none",
+      "extracted_sha256": "c0a603e005ef8cb969cb62ddf2d1cc1860f38b36fa93b908793d1a48a3126d5c"
+    },
+    {
+      "source": "protocol_lab/explore.py",
+      "target": "protocol_lab/explore.py",
+      "source_sha256": "68636011e1712768eba7c89a5c3b7e9ab125fbfa2c20652b8db798402154b306",
+      "transformation": "none",
+      "extracted_sha256": "68636011e1712768eba7c89a5c3b7e9ab125fbfa2c20652b8db798402154b306"
+    },
+    {
+      "source": "protocol_lab/sequence_induction.py",
+      "target": "protocol_lab/sequence_induction.py",
+      "source_sha256": "0ef2fba21ddb6aebd1a0ccdfe8f9f3ebc3aa0c073cf6b26a70aaf3f26a92bcae",
+      "transformation": "none",
+      "extracted_sha256": "0ef2fba21ddb6aebd1a0ccdfe8f9f3ebc3aa0c073cf6b26a70aaf3f26a92bcae"
+    },
+    {
+      "source": "protocol_lab/initial_step.py",
+      "target": "protocol_lab/initial_step.py",
+      "source_sha256": "70d78b82e5daa068ef0663738fc24c5d2d3cbe0c6b16de42df0421c16e4c859a",
+      "transformation": "none",
+      "extracted_sha256": "70d78b82e5daa068ef0663738fc24c5d2d3cbe0c6b16de42df0421c16e4c859a"
+    },
+    {
+      "source": "protocol_lab/initial_plan.py",
+      "target": "protocol_lab/initial_plan.py",
+      "source_sha256": "2651be58a75ff345b235947756bf671eecf2fc39e2bc07ff5f789e30d3e25a85",
+      "transformation": "none",
+      "extracted_sha256": "2651be58a75ff345b235947756bf671eecf2fc39e2bc07ff5f789e30d3e25a85"
+    },
+    {
+      "source": "protocol_lab/initial_units.py",
+      "target": "protocol_lab/initial_units.py",
+      "source_sha256": "bc2ff693f79bc3b86ae9e61605e95f0ed262fc6e59c74c778f5131af67587899",
+      "transformation": "none",
+      "extracted_sha256": "bc2ff693f79bc3b86ae9e61605e95f0ed262fc6e59c74c778f5131af67587899"
+    },
+    {
+      "source": "protocol_lab/initial_overlap.py",
+      "target": "protocol_lab/initial_overlap.py",
+      "source_sha256": "d9eb3cab389a80053f4222449d9ba181e81c80f2f89938ad425575f77ce50d04",
+      "transformation": "none",
+      "extracted_sha256": "d9eb3cab389a80053f4222449d9ba181e81c80f2f89938ad425575f77ce50d04"
+    },
+    {
+      "source": "protocol_lab/pipeline/__init__.py",
+      "target": "protocol_lab/pipeline/__init__.py",
+      "source_sha256": "c47c28ab64467ae92c4ce45391db7e0739d2ba2e74fd02dabe40f8d43c51a587",
+      "transformation": "none",
+      "extracted_sha256": "c47c28ab64467ae92c4ce45391db7e0739d2ba2e74fd02dabe40f8d43c51a587"
+    },
+    {
+      "source": "protocol_lab/pipeline/__main__.py",
+      "target": "protocol_lab/pipeline/__main__.py",
+      "source_sha256": "4b3aed3ab0e4a92e39dad2e2bd48cedf9ce2a451e81bd0c9e0f37cd7e1c538ec",
+      "transformation": "none",
+      "extracted_sha256": "4b3aed3ab0e4a92e39dad2e2bd48cedf9ce2a451e81bd0c9e0f37cd7e1c538ec"
+    },
+    {
+      "source": "protocol_lab/pipeline/runner.py",
+      "target": "protocol_lab/pipeline/runner.py",
+      "source_sha256": "cbd78b3749b3368ba39fbd4a1fa1f89e69cc7212feb7af4dd196b97404a65750",
+      "transformation": "none",
+      "extracted_sha256": "cbd78b3749b3368ba39fbd4a1fa1f89e69cc7212feb7af4dd196b97404a65750"
+    },
+    {
+      "source": "protocol_lab/pipeline/task.py",
+      "target": "protocol_lab/pipeline/task.py",
+      "source_sha256": "3a760183e8d1a4b9d2ed7d44c0a86136c8eb342714dd6c3bfd0b2b5c11752baf",
+      "transformation": "explicitly reject benchmark-only legacy TCP wire codec; ordinary IR semantics unchanged",
+      "extracted_sha256": "059cf6e401837ae74042c37907a0673e7b05f26f9232b9e5cb3e3c0091f4980e"
+    },
+    {
+      "source": "protocol_lab/pipeline/testgen.py",
+      "target": "protocol_lab/pipeline/testgen.py",
+      "source_sha256": "e7581c8047b3a47ca81cc1c726b0c5b41413c52d750c0f21f0599a5d074de169",
+      "transformation": "none",
+      "extracted_sha256": "e7581c8047b3a47ca81cc1c726b0c5b41413c52d750c0f21f0599a5d074de169"
+    },
+    {
+      "source": "protocol_lab/pipeline/worker.py",
+      "target": "protocol_lab/pipeline/worker.py",
+      "source_sha256": "cab78a75d197fd9def988aaf5f1584bac501e2c04ea989d99cd55e3b1b109879",
+      "transformation": "none",
+      "extracted_sha256": "cab78a75d197fd9def988aaf5f1584bac501e2c04ea989d99cd55e3b1b109879"
+    },
+    {
+      "source": "protocol_lab/pipeline/coverage.py",
+      "target": "protocol_lab/pipeline/coverage.py",
+      "source_sha256": "091444e0f9d4a35c657d54b4bf91f5e2e4ac02d4af2622b6e872e07e63100854",
+      "transformation": "none",
+      "extracted_sha256": "091444e0f9d4a35c657d54b4bf91f5e2e4ac02d4af2622b6e872e07e63100854"
+    },
+    {
+      "source": "protocol_lab/codegen/__init__.py",
+      "target": "protocol_lab/codegen/__init__.py",
+      "source_sha256": "3212cf46b9dd1528575d95599dd56cde94fe9e8bfa7cb83d85069bbf2d1f6ed6",
+      "transformation": "explicitly reject benchmark-only legacy TCP wire codec; ordinary IR semantics unchanged",
+      "extracted_sha256": "ba9c94b903acd7a7894b9a33ebef4fcd6a571088da0ff31aa15b6c4a0b6a8485"
+    },
+    {
+      "source": "protocol_lab/codegen/__main__.py",
+      "target": "protocol_lab/codegen/__main__.py",
+      "source_sha256": "f8a87acbecedefacfe74abe201c1be7a1993908720d3220674b17ad3cdb2e660",
+      "transformation": "none",
+      "extracted_sha256": "f8a87acbecedefacfe74abe201c1be7a1993908720d3220674b17ad3cdb2e660"
+    },
+    {
+      "source": "protocol_lab/codegen/execute.py",
+      "target": "protocol_lab/codegen/execute.py",
+      "source_sha256": "355a90badcb18aecd8217755e03d5f290cfd758b3fa3f3a4224db7928a8b3895",
+      "transformation": "none",
+      "extracted_sha256": "355a90badcb18aecd8217755e03d5f290cfd758b3fa3f3a4224db7928a8b3895"
+    },
+    {
+      "source": "protocol_lab/codegen/runtime.c",
+      "target": "protocol_lab/codegen/runtime.c",
+      "source_sha256": "3deee31d596e78afa35383d247597bbe95ee43cb4a736d5b1807d78887903ea4",
+      "transformation": "none",
+      "extracted_sha256": "3deee31d596e78afa35383d247597bbe95ee43cb4a736d5b1807d78887903ea4"
+    },
+    {
+      "source": "protocol_lab/codegen/harness.c",
+      "target": "protocol_lab/codegen/harness.c",
+      "source_sha256": "2458df5d56d386fe086b4988f8a8efddff0d62b52009556382e3e9e6f4b02e07",
+      "transformation": "none",
+      "extracted_sha256": "2458df5d56d386fe086b4988f8a8efddff0d62b52009556382e3e9e6f4b02e07"
+    },
+    {
+      "source": "protocol_lab/flow.py",
+      "target": "protocol_lab/flow.py",
+      "source_sha256": "54621ad6ee3872de52112ceb66be971f648abe78868b1165b3f402d26dd07778",
+      "transformation": "AST-select TraceContractMismatch and run_scenario unchanged; omit TCP/network build and packetdrill helpers",
+      "extracted_sha256": "1a35ee2988a65b8ef12fafcbd434d65e7b07b4a60745a59e185d2ac688c873fe"
+    },
+    {
+      "source": "agents/deepseek_gateway.py",
+      "target": "formal_spec_agent/providers/deepseek.py",
+      "source_sha256": "83688f8332ef29e13ea42b702e05ff3856d3f0b81aff4f5c17aacc028048fa05",
+      "transformation": "none",
+      "extracted_sha256": "83688f8332ef29e13ea42b702e05ff3856d3f0b81aff4f5c17aacc028048fa05"
+    },
+    {
+      "source": "tests/test_initial_units.py",
+      "target": "tests/test_initial_units.py",
+      "source_sha256": "f939bfd48826a0a8ebb7c610eefb6c8df44947f6c1ce92d163023e3fd7aac5a4",
+      "transformation": "none",
+      "extracted_sha256": "f939bfd48826a0a8ebb7c610eefb6c8df44947f6c1ce92d163023e3fd7aac5a4"
+    },
+    {
+      "source": "tests/test_initial_units_independent.py",
+      "target": "tests/test_initial_units_independent.py",
+      "source_sha256": "6e05131b38c06c39ab2464a21c51849edee84ddbedb659c16caddf9d3ea57e38",
+      "transformation": "none",
+      "extracted_sha256": "6e05131b38c06c39ab2464a21c51849edee84ddbedb659c16caddf9d3ea57e38"
+    },
+    {
+      "source": "tests/test_initial_overlap.py",
+      "target": "tests/test_initial_overlap.py",
+      "source_sha256": "5959707118e2d8b1ba90bd3997620757aa6122cf55c1cf6cba0663116ef3219f",
+      "transformation": "none",
+      "extracted_sha256": "5959707118e2d8b1ba90bd3997620757aa6122cf55c1cf6cba0663116ef3219f"
+    },
+    {
+      "source": "tests/test_symbolic_timer_replay.py",
+      "target": "tests/test_symbolic_timer_replay.py",
+      "source_sha256": "265c7ba0dae2203726c33d6ad2b4cc70eadc4f0db3b230885cd2caed0e16cf3a",
+      "transformation": "none",
+      "extracted_sha256": "265c7ba0dae2203726c33d6ad2b4cc70eadc4f0db3b230885cd2caed0e16cf3a"
+    },
+    {
+      "source": "tests/test_rational_clock.py",
+      "target": "tests/test_rational_clock.py",
+      "source_sha256": "ae461d096fbceb9f8a6600a739cad243bcfbd170943e283723f51e497a1e6d7e",
+      "transformation": "none",
+      "extracted_sha256": "ae461d096fbceb9f8a6600a739cad243bcfbd170943e283723f51e497a1e6d7e"
+    },
+    {
+      "source": "requirements-formal.txt",
+      "target": "requirements-formal.txt",
+      "source_sha256": "a7f518176888216007f17633869baaeb93fa3e23b2e8e72c4d24d271992e988a",
+      "transformation": "none",
+      "extracted_sha256": "a7f518176888216007f17633869baaeb93fa3e23b2e8e72c4d24d271992e988a"
+    },
+    {
+      "source": "docs/semantics.md",
+      "target": "docs/semantics.md",
+      "source_sha256": "3d66f69a0c97f72290362ad75d2872e52c02b58a2ec31a082c04d42ac557d57b",
+      "transformation": "none",
+      "extracted_sha256": "3d66f69a0c97f72290362ad75d2872e52c02b58a2ec31a082c04d42ac557d57b"
+    }
+  ],
+  "authority": "Formal-Spec-Agent owns future generic semantics; original repository legacy source is frozen for historical checks, not a second evolving implementation",
+  "excluded": [
+    "TCP/IP models and scenarios",
+    "RFC oracle/specification bindings",
+    "PCAP and historical evidence",
+    "lwIP/Linux protocol adapters",
+    "protocol-specific agents/controllers"
+  ]
+}

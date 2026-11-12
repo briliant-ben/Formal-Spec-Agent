@@ -1,0 +1,137 @@
+{
+  "ir_version": "0.5",
+  "semantics": "flat-efsm-atomic-ordered-v1",
+  "protocol": "bounded-mailbox",
+  "scope": {
+    "terminal_states": [],
+    "excluded": [
+      "network/wire/realpeer",
+      "unbounded buffer",
+      "spec interpretation correctness"
+    ]
+  },
+  "states": [
+    "READY"
+  ],
+  "initial_state": "READY",
+  "variables": {
+    "buffer": {
+      "type": "bytes",
+      "initial": []
+    }
+  },
+  "events": {
+    "publish": {
+      "origin": "application",
+      "fields": {
+        "data": "bytes"
+      }
+    },
+    "clear": {
+      "origin": "application",
+      "fields": {}
+    }
+  },
+  "timers": {},
+  "messages": {
+    "delivered": {
+      "fields": {
+        "data": "bytes"
+      }
+    }
+  },
+  "requirements": {
+    "MB": {
+      "source": "spec.md",
+      "interpretation": "Exactly store and emit at most eight octets; clear empties buffer",
+      "kind": "modeling_choice"
+    }
+  },
+  "transitions": [
+    {
+      "id": "PUBLISH",
+      "from": "READY",
+      "to": "READY",
+      "event": "publish",
+      "guard": {
+        "op": "le",
+        "args": [
+          {
+            "op": "bytes_len",
+            "args": [
+              {
+                "event": "data"
+              }
+            ]
+          },
+          8
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "buffer",
+            "value": {
+              "event": "data"
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "delivered",
+            "fields": {
+              "data": {
+                "var": "buffer"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "MB"
+      ]
+    },
+    {
+      "id": "CLEAR",
+      "from": "READY",
+      "to": "READY",
+      "event": "clear",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "buffer",
+            "value": {
+              "bytes": []
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "MB"
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "id": "capacity",
+      "requirements": [
+        "MB"
+      ],
+      "assert": {
+        "op": "le",
+        "args": [
+          {
+            "op": "bytes_len",
+            "args": [
+              {
+                "var": "buffer"
+              }
+            ]
+          },
+          8
+        ]
+      }
+    }
+  ]
+}

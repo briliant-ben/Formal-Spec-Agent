@@ -1,0 +1,1 @@
+{"schema": "spec-flow-verification-v1", "status": "retained_evidence_consistent", "assessment": "verified_event_slice", "run_id": "e92ed771-6496-402c-82c2-32b233f9d91c", "inputs_checked": 31, "artifacts_checked": 147, "fresh_execution": false, "authenticity_established": false, "scope": "retained file/source/dependency/verdict integrity only; rerun flow for fresh execution"}

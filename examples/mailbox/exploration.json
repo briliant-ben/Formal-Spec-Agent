@@ -1,0 +1,82 @@
+{
+  "depth": 2,
+  "initials": [
+    {}
+  ],
+  "cases": [
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "publish",
+      "fields": {
+        "data": {
+          "bytes": []
+        }
+      }
+    },
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "publish",
+      "fields": {
+        "data": {
+          "bytes": [
+            0,
+            128,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "publish",
+      "fields": {
+        "data": {
+          "bytes": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "publish",
+      "fields": {
+        "data": {
+          "bytes": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "clear",
+      "fields": {}
+    }
+  ]
+}
