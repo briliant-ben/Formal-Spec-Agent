@@ -1,0 +1,65 @@
+{
+  "schema": "spec-flow-task-v2",
+  "id": "bounded-mailbox",
+  "model": "model.json",
+  "sources": [
+    {
+      "id": "spec",
+      "path": "spec.md",
+      "sha256": "a7b65a8c8de32bb2ec528d34f63c60750df83fc6c61245a3a0d2ff70d37cd806",
+      "version": "mailbox-v1",
+      "uri_aliases": [
+        "spec.md"
+      ]
+    },
+    {
+      "id": "exploration",
+      "path": "exploration.json",
+      "sha256": "563cf34670a82c3227b4809d302702e74ea1d68a755f0273a770bfe24101d174",
+      "version": "mailbox-v1",
+      "uri_aliases": [
+        "exploration.json"
+      ]
+    },
+    {
+      "id": "seed",
+      "path": "seed.json",
+      "sha256": "861a9578a0c8c088149341ee9c1b633fe20862ceeeb125b138ad1e55d0a11f74",
+      "version": "mailbox-v1",
+      "uri_aliases": [
+        "seed.json"
+      ]
+    }
+  ],
+  "requirement_bindings": {
+    "MB": {
+      "source": "spec",
+      "clause": "revision1",
+      "reference": "spec.md"
+    }
+  },
+  "exploration": "exploration.json",
+  "seeds": [
+    "seed.json"
+  ],
+  "formal": {
+    "depth": 2,
+    "symbolic_initials": []
+  },
+  "limits": {
+    "stage_seconds": 60,
+    "max_prefixes": 64,
+    "max_cases": 20
+  },
+  "scope": {
+    "purpose": "protocol-independent extraction smoke test",
+    "assumptions": [
+      "caller-pinned independent literal seed; source interpretation trusted"
+    ],
+    "excluded": [
+      "network evidence",
+      "unbounded proof",
+      "compiler correctness"
+    ]
+  }
+}

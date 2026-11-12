@@ -1,0 +1,193 @@
+test_actual_non_tcp_flow_and_tamper_rejection (test_framework.FrameworkTests) ... {"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "sources", "run_id": "4a7c2308-29fb-48a0-a8a6-bf11fad0ed02"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "ir", "run_id": "4a7c2308-29fb-48a0-a8a6-bf11fad0ed02"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "formal", "run_id": "4a7c2308-29fb-48a0-a8a6-bf11fad0ed02"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "tests", "run_id": "4a7c2308-29fb-48a0-a8a6-bf11fad0ed02"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "reference", "run_id": "4a7c2308-29fb-48a0-a8a6-bf11fad0ed02"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "generate", "run_id": "4a7c2308-29fb-48a0-a8a6-bf11fad0ed02"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "build", "run_id": "4a7c2308-29fb-48a0-a8a6-bf11fad0ed02"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "execute", "run_id": "4a7c2308-29fb-48a0-a8a6-bf11fad0ed02"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "compare", "run_id": "4a7c2308-29fb-48a0-a8a6-bf11fad0ed02"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "traceability", "run_id": "4a7c2308-29fb-48a0-a8a6-bf11fad0ed02"}
+FAIL
+test_independent_roles_never_self_approve_or_execute_output (test_framework.FrameworkTests) ... ok
+test_legacy_tcp_wire_adapter_explicitly_refused (test_framework.FrameworkTests) ... ok
+test_provider_failure_not_retried_and_input_changes_reject (test_framework.FrameworkTests) ... ok
+test_initial_overlap (unittest.loader._FailedTest) ... ERROR
+test_initial_units (unittest.loader._FailedTest) ... ERROR
+test_initial_units_independent (unittest.loader._FailedTest) ... ERROR
+test_canonical_values_and_literals_reject_ambiguity_and_old_versions (test_rational_clock.RationalClockTests) ... ok
+test_guard_and_actions_read_event_clock_and_values_stay_exact (test_rational_clock.RationalClockTests) ... ok
+test_negative_abs_scale_and_ceil_are_exact_without_floats (test_rational_clock.RationalClockTests) ... ok
+test_rational_input_and_output_schema_uses_canonical_json_values (test_rational_clock.RationalClockTests) ... ok
+test_all_rational_ceil_values_and_dispatch_clock_have_independent_queries (test_rational_clock.SymbolicRationalClockTests) ... skipped 'Z3 required'
+test_backend_rejects_nonrational_witness_instead_of_rounding_it (test_rational_clock.SymbolicRationalClockTests) ... skipped 'Z3 required'
+test_clock_guard_exact_fraction_witness_and_full_trace_replay (test_rational_clock.SymbolicRationalClockTests) ... skipped 'Z3 required'
+test_bad_step_is_atomic_and_timer_injection_stays_forbidden (test_symbolic_timer_replay.SymbolicTimerReplayTests) ... ok
+test_cancellation_and_rearm_are_not_overridden_by_witness (test_symbolic_timer_replay.SymbolicTimerReplayTests) ... test_external_step_cannot_hide_earlier_timers (test_symbolic_timer_replay.SymbolicTimerReplayTests) ... ERROR
+test_malformed_and_wrong_semantics_clock_witness_is_rejected (test_symbolic_timer_replay.SymbolicTimerReplayTests) ... ok
+test_one_step_and_batched_tick_have_identical_records (test_symbolic_timer_replay.SymbolicTimerReplayTests) ... ok
+test_tied_timers_and_prefix_match_each_logical_transition (test_symbolic_timer_replay.SymbolicTimerReplayTests) ... ERROR
+test_wrong_timer_labels_do_not_match_unchanged_after_or_emissions (test_symbolic_timer_replay.SymbolicTimerReplayTests) ... ERROR
+
+======================================================================
+ERROR: test_initial_overlap (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_initial_overlap
+Traceback (most recent call last):
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/tests/test_initial_overlap.py", line 2, in <module>
+    import z3
+ModuleNotFoundError: No module named 'z3'
+
+
+======================================================================
+ERROR: test_initial_units (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_initial_units
+Traceback (most recent call last):
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/tests/test_initial_units.py", line 5, in <module>
+    import z3
+ModuleNotFoundError: No module named 'z3'
+
+
+======================================================================
+ERROR: test_initial_units_independent (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_initial_units_independent
+Traceback (most recent call last):
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/tests/test_initial_units_independent.py", line 3, in <module>
+    import z3
+ModuleNotFoundError: No module named 'z3'
+
+
+======================================================================
+ERROR: test_cancellation_and_rearm_are_not_overridden_by_witness (test_symbolic_timer_replay.SymbolicTimerReplayTests) (action={'cancel': 'b'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 157, in __init__
+    import z3
+ModuleNotFoundError: No module named 'z3'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/tests/test_symbolic_timer_replay.py", line 75, in test_cancellation_and_rearm_are_not_overridden_by_witness
+    result = crosscheck_trace(model, machine.trace)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 108, in crosscheck_trace
+    enc = encode_trace(model, trace)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 78, in encode_trace
+    enc = Encoding(model, len(trace), overrides, fixed_choices=choices, **encoding_options)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 159, in __init__
+    raise ModelError("Z3 is missing: install requirements-formal.txt in .venv") from exc
+protocol_lab.ir.ModelError: Z3 is missing: install requirements-formal.txt in .venv
+
+======================================================================
+ERROR: test_cancellation_and_rearm_are_not_overridden_by_witness (test_symbolic_timer_replay.SymbolicTimerReplayTests) (action={'arm': {'timer': 'b', 'delay_ms': 5}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 157, in __init__
+    import z3
+ModuleNotFoundError: No module named 'z3'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/tests/test_symbolic_timer_replay.py", line 75, in test_cancellation_and_rearm_are_not_overridden_by_witness
+    result = crosscheck_trace(model, machine.trace)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 108, in crosscheck_trace
+    enc = encode_trace(model, trace)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 78, in encode_trace
+    enc = Encoding(model, len(trace), overrides, fixed_choices=choices, **encoding_options)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 159, in __init__
+    raise ModelError("Z3 is missing: install requirements-formal.txt in .venv") from exc
+protocol_lab.ir.ModelError: Z3 is missing: install requirements-formal.txt in .venv
+
+======================================================================
+ERROR: test_external_step_cannot_hide_earlier_timers (test_symbolic_timer_replay.SymbolicTimerReplayTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 157, in __init__
+    import z3
+ModuleNotFoundError: No module named 'z3'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/tests/test_symbolic_timer_replay.py", line 103, in test_external_step_cannot_hide_earlier_timers
+    result = crosscheck_trace(model, machine.trace)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 108, in crosscheck_trace
+    enc = encode_trace(model, trace)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 78, in encode_trace
+    enc = Encoding(model, len(trace), overrides, fixed_choices=choices, **encoding_options)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 159, in __init__
+    raise ModelError("Z3 is missing: install requirements-formal.txt in .venv") from exc
+protocol_lab.ir.ModelError: Z3 is missing: install requirements-formal.txt in .venv
+
+======================================================================
+ERROR: test_tied_timers_and_prefix_match_each_logical_transition (test_symbolic_timer_replay.SymbolicTimerReplayTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 157, in __init__
+    import z3
+ModuleNotFoundError: No module named 'z3'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/tests/test_symbolic_timer_replay.py", line 48, in test_tied_timers_and_prefix_match_each_logical_transition
+    checked = crosscheck_trace(model, machine.trace)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 108, in crosscheck_trace
+    enc = encode_trace(model, trace)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 78, in encode_trace
+    enc = Encoding(model, len(trace), overrides, fixed_choices=choices, **encoding_options)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 159, in __init__
+    raise ModelError("Z3 is missing: install requirements-formal.txt in .venv") from exc
+protocol_lab.ir.ModelError: Z3 is missing: install requirements-formal.txt in .venv
+
+======================================================================
+ERROR: test_wrong_timer_labels_do_not_match_unchanged_after_or_emissions (test_symbolic_timer_replay.SymbolicTimerReplayTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 157, in __init__
+    import z3
+ModuleNotFoundError: No module named 'z3'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/tests/test_symbolic_timer_replay.py", line 91, in test_wrong_timer_labels_do_not_match_unchanged_after_or_emissions
+    witness = crosscheck_trace(model, machine.trace)["witness"]
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 108, in crosscheck_trace
+    enc = encode_trace(model, trace)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 78, in encode_trace
+    enc = Encoding(model, len(trace), overrides, fixed_choices=choices, **encoding_options)
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/protocol_lab/symbolic.py", line 159, in __init__
+    raise ModelError("Z3 is missing: install requirements-formal.txt in .venv") from exc
+protocol_lab.ir.ModelError: Z3 is missing: install requirements-formal.txt in .venv
+
+======================================================================
+FAIL: test_actual_non_tcp_flow_and_tamper_rejection (test_framework.FrameworkTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/tests/test_framework.py", line 25, in test_actual_non_tcp_flow_and_tamper_rejection
+    self.assertEqual(result['assessment'], 'verified_event_slice')
+AssertionError: 'blocked' != 'verified_event_slice'
+- blocked
++ verified_event_slice
+
+
+----------------------------------------------------------------------
+Ran 21 tests in 1.176s
+
+FAILED (failures=1, errors=8, skipped=3)

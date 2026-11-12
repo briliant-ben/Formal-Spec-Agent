@@ -1,0 +1,30 @@
+{
+  "schema": "formal-spec-proposal-job-v1",
+  "id": "mailbox-model-and-review",
+  "sources": [
+    {
+      "path": "examples/mailbox/spec.md",
+      "sha256": "a7b65a8c8de32bb2ec528d34f63c60750df83fc6c61245a3a0d2ff70d37cd806"
+    }
+  ],
+  "roles": [
+    {
+      "id": "modeler",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Propose a declarative Protocol IR for the pinned finite mailbox. Return JSON model and explicit assumptions; no code or execution claims."
+        }
+      ]
+    },
+    {
+      "id": "interpretation-reviewer",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Independently list normative behavior, ambiguous interpretations and literal positive/negative acceptance examples for the pinned specification. Return JSON; do not claim proof or change the oracle."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "tcp": {
+    "run_id": "e0d4fb16-b9fe-41cd-9346-cc08c9841da5",
+    "task_id": "tcp-active-open",
+    "task_sha256": "0e8bf683de0d7d0b308303e90ec70589c17c06dd5616e291da9e2a6691e314b9",
+    "assessment": "verified_event_slice",
+    "stages": {
+      "sources": "pass",
+      "ir": "pass",
+      "formal": "pass",
+      "tests": "pass",
+      "reference": "pass",
+      "generate": "pass",
+      "build": "pass",
+      "execute": "pass",
+      "compare": "pass",
+      "traceability": "pass"
+    },
+    "cases": 13,
+    "generated_source_sha256": "bc3821199237d699c5092bc4839af69ea788c23c9f75e3de72069352f7ab28e4",
+    "observation_kind": "generated_native_event_trace",
+    "new_network_execution": false
+  },
+  "udp": {
+    "run_id": "e92ed771-6496-402c-82c2-32b233f9d91c",
+    "task_id": "udp-ipv4-header-descriptor",
+    "task_sha256": "641ac385b1445749caf127569111c8537b7d28663fa46ba9a622c786ea4f5a66",
+    "assessment": "verified_event_slice",
+    "stages": {
+      "sources": "pass",
+      "ir": "pass",
+      "formal": "pass",
+      "tests": "pass",
+      "reference": "pass",
+      "generate": "pass",
+      "build": "pass",
+      "execute": "pass",
+      "compare": "pass",
+      "traceability": "pass"
+    },
+    "cases": 12,
+    "generated_source_sha256": "5a01a9d14ad8723d98aef1573ea733c5efcff7eba444044639b1607edc00c0fd",
+    "observation_kind": "generated_native_event_trace",
+    "new_network_execution": false
+  }
+}
