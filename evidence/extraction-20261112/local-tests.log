@@ -1,19 +1,19 @@
 test_named_source_extraction_is_exact_or_explicitly_transformed (test_extraction.ExtractionTests.test_named_source_extraction_is_exact_or_explicitly_transformed) ... ok
-test_actual_non_tcp_flow_and_tamper_rejection (test_framework.FrameworkTests.test_actual_non_tcp_flow_and_tamper_rejection) ... {"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "sources", "run_id": "172589b8-90d6-4992-b283-984400b597e4"}
-{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "ir", "run_id": "172589b8-90d6-4992-b283-984400b597e4"}
-{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "formal", "run_id": "172589b8-90d6-4992-b283-984400b597e4"}
-{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "tests", "run_id": "172589b8-90d6-4992-b283-984400b597e4"}
-{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "reference", "run_id": "172589b8-90d6-4992-b283-984400b597e4"}
-{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "generate", "run_id": "172589b8-90d6-4992-b283-984400b597e4"}
-{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "build", "run_id": "172589b8-90d6-4992-b283-984400b597e4"}
-{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "execute", "run_id": "172589b8-90d6-4992-b283-984400b597e4"}
-{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "compare", "run_id": "172589b8-90d6-4992-b283-984400b597e4"}
-{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "traceability", "run_id": "172589b8-90d6-4992-b283-984400b597e4"}
+test_actual_non_tcp_flow_and_tamper_rejection (test_framework.FrameworkTests.test_actual_non_tcp_flow_and_tamper_rejection) ... {"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "sources", "run_id": "8066e9e6-e3ae-46c4-9fff-f132c53a4f4d"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "ir", "run_id": "8066e9e6-e3ae-46c4-9fff-f132c53a4f4d"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "formal", "run_id": "8066e9e6-e3ae-46c4-9fff-f132c53a4f4d"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "tests", "run_id": "8066e9e6-e3ae-46c4-9fff-f132c53a4f4d"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "reference", "run_id": "8066e9e6-e3ae-46c4-9fff-f132c53a4f4d"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "generate", "run_id": "8066e9e6-e3ae-46c4-9fff-f132c53a4f4d"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "build", "run_id": "8066e9e6-e3ae-46c4-9fff-f132c53a4f4d"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "execute", "run_id": "8066e9e6-e3ae-46c4-9fff-f132c53a4f4d"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "compare", "run_id": "8066e9e6-e3ae-46c4-9fff-f132c53a4f4d"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "traceability", "run_id": "8066e9e6-e3ae-46c4-9fff-f132c53a4f4d"}
 ok
 test_independent_roles_never_self_approve_or_execute_output (test_framework.FrameworkTests.test_independent_roles_never_self_approve_or_execute_output) ... ok
 test_legacy_tcp_wire_adapter_explicitly_refused (test_framework.FrameworkTests.test_legacy_tcp_wire_adapter_explicitly_refused) ... ok
 test_provider_failure_not_retried_and_input_changes_reject (test_framework.FrameworkTests.test_provider_failure_not_retried_and_input_changes_reject) ... ok
-test_source_edit_during_provider_call_invalidates_completed_proposal (test_framework.FrameworkTests.test_source_edit_during_provider_call_invalidates_completed_proposal) ... FAIL
+test_source_edit_during_provider_call_invalidates_completed_proposal (test_framework.FrameworkTests.test_source_edit_during_provider_call_invalidates_completed_proposal) ... ok
 test_compatible_overlap_returns_none (test_initial_overlap.TestNecessaryLiteralClash.test_compatible_overlap_returns_none) ... ok
 test_custom_context_supported (test_initial_overlap.TestNecessaryLiteralClash.test_custom_context_supported) ... ok
 test_different_base_returns_none (test_initial_overlap.TestNecessaryLiteralClash.test_different_base_returns_none) ... ok
@@ -70,24 +70,7 @@ test_one_step_and_batched_tick_have_identical_records (test_symbolic_timer_repla
 test_tied_timers_and_prefix_match_each_logical_transition (test_symbolic_timer_replay.SymbolicTimerReplayTests.test_tied_timers_and_prefix_match_each_logical_transition) ... ok
 test_wrong_timer_labels_do_not_match_unchanged_after_or_emissions (test_symbolic_timer_replay.SymbolicTimerReplayTests.test_wrong_timer_labels_do_not_match_unchanged_after_or_emissions) ... ok
 
-======================================================================
-FAIL: test_source_edit_during_provider_call_invalidates_completed_proposal (test_framework.FrameworkTests.test_source_edit_during_provider_call_invalidates_completed_proposal)
 ----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/Users/xubenling/Documents/ChatGPT/Protocol_Form/Formal-Spec-Agent/tests/test_framework.py", line 77, in test_source_edit_during_provider_call_invalidates_completed_proposal
-    self.assertEqual(result['changed_inputs'],[str(source)])
-AssertionError: Lists differ: ['/private/var/folders/8z/yn99y21n7xzcw_z2z_[38 chars]pec'] != ['/var/folders/8z/yn99y21n7xzcw_z2z_k8m4bc00[30 chars]pec']
+Ran 61 tests in 0.866s
 
-First differing element 0:
-'/private/var/folders/8z/yn99y21n7xzcw_z2z_[37 chars]spec'
-'/var/folders/8z/yn99y21n7xzcw_z2z_k8m4bc00[29 chars]spec'
-
-- ['/private/var/folders/8z/yn99y21n7xzcw_z2z_k8m4bc0000gn/T/tmp_r3ggqje/candidate/spec']
-?   --------
-
-+ ['/var/folders/8z/yn99y21n7xzcw_z2z_k8m4bc0000gn/T/tmp_r3ggqje/candidate/spec']
-
-----------------------------------------------------------------------
-Ran 61 tests in 0.669s
-
-FAILED (failures=1)
+OK

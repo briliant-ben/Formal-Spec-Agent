@@ -74,7 +74,7 @@ class FrameworkTests(unittest.TestCase):
                 return dict(response_file='answer.json')
             result=propose(job,workspace,root/'out',root/'ledger',root/'secret','fake',sha(job),provider=provider)
             self.assertEqual(result['status'],'invalidated_inputs')
-            self.assertEqual(result['changed_inputs'],[str(source)])
+            self.assertEqual(result['changed_inputs'],[str(source.resolve())])
             self.assertFalse(result['protocol_accepted'])
 
 

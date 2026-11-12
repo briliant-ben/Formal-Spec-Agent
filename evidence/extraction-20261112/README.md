@@ -18,3 +18,5 @@ This source review does not establish correctness or execution authenticity.
 Afterward the controller's source/job reads were tightened to hash the SAME bytes
 used as model context, avoiding a hash/read race; final local tests pass. No
 provider retry or automatic code execution/approval was added.
+
+The added source-edit negative test first compared a macOS /var path with its resolved /private/var identity; the failing assertion is retained. It now compares the canonical path actually required by the API; no source-change invalidation rule was weakened.
