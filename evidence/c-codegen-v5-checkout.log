@@ -1,0 +1,85 @@
+test_conditional_timer_actions_keep_order_and_skip_errors (test_codegen_sharing.SharedExpressionTests.test_conditional_timer_actions_keep_order_and_skip_errors) ... ok
+test_conflicting_guards_are_all_checked (test_codegen_sharing.SharedExpressionTests.test_conflicting_guards_are_all_checked) ... ok
+test_event_field_slots_and_types_remain_distinct (test_codegen_sharing.SharedExpressionTests.test_event_field_slots_and_types_remain_distinct) ... ok
+test_overflow_and_byte_capacity_fail_atomically (test_codegen_sharing.SharedExpressionTests.test_overflow_and_byte_capacity_fail_atomically) ... ok
+test_readable_strings_preserve_all_utf8_bytes_and_c99_trigraphs (test_codegen_sharing.SharedExpressionTests.test_readable_strings_preserve_all_utf8_bytes_and_c99_trigraphs) ... ok
+test_reads_follow_ordered_writes_not_cached_values (test_codegen_sharing.SharedExpressionTests.test_reads_follow_ordered_writes_not_cached_values) ... ok
+test_sharing_shrinks_and_is_deterministic (test_codegen_sharing.SharedExpressionTests.test_sharing_shrinks_and_is_deterministic) ... ok
+test_short_circuit_and_conditional_do_not_eagerly_fail (test_codegen_sharing.SharedExpressionTests.test_short_circuit_and_conditional_do_not_eagerly_fail) ... ok
+test_state_only_helper_in_invariant_and_byte_helpers (test_codegen_sharing.SharedExpressionTests.test_state_only_helper_in_invariant_and_byte_helpers) ... ok
+test_named_source_extraction_is_exact_or_explicitly_transformed (test_extraction.ExtractionTests.test_named_source_extraction_is_exact_or_explicitly_transformed) ... ok
+test_actual_non_tcp_flow_and_tamper_rejection (test_framework.FrameworkTests.test_actual_non_tcp_flow_and_tamper_rejection) ... {"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "sources", "run_id": "81d4c51c-2847-4027-af21-ff1e0f8f32f3"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "ir", "run_id": "81d4c51c-2847-4027-af21-ff1e0f8f32f3"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "formal", "run_id": "81d4c51c-2847-4027-af21-ff1e0f8f32f3"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "tests", "run_id": "81d4c51c-2847-4027-af21-ff1e0f8f32f3"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "reference", "run_id": "81d4c51c-2847-4027-af21-ff1e0f8f32f3"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "generate", "run_id": "81d4c51c-2847-4027-af21-ff1e0f8f32f3"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "build", "run_id": "81d4c51c-2847-4027-af21-ff1e0f8f32f3"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "execute", "run_id": "81d4c51c-2847-4027-af21-ff1e0f8f32f3"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "compare", "run_id": "81d4c51c-2847-4027-af21-ff1e0f8f32f3"}
+{"schema": "spec-flow-event-v1", "event": "stage_started", "stage": "traceability", "run_id": "81d4c51c-2847-4027-af21-ff1e0f8f32f3"}
+ok
+test_independent_roles_never_self_approve_or_execute_output (test_framework.FrameworkTests.test_independent_roles_never_self_approve_or_execute_output) ... ok
+test_legacy_tcp_wire_adapter_explicitly_refused (test_framework.FrameworkTests.test_legacy_tcp_wire_adapter_explicitly_refused) ... ok
+test_provider_failure_not_retried_and_input_changes_reject (test_framework.FrameworkTests.test_provider_failure_not_retried_and_input_changes_reject) ... ok
+test_source_edit_during_provider_call_invalidates_completed_proposal (test_framework.FrameworkTests.test_source_edit_during_provider_call_invalidates_completed_proposal) ... ok
+test_compatible_overlap_returns_none (test_initial_overlap.TestNecessaryLiteralClash.test_compatible_overlap_returns_none) ... ok
+test_custom_context_supported (test_initial_overlap.TestNecessaryLiteralClash.test_custom_context_supported) ... ok
+test_different_base_returns_none (test_initial_overlap.TestNecessaryLiteralClash.test_different_base_returns_none) ... ok
+test_length_mismatch_returns_none (test_initial_overlap.TestNecessaryLiteralClash.test_length_mismatch_returns_none) ... ok
+test_never_select_or_branch_even_with_clash (test_initial_overlap.TestNecessaryLiteralClash.test_never_select_or_branch_even_with_clash) ... ok
+test_nonliteral_offset_or_length_returns_none (test_initial_overlap.TestNecessaryLiteralClash.test_nonliteral_offset_or_length_returns_none) ... ok
+test_nonliteral_sequence_expr_ignored (test_initial_overlap.TestNecessaryLiteralClash.test_nonliteral_sequence_expr_ignored) ... ok
+test_reverse_equality_orientation (test_initial_overlap.TestNecessaryLiteralClash.test_reverse_equality_orientation) ... ok
+test_simple_contradiction_offset0_14_vs_offset12_8 (test_initial_overlap.TestNecessaryLiteralClash.test_simple_contradiction_offset0_14_vs_offset12_8) ... ok
+test_whole_base_equality_supported (test_initial_overlap.TestNecessaryLiteralClash.test_whole_base_equality_supported) ... ok
+test_boolean_units (test_initial_units.TestReduceInitialConstants.test_boolean_units) ... ok
+test_bv_binding (test_initial_units.TestReduceInitialConstants.test_bv_binding) ... ok
+test_byte_input_untouched (test_initial_units.TestReduceInitialConstants.test_byte_input_untouched) ... ok
+test_contradictory_bindings_preserved (test_initial_units.TestReduceInitialConstants.test_contradictory_bindings_preserved) ... ok
+test_custom_context_bool (test_initial_units.TestReduceInitialConstants.test_custom_context_bool) ... ok
+test_equality_with_non_bool_literal_rhs_or_expression (test_initial_units.TestReduceInitialConstants.test_equality_with_non_bool_literal_rhs_or_expression) ... ok
+test_expression_rhs_not_used (test_initial_units.TestReduceInitialConstants.test_expression_rhs_not_used) ... ok
+test_fake_function_name_rejected (test_initial_units.TestReduceInitialConstants.test_fake_function_name_rejected) ... ok
+test_forward_literal_equality (test_initial_units.TestReduceInitialConstants.test_forward_literal_equality) ... ok
+test_int_binding_actual_fail (test_initial_units.TestReduceInitialConstants.test_int_binding_actual_fail) ... ok
+test_invalid_element_type (test_initial_units.TestReduceInitialConstants.test_invalid_element_type) ... ok
+test_invalid_input_type (test_initial_units.TestReduceInitialConstants.test_invalid_input_type) ... ok
+test_large_input_allowed (test_initial_units.TestReduceInitialConstants.test_large_input_allowed) ... ok
+test_literal_bv8_seq_binding (test_initial_units.TestReduceInitialConstants.test_literal_bv8_seq_binding) ... ok
+test_literal_bv8_seq_binding_with_concat (test_initial_units.TestReduceInitialConstants.test_literal_bv8_seq_binding_with_concat) ... ok
+test_literal_bv8_seq_empty (test_initial_units.TestReduceInitialConstants.test_literal_bv8_seq_empty) ... ok
+test_nonliteral_seq_rhs_rejected (test_initial_units.TestReduceInitialConstants.test_nonliteral_seq_rhs_rejected) ... ok
+test_not_equality_but_or_top_level (test_initial_units.TestReduceInitialConstants.test_not_equality_but_or_top_level) ... ok
+test_poststate_untouched (test_initial_units.TestReduceInitialConstants.test_poststate_untouched) ... ok
+test_reverse_literal_equality (test_initial_units.TestReduceInitialConstants.test_reverse_literal_equality) ... ok
+test_sat_preserved (test_initial_units.TestReduceInitialConstants.test_sat_preserved) ... ok
+test_string_binding (test_initial_units.TestReduceInitialConstants.test_string_binding) ... ok
+test_unbound_prestate_not_frozen (test_initial_units.TestReduceInitialConstants.test_unbound_prestate_not_frozen) ... ok
+test_unsat_preserved (test_initial_units.TestReduceInitialConstants.test_unsat_preserved) ... ok
+test_conflicting_units_remain_contradictory (test_initial_units_independent.IndependentReductionTests.test_conflicting_units_remain_contradictory) ... ok
+test_custom_context_bool_units_reconstruct (test_initial_units_independent.IndependentReductionTests.test_custom_context_bool_units_reconstruct) ... ok
+test_no_solver_is_called_by_reducer (test_initial_units_independent.IndependentReductionTests.test_no_solver_is_called_by_reducer) ... ok
+test_nonliteral_sequence_and_poststate_are_not_bindings (test_initial_units_independent.IndependentReductionTests.test_nonliteral_sequence_and_poststate_are_not_bindings) ... ok
+test_nonunit_equalities_are_not_bindings (test_initial_units_independent.IndependentReductionTests.test_nonunit_equalities_are_not_bindings) ... ok
+test_scalar_binding_reconstruction_is_equivalent (test_initial_units_independent.IndependentReductionTests.test_scalar_binding_reconstruction_is_equivalent) ... ok
+test_sequence_domain_above_MTU_preserved (test_initial_units_independent.IndependentReductionTests.test_sequence_domain_above_MTU_preserved) ... ok
+test_canonical_values_and_literals_reject_ambiguity_and_old_versions (test_rational_clock.RationalClockTests.test_canonical_values_and_literals_reject_ambiguity_and_old_versions) ... ok
+test_guard_and_actions_read_event_clock_and_values_stay_exact (test_rational_clock.RationalClockTests.test_guard_and_actions_read_event_clock_and_values_stay_exact) ... ok
+test_negative_abs_scale_and_ceil_are_exact_without_floats (test_rational_clock.RationalClockTests.test_negative_abs_scale_and_ceil_are_exact_without_floats) ... ok
+test_rational_input_and_output_schema_uses_canonical_json_values (test_rational_clock.RationalClockTests.test_rational_input_and_output_schema_uses_canonical_json_values) ... ok
+test_all_rational_ceil_values_and_dispatch_clock_have_independent_queries (test_rational_clock.SymbolicRationalClockTests.test_all_rational_ceil_values_and_dispatch_clock_have_independent_queries) ... ok
+test_backend_rejects_nonrational_witness_instead_of_rounding_it (test_rational_clock.SymbolicRationalClockTests.test_backend_rejects_nonrational_witness_instead_of_rounding_it) ... ok
+test_clock_guard_exact_fraction_witness_and_full_trace_replay (test_rational_clock.SymbolicRationalClockTests.test_clock_guard_exact_fraction_witness_and_full_trace_replay) ... ok
+test_bad_step_is_atomic_and_timer_injection_stays_forbidden (test_symbolic_timer_replay.SymbolicTimerReplayTests.test_bad_step_is_atomic_and_timer_injection_stays_forbidden) ... ok
+test_cancellation_and_rearm_are_not_overridden_by_witness (test_symbolic_timer_replay.SymbolicTimerReplayTests.test_cancellation_and_rearm_are_not_overridden_by_witness) ... ok
+test_external_step_cannot_hide_earlier_timers (test_symbolic_timer_replay.SymbolicTimerReplayTests.test_external_step_cannot_hide_earlier_timers) ... ok
+test_malformed_and_wrong_semantics_clock_witness_is_rejected (test_symbolic_timer_replay.SymbolicTimerReplayTests.test_malformed_and_wrong_semantics_clock_witness_is_rejected) ... ok
+test_one_step_and_batched_tick_have_identical_records (test_symbolic_timer_replay.SymbolicTimerReplayTests.test_one_step_and_batched_tick_have_identical_records) ... ok
+test_tied_timers_and_prefix_match_each_logical_transition (test_symbolic_timer_replay.SymbolicTimerReplayTests.test_tied_timers_and_prefix_match_each_logical_transition) ... ok
+test_wrong_timer_labels_do_not_match_unchanged_after_or_emissions (test_symbolic_timer_replay.SymbolicTimerReplayTests.test_wrong_timer_labels_do_not_match_unchanged_after_or_emissions) ... ok
+
+----------------------------------------------------------------------
+Ran 70 tests in 6.595s
+
+OK

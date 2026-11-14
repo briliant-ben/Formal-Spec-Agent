@@ -1,0 +1,16 @@
+{
+  "schema": "framework-source-evolution-v1",
+  "baseline": "provenance/extraction.json",
+  "files": {
+    "protocol_lab/codegen/__init__.py": {
+      "extracted_sha256": "ba9c94b903acd7a7894b9a33ebef4fcd6a571088da0ff31aa15b6c4a0b6a8485",
+      "current_sha256": "a3c2801884732d44f8b33711fca25b56c1a9aa7bf888367d11c568aa4713f081",
+      "change": "compact-c-generation-v5"
+    },
+    "protocol_lab/codegen/execute.py": {
+      "extracted_sha256": "355a90badcb18aecd8217755e03d5f290cfd758b3fa3f3a4224db7928a8b3895",
+      "current_sha256": "0f344fa7d7934dcdb29ae9eacebf6ad79bd339d277a3e7593784321e1cca741f",
+      "change": "compact-c-generation-v5"
+    }
+  }
+}

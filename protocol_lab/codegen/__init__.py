@@ -1,4 +1,5 @@
 """Direct native code generation from an explicitly admitted Protocol IR fragment."""
+from collections import Counter
 import hashlib
 import json
 import re
@@ -16,7 +17,12 @@ OPS={'eq','ne','and','or','not','implies','add','sub','mul','le','ge','min','ite
 class Unsupported(ValueError): pass
 
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
-def cstr(s):return '"'+''.join('\\%03o'%b for b in s.encode())+'"'
+def cstr(s):
+    # Escape UTF-8 bytes, not Unicode code points. Three octal digits prevent
+    # following digits from extending an escape; \? also prevents C99 trigraphs.
+    escapes={34:r'\"',92:r'\\',63:r'\?'}
+    return '"'+''.join(escapes.get(b,chr(b)if 32<=b<=126 else'\\%03o'%b)for b in s.encode())+'"'
+
 def integer(n):
     if not -(1<<63)<=n<(1<<63):raise Unsupported('Integer literal outside signed 64-bit backend domain')
     return 'INT64_MIN'if n==-(1<<63)else '(-INT64_C('+str(-n)+'))'if n<0 else 'INT64_C('+str(n)+')'
@@ -108,7 +114,7 @@ def admit(m):
         expr(inv['assert'])
 
 
-def render(m,wire=None):
+def render(m,wire=None,*,share_expressions=True):
     if wire is not None:raise Unsupported("Legacy TCP wire codec is not a generic framework backend")
     admit(m)
     byte_vars=[n for n,v in m['variables'].items()if v['type']=='bytes']
@@ -121,7 +127,7 @@ def render(m,wire=None):
         from .wire import render_codec
         lines.append(render_codec(m,wire))
     emit=lines.append
-    def exp(e,event=None):
+    def expand(e,event=None):
         if type(e)is bool:return '1'if e else'0'
         if type(e)is int:return integer(e)
         if type(e)is str:return str(strings.index(e))
@@ -151,6 +157,51 @@ def render(m,wire=None):
         if op=='seq_le':return '(distance('+','.join(a)+')<INT64_C(2147483648))'
         if op=='seq_comparable':return '(distance('+','.join(a)+')!=INT64_C(2147483648))'
         return {'add':'add','sub':'sub','mul':'mul','min':'minimum','seq_add':'seqadd','seq_distance':'distance'}[op]+'('+','.join(a)+')'
+    # Plan sharing on exact lowered expressions, including their result type.
+    # Helpers are called at the original use site: no eager temporaries or value
+    # memoization. Mutable state is read afresh after each ordered assignment;
+    # &&, || and ?: still control whether an expression is evaluated at all.
+    counts=Counter(); expressions={}; representatives={}; shared={}
+    planning=True
+    def exp(e,event=None):
+        compound=isinstance(e,dict)and 'op'in e
+        if not planning and compound:
+            key=expressions[(id(e),event)]
+            if key in shared:
+                arguments='m,NULL,NULL'if event is None else'm,f,bf'
+                return shared[key]+'('+arguments+')'
+        rendered=expand(e,event)
+        if planning and compound and share_expressions:
+            kind='Bytes'if infer(e,m,event)=='bytes'else'int64_t'
+            key=(kind,rendered)
+            expressions[(id(e),event)]=key
+            counts[key]+=1
+            representatives.setdefault(key,(e,event))
+        return rendered
+
+    # Visit exactly the expression roots lowered below. Event names are part of
+    # each node lookup, so identically named fields in different schemas retain
+    # their own slot and type. Initial values and snapshots contain no operators.
+    if share_expressions:
+        for r in m['transitions']:
+            event=r['event'];exp(r['guard'],event)
+            for action in r['actions']:
+                kind,p=next(iter(action.items()))
+                if kind=='set':exp(p['value'],event)
+                elif kind in ('emit','emit_if'):
+                    for e in p['fields'].values():exp(e,event)
+                elif kind in ('arm','arm_if'):exp(p['delay_ms'],event)
+                if kind in ('emit_if','arm_if','cancel_if'):exp(p['when'],event)
+        for inv in m['invariants']:exp(inv['assert'])
+        # Full expansion length orders children before parents. Stable ordering
+        # makes output independent of Python object identities and hash seeds.
+        candidates=sorted((k for k,n in counts.items()if n>=2 and len(k[1])>=80),key=lambda k:(len(k[1]),k))
+        shared={k:'shared_expr_'+str(i)for i,k in enumerate(candidates)}
+        planning=False
+    else:
+        # Diagnostic unshared lowering; generated evidence always uses sharing.
+        planning=True
+
     def literal(out,s):emit('text('+out+','+cstr(s)+');')
     def value(out,e,kind,event=None):
         if kind=='string':emit('text('+out+',source_json('+exp(e,event)+'));')
@@ -176,6 +227,10 @@ def render(m,wire=None):
         for i,wire_literal in enumerate(strings):
             if wire_literal in ('S','SA','A'):emit('case '+str(i)+':return '+cstr(wire_literal)+';')
         emit('default:failure="unsupported_wire_output_flags";return "";} }')
+    for (kind,expression),name in shared.items():
+        e,event=representatives[(kind,expression)]
+        body=expand(e,event)
+        emit('static inline '+kind+' '+name+'(Machine *m,int64_t *f,Bytes *bf) { (void)m; (void)f; (void)bf; return '+body+'; }')
     emit('void initialize(Machine *m) { memset(m,0,sizeof(*m)); m->state='+str(states.index(m['initial_state']))+';')
     for i,n in enumerate(variables):
         initial=m['variables'][n]['initial'];expression={'bytes':initial}if n in byte_vars else initial
@@ -256,7 +311,8 @@ def generate(model_file,out,wire_binding_file=None):
     m=load(model_file);source=render(m,wire)
     if any(sha(p)!=h for p,h in inputs.items()):raise ValueError('Source changed during generation')
     out.mkdir(parents=True);(out/'protocol.c').write_text(source)
-    result=dict(schema='spec-flow-stage-v1',stage='generate',status='pass',backend='direct-c99-byte-access-v4',
+    result=dict(schema='spec-flow-stage-v1',stage='generate',status='pass',backend='direct-c99-shared-expressions-v5',
+                expression_lowering='shared typed functions at original use sites; no value cache or eager hoisting',
                 model_file=str(model_file),model_semantic_sha256=model_hash(m),inputs=inputs,
                 outputs={'protocol.c':sha(out/'protocol.c')},runtime_python_required=False,
                 external_protocol_stack_used=False,compiler_correctness_proved=False,
