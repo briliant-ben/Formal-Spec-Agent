@@ -1,0 +1,41 @@
+{
+  "schema": "lean-pilot-summary-v1",
+  "source_commit": "7e400a0751da9130ec788b21bd9e46f88ecb51ce",
+  "archive_sha256": "d8439528e23a680ec396361d279433ac56d49f348a06b9d12672d767e6a6544d",
+  "raw_file_count": 41,
+  "diagnostic_archive_sha256": "3ab8da313e97d75069ee34482973869856e33a6d2ddc70b65ac933b831bde955",
+  "checked_obligations": 9,
+  "universal_contracts": 4,
+  "concrete_witnesses": 5,
+  "tests_checkout": 83,
+  "tests_installed": 83,
+  "public_CLI_check_and_fresh_recheck": "pass",
+  "lean_version": "Lean (version 4.35.0, arm64-apple-darwin24.6.0, commit eb6cafb7290e8bd5f2937522d8d804f58f02bafc, Release)",
+  "lean_binary_sha256": "d1d9c26a539f54fe839d2aa7760bf1ac1dd76a30b26e2c9684bebf2900038fcf",
+  "official_macos_release_archive_sha256": "c0c6f34f35ba1dcc5c4a5fd106fefab9eb5e8469712624dd2c868d51b63177c2",
+  "allowed_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "task_sha256": "0f7e6bf9778d4477c99834ed4e896e6642b4bb9d3d8531e6ef90945d346e5fbf",
+  "sources": {
+    "Proofs.lean": "6fa957e1e78b99c1ee56b0af14439b7c889827f75b446bf2280556f10f3b45b5",
+    "Approved.lean": "031be5a52712eb89c40d44af88b51f01ae6c1e49967d15a627f3886914a2461a",
+    "Foundation.lean": "8695310fac438f6d89c3d578ba8d3c33cf4fbca088595e435a36f688e5afee60",
+    "Audit.lean": "83a4b08f2d3aa78d51fc84f94941ea1408bc499ed5d923a7a63681c0d0c55f69"
+  },
+  "checker_source_sha256": "c34787d85a2fd8f42e2472cf478157c0f1296c0704ab1e6c4a16fd8755b19f7f",
+  "provider": "DeepSeek",
+  "provider_requests": 4,
+  "known_tokens": 25866,
+  "proof_proposal_attempts": 3,
+  "first_two_attempts": "rejected; preserved",
+  "third_proposal": "kernel/audit checked",
+  "independent_AI_review": "invalid JSON; terminal; unaccepted; not retried",
+  "controller_review": "manual source review and actual positive/negative test gates",
+  "metadata_diagnostic": "Initial /tmp alias omitted adapter hash; retained separately, fixed and all checks rerun with the corrected source binding.",
+  "scope": "Selected pure event expression only; not EFSM transitions, C refinement, wire behavior, scheduler or whole-protocol correctness.",
+  "protocol_correctness_proved": false,
+  "compiler_correctness_proved": false
+}
