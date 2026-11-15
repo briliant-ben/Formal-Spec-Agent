@@ -66,9 +66,15 @@ do not imply full specification or compiler correctness.
 External protocol data stays in its own workspace:
 
 ```sh
-.venv/bin/formal-spec-agent run /path/to/TCPIP-Model/flows/tcp-active-open.json \
-  --workspace /path/to/TCPIP-Model --task-sha256 APPROVED_TASK_SHA --out /tmp/tcp-framework-001
+.venv/bin/formal-spec-agent run /path/to/your-protocol/task.json \
+  --workspace /path/to/your-protocol --task-sha256 APPROVED_TASK_SHA --out /tmp/tcp-framework-001
 ```
+
+The TCPIP-Model repository is now a small model/C/demo snapshot, without the old
+`flows/` tree or a framework submodule. Its optional `code/regenerate.py` uses an
+external pinned framework checkout. Complete historical TCP/UDP tasks remain at
+the Git versions named in the extraction evidence; the command above expects a
+caller-supplied, independently approved workspace/task.
 
 [C generation](docs/c-code-generation.md) shares repeated expressions and emits
 readable string literals while retaining strict traces and failure checks.
