@@ -41,7 +41,8 @@ class LeanInputTests(unittest.TestCase):
         self.mutate(lambda t:t.update(approved_sha256=hashlib.sha256(source.encode()).hexdigest()))
 
     def test_actual_IR_expression_is_lowered_and_frozen(self):
-        source,goals,_=self.prepare()
+        source,goals,inputs=self.prepare()
+        self.assertEqual(inputs['tool/lean_backend.py'],backend.sha(Path(backend.__file__).resolve()))
         self.assertIn('FormalSpecAgent.byteSlice f0 f1 f2',source)
         self.assertEqual(len(goals),9)
         self.assertIn('witness_valid',goals)

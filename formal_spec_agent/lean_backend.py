@@ -131,7 +131,7 @@ def prepare(task_file, workspace, task_sha256, *, draft=False):
     if not draft and hashlib.sha256(source.encode()).hexdigest() != task['approved_sha256']:
         raise ValueError('Generated statements differ from the approved frozen definitions')
     inputs = {'workspace/'+str(p.relative_to(root)):sha(p) for p in paths}
-    inputs.update({'tool/'+str(p.relative_to(HERE)):sha(p) for p in [Path(__file__),HERE/'lean/Foundation.lean',HERE/'lean/lean-toolchain',HERE.parent/'protocol_lab/ir.py'] if p.is_relative_to(HERE)})
+    inputs.update({'tool/'+str(p.relative_to(HERE)):sha(p) for p in [Path(__file__).resolve(),HERE/'lean/Foundation.lean',HERE/'lean/lean-toolchain']})
     inputs['ir_checker'] = sha(HERE.parent/'protocol_lab/ir.py')
     return source, list(statements), inputs
 
