@@ -1,0 +1,52 @@
+name: Lean expression contracts and acceptance gates
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lean-kernel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install checksum-pinned official Lean and the independent framework package
+        run: |
+          curl --fail --location --connect-timeout 20 --max-time 300 \
+            https://github.com/leanprover/lean4/releases/download/v4.35.0/lean-4.35.0-linux.tar.zst \
+            --output /tmp/lean.tar.zst
+          echo '7289597a44543246c9227b8cae501767e095ce17f6d448b95fc4a8dc97268f6d  /tmp/lean.tar.zst' | sha256sum --check
+          tar --zstd -xf /tmp/lean.tar.zst -C /tmp
+          /tmp/lean-4.35.0-linux/bin/lean --version
+          python3 -m venv /tmp/lean-framework-venv
+          /tmp/lean-framework-venv/bin/python -m pip install .
+      - name: Check installed package and actual kernel positive/negative cases
+        env:
+          FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
+          FSA_LEAN_REQUIRED: '1'
+        run: |
+          cd /tmp
+          /tmp/lean-framework-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/lean-tests.log" 2>&1
+      - name: Check and freshly recheck the frozen IR expression through the public CLI
+        run: |
+          TASK_SHA=$(sha256sum examples/lean-bytes/task.json | cut -d ' ' -f 1)
+          /tmp/lean-framework-venv/bin/formal-spec-agent lean-check examples/lean-bytes/task.json \
+            --workspace examples/lean-bytes --proofs examples/lean-bytes/proofs.json \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-byte-check
+          /tmp/lean-framework-venv/bin/formal-spec-agent lean-verify /tmp/lean-byte-check \
+            --task examples/lean-bytes/task.json --workspace examples/lean-bytes \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-byte-recheck
+      - name: Preserve raw source, kernel logs, audits and test result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: lean-expression-${{ github.sha }}
+          path: |
+            lean-tests.log
+            /tmp/lean-byte-check
+            /tmp/lean-byte-recheck
+          if-no-files-found: error

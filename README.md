@@ -83,6 +83,21 @@ Protocol byte layout should be expressed in IR. The old TCP-specific `wire` code
 was not extracted into the generic backend: requesting it is explicitly rejected.
 Existing TCP network channels are reproduced in the benchmark repository.
 
+## Optional Lean proof backend
+
+The [Lean expression pilot](docs/lean-proof-gates.md) adds kernel-checked
+contracts for a selected pure IR byte expression. It uses frozen definitions,
+restricted proof data, explicit positive witnesses and a separate axiom audit.
+The [byte example](examples/lean-bytes/README.md) includes DeepSeek-proposed
+proof data which still must pass actual Lean checking. Lean 4.35.0 is pinned.
+Z3 and the existing ten-stage flow remain available and unchanged.
+
+`formal-spec-agent lean-plan` drafts statements for independent approval;
+`lean-check` checks all frozen obligations; `lean-verify` reconstructs a fresh
+project and checks again. A passing expression certificate is neither a C
+compiler proof nor full-model/protocol verification. The dedicated Lean CI
+requires the real checker and exercises both successful and rejected proofs.
+
 ## Optional independent proposal roles
 
 `formal-spec-agent propose` executes one to four independent JSON roles with
@@ -103,6 +118,9 @@ outputs must be outside the candidate workspace. Calls are capped by default;
 explicitly authorized operators may use `--uncapped-calls` without resetting the
 ledger. See [the role/trust contract](docs/agent-contract.md). Tests use a fake
 provider and incur no API fees.
+
+The [milestone roadmap](docs/roadmap.md) separates the implemented Lean unit
+from future implementation correspondence and persistent agent orchestration.
 
 ## Scope and historical contracts
 

@@ -1,0 +1,168 @@
+{
+  "byte_at_range": [
+    {
+      "intro": [
+        "xs",
+        "i"
+      ]
+    },
+    {
+      "unfold": [
+        "FormalSpecAgent.byteAt"
+      ]
+    },
+    {
+      "split": [
+        [
+          {
+            "omega": true
+          }
+        ],
+        [
+          {
+            "have": {
+              "name": "hlt",
+              "term": "(xs.getD i.toNat 0).isLt"
+            }
+          },
+          {
+            "constructor": [
+              [
+                {
+                  "exact": "Int.natCast_nonneg _"
+                }
+              ],
+              [
+                {
+                  "exact": "Int.ofNat_lt.mpr hlt"
+                }
+              ]
+            ]
+          }
+        ]
+      ]
+    }
+  ],
+  "negative_read": [
+    {
+      "intro": [
+        "xs",
+        "i",
+        "hi"
+      ]
+    },
+    {
+      "unfold": [
+        "FormalSpecAgent.byteAt"
+      ]
+    },
+    {
+      "simp": [
+        "hi"
+      ]
+    }
+  ],
+  "slice_length": [
+    {
+      "intro": [
+        "xs",
+        "offset",
+        "count"
+      ]
+    },
+    {
+      "unfold": [
+        "FormalSpecAgent.byteSlice"
+      ]
+    },
+    {
+      "simp": [
+        "List.length_take",
+        "List.length_drop"
+      ]
+    },
+    {
+      "omega": true
+    }
+  ],
+  "expression_range": [
+    {
+      "intro": [
+        "f0",
+        "f1",
+        "f2",
+        "f3",
+        "f4"
+      ]
+    },
+    {
+      "unfold": [
+        "Approved.expression"
+      ]
+    },
+    {
+      "simp": [
+        "FormalSpecAgent.byteAt"
+      ]
+    },
+    {
+      "have": {
+        "name": "hbyte",
+        "term": "Proofs.byte_at_range (FormalSpecAgent.byteSlice f0 f1 f2) f3"
+      }
+    },
+    {
+      "omega": true
+    }
+  ],
+  "witness_valid": [
+    {
+      "unfold": [
+        "Approved.witness_valid"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_negative": [
+    {
+      "unfold": [
+        "Approved.witness_negative"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_outside": [
+    {
+      "unfold": [
+        "Approved.witness_outside"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_disabled": [
+    {
+      "unfold": [
+        "Approved.witness_disabled"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_maximum": [
+    {
+      "unfold": [
+        "Approved.witness_maximum"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ]
+}
