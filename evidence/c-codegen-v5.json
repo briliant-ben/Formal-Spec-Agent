@@ -1,0 +1,20 @@
+{
+  "schema": "framework-codegen-validation-v1",
+  "backend": "direct-c99-shared-expressions-v5",
+  "test_count": 70,
+  "new_compiled_test_methods": 9,
+  "checkout_and_installed_tests_pass": true,
+  "installed_source_hashes_match": true,
+  "paid_model_calls": 0,
+  "compiler_correctness_proved": false,
+  "logs": {
+    "c-codegen-v5-checkout.log": "63777c2f5aee6dac5589d0f7d9576b5991c16fd826dd5e82fd68814281ad58f6",
+    "c-codegen-v5-installed.log": "e179490221d5a1454b34202153e8ead3ba86ebc0399e1ac9baa060f16c4da267"
+  },
+  "sources": {
+    "protocol_lab/codegen/__init__.py": "a3c2801884732d44f8b33711fca25b56c1a9aa7bf888367d11c568aa4713f081",
+    "protocol_lab/codegen/execute.py": "0f344fa7d7934dcdb29ae9eacebf6ad79bd339d277a3e7593784321e1cca741f",
+    "tests/test_codegen_sharing.py": "0332824c1ede4fea009744580c0741558faa3932ccf6403d007d854434762c82",
+    "tests/test_extraction.py": "0a5ca6e774f0d7ba2f2917cea8913172cf72d6f6d49177554f8637ee143dea24"
+  }
+}

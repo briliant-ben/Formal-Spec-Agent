@@ -20,7 +20,7 @@ def build(generation,out):
     generation=Path(generation).resolve();out=Path(out).resolve()
     if out.exists():raise ValueError('Fresh build directory required')
     r=json.loads((generation/'generation.json').read_text())
-    if r['stage']!='generate'or r['status']!='pass'or r['backend']!='direct-c99-byte-access-v4':raise ValueError('Unsupported generation evidence')
+    if r['stage']!='generate'or r['status']!='pass'or r['backend']!='direct-c99-shared-expressions-v5':raise ValueError('Unsupported generation evidence')
     for name,digest in r['inputs'].items():
         if sha(name)!=digest:raise ValueError('Generation input changed: '+name)
     if sha(generation/'protocol.c')!=r['outputs']['protocol.c']:raise ValueError('Generated source hash changed')

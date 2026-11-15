@@ -76,6 +76,9 @@ external pinned framework checkout. Complete historical TCP/UDP tasks remain at
 the Git versions named in the extraction evidence; the command above expects a
 caller-supplied, independently approved workspace/task.
 
+[C generation](docs/c-code-generation.md) shares repeated expressions and emits
+readable string literals while retaining strict traces and failure checks.
+
 Protocol byte layout should be expressed in IR. The old TCP-specific `wire` codec
 was not extracted into the generic backend: requesting it is explicitly rejected.
 Existing TCP network channels are reproduced in the benchmark repository.
