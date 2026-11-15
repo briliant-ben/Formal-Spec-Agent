@@ -1,0 +1,91 @@
+{
+  "schema": "fsa-lean-expression-task-v1",
+  "id": "pure-byte-expression-v1",
+  "model": "model.json",
+  "model_sha256": "2ce5cb8af0ca220f06190cc3f0b1fdac30bb7badd55117649252cf9eda2ad340",
+  "sources": [
+    {
+      "path": "spec.md",
+      "sha256": "576b330d87e9efd9d7a9a5ab73646fcea9d6a72aa871189c10a7994b6cf46c17"
+    }
+  ],
+  "target": {
+    "rule": "INSPECT",
+    "action": 0
+  },
+  "range": {
+    "min": 0,
+    "max": 255
+  },
+  "witnesses": [
+    {
+      "id": "valid",
+      "fields": {
+        "data": [
+          65,
+          128
+        ],
+        "offset": 0,
+        "count": 2,
+        "index": 0,
+        "enabled": true
+      },
+      "expected": 65
+    },
+    {
+      "id": "negative",
+      "fields": {
+        "data": [
+          65
+        ],
+        "offset": 0,
+        "count": 1,
+        "index": -1,
+        "enabled": true
+      },
+      "expected": 0
+    },
+    {
+      "id": "outside",
+      "fields": {
+        "data": [
+          65
+        ],
+        "offset": 0,
+        "count": 1,
+        "index": 3,
+        "enabled": true
+      },
+      "expected": 0
+    },
+    {
+      "id": "disabled",
+      "fields": {
+        "data": [
+          65
+        ],
+        "offset": 0,
+        "count": 1,
+        "index": 0,
+        "enabled": false
+      },
+      "expected": 0
+    },
+    {
+      "id": "maximum",
+      "fields": {
+        "data": [
+          255
+        ],
+        "offset": -1,
+        "count": 1,
+        "index": 0,
+        "enabled": true
+      },
+      "expected": 255
+    }
+  ],
+  "lean_version": "4.35.0",
+  "foundation_sha256": "8695310fac438f6d89c3d578ba8d3c33cf4fbca088595e435a36f688e5afee60",
+  "approved_sha256": "031be5a52712eb89c40d44af88b51f01ae6c1e49967d15a627f3886914a2461a"
+}

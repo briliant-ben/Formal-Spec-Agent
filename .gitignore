@@ -7,3 +7,7 @@ dist/
 private/
 .env
 framework-tests.log
+lean-tests.log
+.lake/
+*.olean
+*.ilean

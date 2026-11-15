@@ -17,3 +17,5 @@ include = ["formal_spec_agent*", "protocol_lab*"]
 
 [tool.setuptools.package-data]
 "protocol_lab.codegen" = ["*.c"]
+
+"formal_spec_agent" = ["lean/*.lean", "lean/lean-toolchain"]

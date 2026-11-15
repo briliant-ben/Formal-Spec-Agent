@@ -27,3 +27,13 @@ ledger only for the provider. This is process/source isolation, not a security
 sandbox for arbitrary hostile native code. The current POSIX worker boundary,
 compiler, Python, Z3, source interpretation and code translation remain trusted
 components. Credentials and private provider records never belong in Git.
+
+## Optional Lean proof-data role
+
+A proof worker may propose the JSON instruction data described in
+[Lean proof gates](lean-proof-gates.md). It cannot edit the approved task,
+source/semantic definitions, generated proposition headers or expected witnesses.
+Only the trusted controller reconstructs the project and invokes Lean and the
+separate axiom audit. Specification changes are proposals for a new approval
+epoch, never a proof-repair shortcut. An agent response, tool-free claim, missing
+checker, failed elaboration or timeout cannot declare a proof complete.
