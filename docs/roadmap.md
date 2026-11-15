@@ -15,9 +15,14 @@ These are finite, explicit scopes. A passing expression unit is not a proof of
 its containing EFSM, the generated C compiler, an Internet standard or TCP/IP.
 Existing UNKNOWNs and implementation Differences remain independent evidence.
 
+- A first typed IR / actual C-expression correspondence unit under pinned
+  runtime/ABI contracts, with helper expansion, malformed-code rejection and
+  rebound-mutant tests. Optional compiled Lean → C reference execution is real,
+  but requires Lean's runtime and does not certify either native compiler.
+
 ## Next: implementation correspondence
 
-Formalize a typed IR expression/statement fragment and its evaluation contract.
+Extend the typed pure expression fragment to statements and its evaluation contract.
 Establish a checked connection to a C subset or per-output translation validation,
 starting with byte access/slices and conditional evaluation. Then cover ordered
 updates, failures/rollback and expression factoring. Keep all protocol decisions

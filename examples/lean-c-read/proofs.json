@@ -1,0 +1,269 @@
+{
+  "read_model_equivalent": [
+    {
+      "unfold": [
+        "Approved.read_model_equivalent"
+      ]
+    },
+    {
+      "intro": [
+        "xs",
+        "i"
+      ]
+    },
+    {
+      "unfold": [
+        "FormalSpecAgent.CSubset.cRead",
+        "FormalSpecAgent.byteAt"
+      ]
+    },
+    {
+      "split": [
+        [
+          {
+            "simp_all": []
+          }
+        ],
+        [
+          {
+            "split": [
+              [
+                {
+                  "simp_all": [
+                    "List.getD_eq_getElem?_getD",
+                    "List.getElem?_eq_none"
+                  ]
+                }
+              ],
+              [
+                {
+                  "simp_all": []
+                }
+              ]
+            ]
+          }
+        ]
+      ]
+    }
+  ],
+  "valid_index_bound": [
+    {
+      "unfold": [
+        "Approved.valid_index_bound"
+      ]
+    },
+    {
+      "intro": [
+        "len",
+        "i",
+        "hn",
+        "hlt"
+      ]
+    },
+    {
+      "exact": "(Int.toNat_lt hn).mpr hlt"
+    }
+  ],
+  "lowering_correct": [
+    {
+      "unfold": [
+        "Approved.lowering_correct"
+      ]
+    },
+    {
+      "intro": [
+        "k",
+        "e",
+        "ctx"
+      ]
+    },
+    {
+      "have": {
+        "name": "hread",
+        "term": "Proofs.read_model_equivalent"
+      }
+    },
+    {
+      "unfold_at": {
+        "definitions": [
+          "Approved.read_model_equivalent"
+        ],
+        "hypothesis": "hread"
+      }
+    },
+    {
+      "induction": "e"
+    },
+    {
+      "all_goals": [
+        {
+          "simp_all": [
+            "FormalSpecAgent.CSubset.lower",
+            "FormalSpecAgent.CSubset.evalC",
+            "FormalSpecAgent.CSubset.evalIR"
+          ]
+        }
+      ]
+    }
+  ],
+  "actual_lowering": [
+    {
+      "unfold": [
+        "Approved.actual_lowering"
+      ]
+    },
+    {
+      "rfl": true
+    }
+  ],
+  "actual_refines": [
+    {
+      "intro": [
+        "ctx",
+        "hctx"
+      ]
+    },
+    {
+      "have": {
+        "name": "hmatch",
+        "term": "Proofs.actual_lowering"
+      }
+    },
+    {
+      "unfold_at": {
+        "definitions": [
+          "Approved.actual_lowering"
+        ],
+        "hypothesis": "hmatch"
+      }
+    },
+    {
+      "have": {
+        "name": "hcorrect",
+        "term": "Proofs.lowering_correct FormalSpecAgent.CSubset.Kind.integer Approved.originalIR ctx"
+      }
+    },
+    {
+      "exact": "Eq.trans (congrArg (fun e => FormalSpecAgent.CSubset.evalC e ctx) hmatch) hcorrect"
+    }
+  ],
+  "witness_valid": [
+    {
+      "unfold": [
+        "Approved.witness_valid"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_negative": [
+    {
+      "unfold": [
+        "Approved.witness_negative"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_outside": [
+    {
+      "unfold": [
+        "Approved.witness_outside"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_disabled": [
+    {
+      "unfold": [
+        "Approved.witness_disabled"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_maximum": [
+    {
+      "unfold": [
+        "Approved.witness_maximum"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "native_context_witness": [
+    {
+      "unfold": [
+        "Approved.native_context_witness",
+        "FormalSpecAgent.CSubset.NativeContext",
+        "Approved.environment"
+      ]
+    },
+    {
+      "constructor": [
+        [
+          {
+            "intro": [
+              "n"
+            ]
+          },
+          {
+            "simp": []
+          },
+          {
+            "all_goals": [
+              {
+                "split": [
+                  [
+                    {
+                      "decide": true
+                    }
+                  ],
+                  [
+                    {
+                      "decide": true
+                    }
+                  ]
+                ]
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "intro": [
+              "n"
+            ]
+          },
+          {
+            "simp": []
+          },
+          {
+            "all_goals": [
+              {
+                "split": [
+                  [
+                    {
+                      "decide": true
+                    }
+                  ],
+                  [
+                    {
+                      "decide": true
+                    }
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      ]
+    }
+  ]
+}

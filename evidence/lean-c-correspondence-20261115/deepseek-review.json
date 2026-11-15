@@ -1,0 +1,23 @@
+{
+  "blocking": [
+    "Noncanonical integer literals are rejected only during parsing; approval binding and hash checks do not prevent a future strict parser relaxation from weakening the frozen C grammar.",
+    "Shared helper expansion trusts the initial `(void)m; (void)f; (void)bf; return` prefix even when a malicious macro in a pinned source silently redefines argument tokens `f`, `bf`, or `m`.",
+    "Semantic equality in actual_refines is pointwise on total Context, so no proof obligation pins the read helper\u2019s mathematical cRead to the trusted ABI behavior for indices above 2^63; unsound if ABI views such indices as in-bounds."
+  ],
+  "findings": [
+    "Pure C integer literals can undergo implementation-defined signed conversion if later fed to unsigned ABI contexts, a real discrepancy outside the admitted contract because literals are reified as narrow signed64 values.",
+    "The parser allows a false C conditional with an embedded read of a function-argument bytes pointer, i.e., a side-channel observation, while the reified tree can omit that read if the condition is constant-folded by the compiler.",
+    "The check `f == NULL` in shared helpers only disallows event-dependent bodies when the helper is called with NULL; a helper with a return expression not mentioning fields but calling an impure runtime function is not structurally rejected.",
+    "Field type mapping in parse_expression checks exact Python kind equality; a C implicit conversion between `int` and `long` with same-width signed64 can be silently accepted by the C compiler but is rejected by the parser, creating false negatives.",
+    "The approved_sha256 draft check is skipped in draft mode, so any reviewer workflow that uses draft to iterate and then forgets to freeze the approval can promote an unverified C fragment.",
+    "The used_helpers dict stores helper bodies verbatim but never checks that the helper argument tokens inside the helper are syntactically variables, allowing shadowing macros with identical text to escape until C preprocessing."
+  ],
+  "limitations": [
+    "The checker explicitly trusts the C runtime and harness, including their preprocessor macros, and does not model segmented memory, pointer provenance, or strict aliasing.",
+    "C helper bodies are expanded inline with a fuel limit and cycle detection, but the expansion does not alpha-rename local variables in the helper, so capture of an outer `f` or `bf` can change semantics.",
+    "Lean proofs are only as strong as the total semantics of evalC; the NativeContext predicate is unchecked for arbitrary contexts, and refinement only covers integer assignments, not observation of partial writes on failure.",
+    "Integer literal parsing rejects suffixes like `ULL`, `L`, or `u`, and binary literals; valid C99 expressions using these forms are refused even though their semantic value could be within range.",
+    "The parser scans helper definition bodies by exact token prefix after tokenization, but a helper written with multiple statements or an early return that is still pure could be expanded incorrectly because only single-return forms are accepted.",
+    "The task could be satisfied by a C artifact where the selected expression is trivially correct but the surrounding generated code contains irrelevant loops; this is outside the intended scope but still a potential review gap."
+  ]
+}
