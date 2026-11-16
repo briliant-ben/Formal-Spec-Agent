@@ -1,0 +1,125 @@
+{
+  "ir_version": "0.5",
+  "semantics": "flat-efsm-atomic-ordered-v1",
+  "protocol": "lean-c-read-expression",
+  "scope": {
+    "excluded": [
+      "C/compiler/whole-machine/network proof"
+    ]
+  },
+  "states": [
+    "READY"
+  ],
+  "initial_state": "READY",
+  "variables": {
+    "result": {
+      "type": "int",
+      "initial": 0
+    }
+  },
+  "events": {
+    "inspect": {
+      "origin": "application",
+      "fields": {
+        "data": "bytes",
+        "index": "int",
+        "enabled": "bool"
+      }
+    }
+  },
+  "timers": {},
+  "messages": {
+    "observed": {
+      "fields": {
+        "value": "int"
+      }
+    }
+  },
+  "requirements": {
+    "BYTES": {
+      "source": "spec.md",
+      "kind": "modeling_choice",
+      "interpretation": "Revision1, pure byte expression contract"
+    }
+  },
+  "transitions": [
+    {
+      "id": "INSPECT",
+      "from": "READY",
+      "to": "READY",
+      "event": "inspect",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "result",
+            "value": {
+              "op": "ite",
+              "args": [
+                {
+                  "event": "enabled"
+                },
+                {
+                  "op": "bytes_at_or_zero",
+                  "args": [
+                    {
+                      "event": "data"
+                    },
+                    {
+                      "event": "index"
+                    }
+                  ]
+                },
+                0
+              ]
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "value": {
+                "var": "result"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "BYTES"
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "id": "range",
+      "requirements": [
+        "BYTES"
+      ],
+      "assert": {
+        "op": "and",
+        "args": [
+          {
+            "op": "ge",
+            "args": [
+              {
+                "var": "result"
+              },
+              0
+            ]
+          },
+          {
+            "op": "le",
+            "args": [
+              {
+                "var": "result"
+              },
+              255
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

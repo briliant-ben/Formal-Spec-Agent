@@ -98,6 +98,12 @@ project and checks again. A passing expression certificate is neither a C
 compiler proof nor full-model/protocol verification. The dedicated Lean CI
 requires the real checker and exercises both successful and rejected proofs.
 
+The [C correspondence unit](docs/code-generation-paths.md) independently parses
+an actual generated C assignment, reifies its typed expression and checks it
+against formal IR lowering. It includes an optional `lean-native` route that
+compiles the IR reference through Lean to C and runs frozen witnesses, requiring
+Lean's runtime. Neither route implies native compiler or whole-protocol correctness.
+
 ## Optional independent proposal roles
 
 `formal-spec-agent propose` executes one to four independent JSON roles with

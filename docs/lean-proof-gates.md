@@ -40,7 +40,8 @@ still comes from the caller/controller, not a model or a locally computed hash.
 Workers return JSON instructions from a finite proof-data language. The trusted
 renderer owns every import, definition and theorem header. Supported steps are
 `intro`, `unfold`, `simp`, `simp_all`, `omega`, `decide`, `rfl`, `assumption`,
-`exact`, `apply`, `have`, two-branch `split`/`constructor`, and two-branch `cases`.
+`exact`, `apply`, `have`, two-branch `split`/`constructor`, two-branch `cases`, local `induction`,
+`all_goals` blocks and `unfold_at` on a local hypothesis.
 Terms are single-line restricted applications. Arbitrary Lean commands,
 declarations, options, macros, quotation, IO and raw tactic scripts are refused.
 Every frozen obligation needs exactly one nonempty proof. No worker can declare
@@ -94,7 +95,9 @@ the exact digest in a new task. Do not refresh witnesses from a failing subject.
 
 ## Next proof boundary
 
-The next step is a formal IR expression/statement semantics and a checked
+The [C correspondence pilot](code-generation-paths.md) now covers a typed pure
+read/conditional fragment and a parsed actual C expression under explicit
+helper/ABI contracts. The next step is statement semantics and a checked
 correspondence with a C subset or per-output translation validation. These
 semantic lemmas alone do not prove the compact C generator, its expression
 sharing, buffer ownership or the existing TCP/IP implementation correct.

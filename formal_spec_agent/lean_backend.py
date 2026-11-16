@@ -54,6 +54,9 @@ def prepare(task_file, workspace, task_sha256, *, draft=False):
     if not task_file.is_relative_to(root) or sha(task_file) != task_sha256:
         raise ValueError('Task outside workspace or digest mismatch')
     task = json.loads(task_file.read_text())
+    if task.get('schema')=='fsa-lean-c-expression-task-v1':
+        from .lean_c import prepare as prepare_c
+        return prepare_c(task_file,root,task_sha256,draft=draft)
     keys = {'schema','id','model','model_sha256','sources','target','range','witnesses','lean_version','foundation_sha256','approved_sha256'}
     if set(task) != keys or task['schema'] != 'fsa-lean-expression-task-v1' or task['lean_version'] != VERSION:
         raise ValueError('Unsupported Lean task fields/version')
@@ -140,7 +143,7 @@ def prepare(task_file, workspace, task_sha256, *, draft=False):
 # add imports, declarations, axioms, commands, options, macros or executable IO.
 # Terms are single-line, command-free applications; the trusted renderer owns all
 # theorem headers and files. This is not an OS sandbox for an untrusted Lean binary.
-NAME = re.compile(r'[A-Za-z_][A-Za-z0-9_.]*\Z')
+NAME = re.compile(r'[A-Za-z_][A-Za-z0-9_.?]*\Z')
 TERM = re.compile(r'[A-Za-z0-9_().,: +*/<>=?\-]+\Z')
 FORBIDDEN = {'sorry','admit','axiom','unsafe','native_decide','run_tac','run_elab','elab','macro','syntax','initialize','set_option','import','namespace','section','end','def','theorem','example','instance','attribute','by','let','match','do'}
 
@@ -184,6 +187,15 @@ def proof_lines(steps, indent=2, depth=0):
             for branch in v:
                 rows.append(pad+'·')
                 rows.extend(proof_lines(branch,indent+2,depth+1))
+        elif k=='unfold_at':
+            if type(v)is not dict or set(v)!={'definitions','hypothesis'}or not NAME.fullmatch(v['hypothesis'])or '.'in v['hypothesis']:raise ValueError('Local hypothesis and unfold definitions required')
+            rows.append(pad+'unfold '+' '.join(names(v['definitions']))+' at '+term(v['hypothesis']))
+        elif k=='induction':
+            if type(v)is not str or not NAME.fullmatch(v)or '.'in v:raise ValueError('Local induction binder required')
+            rows.append(pad+'induction '+term(v))
+        elif k=='all_goals':
+            rows.append(pad+'all_goals')
+            rows.extend(proof_lines(v,indent+2,depth+1))
         elif k=='cases':
             if type(v) is not dict or set(v)!={'name','branches'} or not NAME.fullmatch(v['name']) or type(v['branches']) is not list or len(v['branches'])!=2: raise ValueError('Two explicit cases required')
             rows.append(pad+'cases '+term(v['name']))
@@ -191,6 +203,13 @@ def proof_lines(steps, indent=2, depth=0):
                 rows.append(pad+'·'); rows.extend(proof_lines(branch,indent+2,depth+1))
         else: raise ValueError('Unsupported proof instruction: '+k)
     return rows
+
+
+def unit_scope(inputs):
+    if 'tool/lean/CSubset.lean'in inputs:
+        from .lean_c import SCOPE as c_scope
+        return c_scope
+    return SCOPE
 
 
 def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
@@ -209,12 +228,14 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
     for n in goals:
         audit+='example : Approved.'+n+' := Proofs.'+n+'\n#print axioms Proofs.'+n+'\n'
     out.mkdir(parents=True)
-    (out/'Foundation.lean').write_bytes((HERE/'lean/Foundation.lean').read_bytes())
+    resources=['Foundation']
+    if 'tool/lean/CSubset.lean'in inputs:resources.append('CSubset')
+    for module in resources:(out/(module+'.lean')).write_bytes((HERE/('lean/'+module+'.lean')).read_bytes())
     for n,s in [('Approved.lean',approved),('Proofs.lean',candidate),('Audit.lean',audit)]: (out/n).write_text(s)
     (out/'proofs.json').write_bytes(proofs_bytes)
     source_hashes={p.name:sha(p)for p in out.glob('*.lean')}
     for name in source_hashes: (out/name).chmod(0o444)
-    result=dict(schema='fsa-lean-expression-result-v1',status='incomplete',scope=SCOPE,task_sha256=task_sha256,proofs_sha256=hashlib.sha256(proofs_bytes).hexdigest(),inputs=inputs,sources=source_hashes,goals=goals,allowed_axioms=sorted(AXIOMS),compiler_correctness_proved=False,protocol_correctness_proved=False)
+    result=dict(schema='fsa-lean-expression-result-v1',status='incomplete',scope=unit_scope(inputs),task_sha256=task_sha256,proofs_sha256=hashlib.sha256(proofs_bytes).hexdigest(),inputs=inputs,sources=source_hashes,goals=goals,allowed_axioms=sorted(AXIOMS),compiler_correctness_proved=False,protocol_correctness_proved=False)
     tool=shutil.which(str(lean))
     if not tool:
         result.update(status='blocked',classification='environment',reason='Pinned Lean checker unavailable')
@@ -224,7 +245,7 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
     if not re.search(r'\bversion '+re.escape(VERSION)+r'(?:,|\))',version): raise ValueError('Pinned Lean version required')
     result.update(lean_version=version.strip(),lean_binary_sha256=sha(Path(tool).resolve()),commands=[])
     env=dict(PATH=os.defpath,LEAN_PATH=str(out),LANG='C.UTF-8')
-    for n in ['Foundation','Approved','Proofs','Audit']:
+    for n in [*resources,'Approved','Proofs','Audit']:
         cmd=[tool,'-o',n+'.olean',n+'.lean']
         try:
             p=subprocess.run(cmd,cwd=out,env=env,capture_output=True,text=True,timeout=60)
@@ -248,14 +269,14 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
                 found=[x.strip()for x in match[1].split(',')if x.strip()]
             if set(found)-AXIOMS: raise ValueError('Unapproved proof axioms')
             axioms[n]=found
-        result.update(status='checked_expression_contract',axioms=axioms)
+        result.update(status='checked_expression_contract',axioms=axioms,c_expression_model_refinement_checked=('tool/lean/CSubset.lean'in inputs))
     # Frozen input and generated-file identity is rechecked after the actual tool.
     try:
         stable=prepare(task_file,root,task_sha256)[2]==inputs and proofs_file.read_bytes()==proofs_bytes and all(sha(out/n)==h for n,h in source_hashes.items())
     except (ValueError,OSError):
         stable=False
     if not stable:
-        result.update(status='invalidated_inputs',classification='evidence_changed')
+        result.update(status='invalidated_inputs',classification='evidence_changed',c_expression_model_refinement_checked=False)
     result['outputs']={p.name:sha(p)for p in out.iterdir()if p.is_file()}
     write(out/'result.json',result);return result
 
@@ -269,7 +290,7 @@ def plan_main(argv=None):
         if out.exists()or out.is_relative_to(root)or out.is_relative_to(HERE.parent):raise ValueError('Fresh external output required')
         source,goals,inputs=prepare(a.task,root,a.task_sha256,draft=True)
         out.mkdir(parents=True);(out/'Approved.lean').write_text(source)
-        result=dict(status='draft_requires_independent_approval',approved_sha256=sha(out/'Approved.lean'),goals=goals,inputs=inputs,proof_checked=False,scope=SCOPE)
+        result=dict(status='draft_requires_independent_approval',approved_sha256=sha(out/'Approved.lean'),goals=goals,inputs=inputs,proof_checked=False,scope=unit_scope(inputs))
         write(out/'plan.json',result);print(json.dumps(result));return 0
     except (ValueError,OSError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2

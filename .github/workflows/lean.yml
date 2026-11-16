@@ -40,6 +40,18 @@ jobs:
           /tmp/lean-framework-venv/bin/formal-spec-agent lean-verify /tmp/lean-byte-check \
             --task examples/lean-bytes/task.json --workspace examples/lean-bytes \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-byte-recheck
+      - name: Check actual C-expression correspondence and compiled Lean reference
+        run: |
+          TASK_SHA=$(sha256sum examples/lean-c-read/task.json | cut -d ' ' -f 1)
+          /tmp/lean-framework-venv/bin/formal-spec-agent lean-check examples/lean-c-read/task.json \
+            --workspace examples/lean-c-read --proofs examples/lean-c-read/proofs.json \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-c-read-check
+          /tmp/lean-framework-venv/bin/formal-spec-agent lean-verify /tmp/lean-c-read-check \
+            --task examples/lean-c-read/task.json --workspace examples/lean-c-read \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-c-read-recheck
+          /tmp/lean-framework-venv/bin/formal-spec-agent lean-native examples/lean-c-read/task.json \
+            --workspace examples/lean-c-read --proofs examples/lean-c-read/proofs.json \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-native-reference
       - name: Preserve raw source, kernel logs, audits and test result
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -49,4 +61,7 @@ jobs:
             lean-tests.log
             /tmp/lean-byte-check
             /tmp/lean-byte-recheck
+            /tmp/lean-c-read-check
+            /tmp/lean-c-read-recheck
+            /tmp/lean-native-reference
           if-no-files-found: error
