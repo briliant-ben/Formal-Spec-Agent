@@ -59,7 +59,7 @@
   },
   "current_lean_efsm_can_accept": false,
   "remaining": [
-    "bytes/seq32/bool/string values and all 26 operators in this pinned case",
+    "typed transition effects over bytes/seq32/bool/string/int; pure expression typing is now supported",
     "five timer instances: ownership, deadlines and tie ordering",
     "all-rule model obligations with explicitly admitted protocol domains",
     "fresh Lean certificates, code regeneration and protocol evidence under a pinned framework version"
