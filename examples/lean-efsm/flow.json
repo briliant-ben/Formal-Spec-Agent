@@ -1,0 +1,97 @@
+{
+  "schema": "spec-flow-task-v6",
+  "id": "lean-scalar-mailbox",
+  "model": "model.json",
+  "sources": [
+    {
+      "id": "spec",
+      "path": "spec.md",
+      "sha256": "c8c2efafe995de02edd9dd24555f93f16492aa369b2a66ffa157b86da7f26e66",
+      "version": "scalar-mailbox-v1",
+      "uri_aliases": [
+        "spec.md"
+      ]
+    },
+    {
+      "id": "witnesses",
+      "path": "rule-witnesses.json",
+      "sha256": "ab5d035f5edbd8a40141d07bbef8fc08ad072966f2c2018474719e9e7973201b",
+      "version": "scalar-mailbox-v1",
+      "uri_aliases": [
+        "rule-witnesses.json"
+      ]
+    },
+    {
+      "id": "exploration",
+      "path": "exploration.json",
+      "sha256": "e08f8ec102b02b6d67e4815bd22697d5e62d88a2c3530daa4200b512cf83fa60",
+      "version": "scalar-mailbox-v1",
+      "uri_aliases": [
+        "exploration.json"
+      ]
+    },
+    {
+      "id": "seed",
+      "path": "seed.json",
+      "sha256": "b0be5913e0cd01c4ca535d94420692560b27e81413796a43ee67f596ae5e3c33",
+      "version": "scalar-mailbox-v1",
+      "uri_aliases": [
+        "seed.json"
+      ]
+    },
+    {
+      "id": "lean-contract",
+      "path": "task.json",
+      "sha256": "1b2cba01331ac2c02f93ee3be6b6bf7abefd0af7c913272778cc8f756af805a6",
+      "version": "scalar-mailbox-v1",
+      "uri_aliases": [
+        "task.json"
+      ]
+    },
+    {
+      "id": "proof-data",
+      "path": "proofs.json",
+      "sha256": "0769a8c608339d6ad57674fecfff3aa9778da2226717ffc48b06fe32cd052827",
+      "version": "scalar-mailbox-v1",
+      "uri_aliases": [
+        "proofs.json"
+      ]
+    }
+  ],
+  "requirement_bindings": {
+    "MB": {
+      "source": "spec",
+      "clause": "revision1",
+      "reference": "spec.md"
+    }
+  },
+  "exploration": "exploration.json",
+  "seeds": [
+    "seed.json"
+  ],
+  "formal": {
+    "strategy": "lean-efsm",
+    "task": "task.json",
+    "task_sha256": "1b2cba01331ac2c02f93ee3be6b6bf7abefd0af7c913272778cc8f756af805a6",
+    "proofs": "proofs.json"
+  },
+  "limits": {
+    "stage_seconds": 120,
+    "max_prefixes": 128,
+    "max_cases": 30
+  },
+  "scope": {
+    "purpose": "Lean-backed timer-free integer EFSM end-to-end flow",
+    "assumptions": [
+      "IR/source interpretation and toolchain trusted; complete declared integer rule semantics, finite exploration kept separate"
+    ],
+    "excluded": [
+      "timers",
+      "bytes",
+      "native memory or compiler correctness",
+      "English specification correctness",
+      "network evidence",
+      "unbounded protocol or TCPIP correctness"
+    ]
+  }
+}

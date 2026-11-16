@@ -1,0 +1,76 @@
+{
+  "depth": 3,
+  "initials": [
+    {}
+  ],
+  "cases": [
+    {
+      "states": [
+        "EMPTY",
+        "FULL"
+      ],
+      "event": "put",
+      "fields": {
+        "value": -1
+      }
+    },
+    {
+      "states": [
+        "EMPTY",
+        "FULL"
+      ],
+      "event": "put",
+      "fields": {
+        "value": 0
+      }
+    },
+    {
+      "states": [
+        "EMPTY",
+        "FULL"
+      ],
+      "event": "put",
+      "fields": {
+        "value": 1
+      }
+    },
+    {
+      "states": [
+        "EMPTY",
+        "FULL"
+      ],
+      "event": "put",
+      "fields": {
+        "value": 65
+      }
+    },
+    {
+      "states": [
+        "EMPTY",
+        "FULL"
+      ],
+      "event": "put",
+      "fields": {
+        "value": 255
+      }
+    },
+    {
+      "states": [
+        "EMPTY",
+        "FULL"
+      ],
+      "event": "put",
+      "fields": {
+        "value": 256
+      }
+    },
+    {
+      "states": [
+        "EMPTY",
+        "FULL"
+      ],
+      "event": "take",
+      "fields": {}
+    }
+  ]
+}

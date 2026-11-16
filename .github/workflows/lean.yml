@@ -60,6 +60,20 @@ jobs:
           /tmp/lean-only-venv/bin/formal-spec-agent lean-verify /tmp/lean-state-check \
             --task examples/lean-state/task.json --workspace examples/lean-state \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-state-recheck
+      - name: Run and audit the complete Lean-backed flow without Z3
+        env:
+          FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
+        run: |
+          TASK_SHA=$(sha256sum examples/lean-efsm/flow.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent run examples/lean-efsm/flow.json \
+            --workspace examples/lean-efsm --task-sha256 "$TASK_SHA" \
+            --out /tmp/lean-efsm-flow > lean-flow.log
+          /tmp/lean-only-venv/bin/formal-spec-agent verify /tmp/lean-efsm-flow \
+            --workspace examples/lean-efsm --task-sha256 "$TASK_SHA" > lean-flow-audit.log
+          CONTRACT_SHA=$(sha256sum examples/lean-efsm/task.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-verify /tmp/lean-efsm-flow/stages/formal/queries \
+            --task examples/lean-efsm/task.json --workspace examples/lean-efsm \
+            --task-sha256 "$CONTRACT_SHA" --lean "$FSA_LEAN" --out /tmp/lean-efsm-recheck
       - name: Check actual C-expression correspondence and compiled Lean reference
         run: |
           TASK_SHA=$(sha256sum examples/lean-c-read/task.json | cut -d ' ' -f 1)
@@ -80,6 +94,8 @@ jobs:
           path: |
             lean-tests.log
             lean-only-tests.log
+            lean-flow.log
+            lean-flow-audit.log
             /tmp/lean-byte-check
             /tmp/lean-byte-recheck
             /tmp/lean-c-read-check
@@ -87,4 +103,6 @@ jobs:
             /tmp/lean-native-reference
             /tmp/lean-state-check
             /tmp/lean-state-recheck
+            /tmp/lean-efsm-flow
+            /tmp/lean-efsm-recheck
           if-no-files-found: error

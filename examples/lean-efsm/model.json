@@ -1,0 +1,379 @@
+{
+  "ir_version": "0.5",
+  "semantics": "flat-efsm-atomic-ordered-v1",
+  "protocol": "lean-scalar-mailbox",
+  "scope": {
+    "terminal_states": [],
+    "excluded": [
+      "timer/bytes/native overflow/compiler/specification proof"
+    ]
+  },
+  "states": [
+    "EMPTY",
+    "FULL"
+  ],
+  "initial_state": "EMPTY",
+  "variables": {
+    "slot": {
+      "type": "int",
+      "initial": 0
+    }
+  },
+  "events": {
+    "put": {
+      "origin": "application",
+      "fields": {
+        "value": "int"
+      }
+    },
+    "take": {
+      "origin": "application",
+      "fields": {}
+    }
+  },
+  "timers": {},
+  "messages": {
+    "stored": {
+      "fields": {
+        "value": "int"
+      }
+    },
+    "rejected": {
+      "fields": {
+        "value": "int"
+      }
+    },
+    "delivered": {
+      "fields": {
+        "value": "int"
+      }
+    },
+    "missing": {
+      "fields": {
+        "value": "int"
+      }
+    }
+  },
+  "requirements": {
+    "MB": {
+      "source": "spec.md",
+      "kind": "modeling_choice",
+      "interpretation": "Revision1 total disjoint rules, ordered effects and inductive invariant"
+    }
+  },
+  "transitions": [
+    {
+      "id": "PUT_EMPTY",
+      "from": "EMPTY",
+      "to": "FULL",
+      "event": "put",
+      "guard": {
+        "op": "and",
+        "args": [
+          {
+            "op": "ge",
+            "args": [
+              {
+                "event": "value"
+              },
+              1
+            ]
+          },
+          {
+            "op": "le",
+            "args": [
+              {
+                "event": "value"
+              },
+              255
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "slot",
+            "value": {
+              "event": "value"
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "stored",
+            "fields": {
+              "value": {
+                "event": "value"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "MB"
+      ]
+    },
+    {
+      "id": "REJECT_EMPTY",
+      "from": "EMPTY",
+      "to": "EMPTY",
+      "event": "put",
+      "guard": {
+        "op": "not",
+        "args": [
+          {
+            "op": "and",
+            "args": [
+              {
+                "op": "ge",
+                "args": [
+                  {
+                    "event": "value"
+                  },
+                  1
+                ]
+              },
+              {
+                "op": "le",
+                "args": [
+                  {
+                    "event": "value"
+                  },
+                  255
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "emit": {
+            "message": "rejected",
+            "fields": {
+              "value": {
+                "event": "value"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "MB"
+      ]
+    },
+    {
+      "id": "PUT_FULL",
+      "from": "FULL",
+      "to": "FULL",
+      "event": "put",
+      "guard": {
+        "op": "and",
+        "args": [
+          {
+            "op": "ge",
+            "args": [
+              {
+                "event": "value"
+              },
+              1
+            ]
+          },
+          {
+            "op": "le",
+            "args": [
+              {
+                "event": "value"
+              },
+              255
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "slot",
+            "value": {
+              "event": "value"
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "stored",
+            "fields": {
+              "value": {
+                "event": "value"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "MB"
+      ]
+    },
+    {
+      "id": "REJECT_FULL",
+      "from": "FULL",
+      "to": "FULL",
+      "event": "put",
+      "guard": {
+        "op": "not",
+        "args": [
+          {
+            "op": "and",
+            "args": [
+              {
+                "op": "ge",
+                "args": [
+                  {
+                    "event": "value"
+                  },
+                  1
+                ]
+              },
+              {
+                "op": "le",
+                "args": [
+                  {
+                    "event": "value"
+                  },
+                  255
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "emit": {
+            "message": "rejected",
+            "fields": {
+              "value": {
+                "event": "value"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "MB"
+      ]
+    },
+    {
+      "id": "TAKE_EMPTY",
+      "from": "EMPTY",
+      "to": "EMPTY",
+      "event": "take",
+      "guard": true,
+      "actions": [
+        {
+          "emit": {
+            "message": "missing",
+            "fields": {
+              "value": {
+                "var": "slot"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "MB"
+      ]
+    },
+    {
+      "id": "TAKE_FULL",
+      "from": "FULL",
+      "to": "EMPTY",
+      "event": "take",
+      "guard": true,
+      "actions": [
+        {
+          "emit": {
+            "message": "delivered",
+            "fields": {
+              "value": {
+                "var": "slot"
+              }
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "slot",
+            "value": 0
+          }
+        }
+      ],
+      "requirements": [
+        "MB"
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "id": "state-slot",
+      "requirements": [
+        "MB"
+      ],
+      "assert": {
+        "op": "or",
+        "args": [
+          {
+            "op": "and",
+            "args": [
+              {
+                "state": "EMPTY"
+              },
+              {
+                "op": "eq",
+                "args": [
+                  {
+                    "var": "slot"
+                  },
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "op": "and",
+            "args": [
+              {
+                "state": "FULL"
+              },
+              {
+                "op": "and",
+                "args": [
+                  {
+                    "op": "ge",
+                    "args": [
+                      {
+                        "var": "slot"
+                      },
+                      1
+                    ]
+                  },
+                  {
+                    "op": "le",
+                    "args": [
+                      {
+                        "var": "slot"
+                      },
+                      255
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

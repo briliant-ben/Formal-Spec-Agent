@@ -1,0 +1,158 @@
+{
+  "schema": "fsa-lean-efsm-task-v1",
+  "id": "scalar-mailbox-all-rules-v1",
+  "model": "model.json",
+  "model_sha256": "7dcd8d73fc4ac8269c0976afded28b523d3625361b5d8f14085e9d0141164458",
+  "sources": [
+    {
+      "path": "spec.md",
+      "sha256": "c8c2efafe995de02edd9dd24555f93f16492aa369b2a66ffa157b86da7f26e66"
+    },
+    {
+      "path": "rule-witnesses.json",
+      "sha256": "ab5d035f5edbd8a40141d07bbef8fc08ad072966f2c2018474719e9e7973201b"
+    }
+  ],
+  "witnesses": [
+    {
+      "rule": "PUT_EMPTY",
+      "values": {
+        "slot": 0
+      },
+      "fields": {
+        "value": 65
+      },
+      "after": {
+        "state": "FULL",
+        "variables": {
+          "slot": 65
+        },
+        "emitted": [
+          {
+            "message": "stored",
+            "fields": {
+              "value": 65
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": "REJECT_EMPTY",
+      "values": {
+        "slot": 0
+      },
+      "fields": {
+        "value": 0
+      },
+      "after": {
+        "state": "EMPTY",
+        "variables": {
+          "slot": 0
+        },
+        "emitted": [
+          {
+            "message": "rejected",
+            "fields": {
+              "value": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": "PUT_FULL",
+      "values": {
+        "slot": 65
+      },
+      "fields": {
+        "value": 255
+      },
+      "after": {
+        "state": "FULL",
+        "variables": {
+          "slot": 255
+        },
+        "emitted": [
+          {
+            "message": "stored",
+            "fields": {
+              "value": 255
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": "REJECT_FULL",
+      "values": {
+        "slot": 65
+      },
+      "fields": {
+        "value": 256
+      },
+      "after": {
+        "state": "FULL",
+        "variables": {
+          "slot": 65
+        },
+        "emitted": [
+          {
+            "message": "rejected",
+            "fields": {
+              "value": 256
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": "TAKE_EMPTY",
+      "values": {
+        "slot": 0
+      },
+      "fields": {},
+      "after": {
+        "state": "EMPTY",
+        "variables": {
+          "slot": 0
+        },
+        "emitted": [
+          {
+            "message": "missing",
+            "fields": {
+              "value": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": "TAKE_FULL",
+      "values": {
+        "slot": 65
+      },
+      "fields": {},
+      "after": {
+        "state": "EMPTY",
+        "variables": {
+          "slot": 0
+        },
+        "emitted": [
+          {
+            "message": "delivered",
+            "fields": {
+              "value": 65
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "lean_version": "4.35.0",
+  "foundation_sha256": "8695310fac438f6d89c3d578ba8d3c33cf4fbca088595e435a36f688e5afee60",
+  "state_semantics_sha256": "a375b9ee4348c3759243886d244dc52b1ea68dde62de49aa2235b9e3a192d465",
+  "efsm_semantics_sha256": "ac180dc546cbea21c63b74b3f3e47cbdc3fc2d3d22711fc40f25b7c4b46d1fa2",
+  "adapter_sha256": "5165368df00dc2e2e264b91965be7605cb3542264d62924fb102cdd5072db22c",
+  "approved_sha256": "8690b6682ba6dce68d54cd839f8f0b8897c4ab8cb8a20a5c514ef2ee40ca9ac5"
+}

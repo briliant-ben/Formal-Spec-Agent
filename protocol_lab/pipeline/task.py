@@ -5,7 +5,12 @@ import re
 
 TOOL=Path(__file__).resolve().parents[1]
 SCHEMA='spec-flow-task-v2'
-SCHEMAS={'spec-flow-task-v1',SCHEMA,'spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5'}
+SCHEMAS={'spec-flow-task-v1',SCHEMA,'spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6'}
+
+
+def framework_files():
+    root=TOOL.parent/'formal_spec_agent'
+    return [p for p in sorted(root.rglob('*'))if p.is_file()and (p.suffix in ('.py','.lean')or p.name=='lean-toolchain')]
 
 
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
@@ -48,7 +53,7 @@ def load_task(filename,workspace):
         if not re.fullmatch('[0-9a-f]{64}',s['sha256']):raise ValueError('Invalid source digest')
         if not isinstance(s['uri_aliases'],list)or not s['uri_aliases']or any(not isinstance(u,str)or not u for u in s['uri_aliases']):raise ValueError('Source URI aliases required')
     if len(ids)!=len(set(ids)):raise ValueError('Duplicate source ID')
-    if t['schema']in ('spec-flow-task-v2','spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5'):
+    if t['schema']in ('spec-flow-task-v2','spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6'):
         pinned={resolve(workspace,s['path'])for s in t['sources']}
         required={resolve(workspace,t['exploration']),*(resolve(workspace,n)for n in t['seeds'])}
         if 'wire'in t:required|={resolve(workspace,t['wire']['binding']),*(resolve(workspace,n)for n in t['wire']['scenarios'])}
@@ -57,7 +62,20 @@ def load_task(filename,workspace):
     for b in t['requirement_bindings'].values():
         if set(b)!={'source','clause','reference'}or b['source']not in ids or any(not isinstance(b[k],str)or not b[k]for k in b):raise ValueError('Incomplete requirement binding')
     f=t['formal'];limits=t['limits']
-    if t['schema']=='spec-flow-task-v5':
+    if t['schema']=='spec-flow-task-v6':
+        if set(f)!={'strategy','task','task_sha256','proofs'}or f['strategy']!='lean-efsm':raise ValueError('Unsupported v6 formal strategy/configuration')
+        if any(type(f[n])is not str or Path(f[n]).is_absolute()for n in ('task','proofs')):raise ValueError('Relative Lean inputs required')
+        contract=resolve(workspace,f['task']);proofs=resolve(workspace,f['proofs'])
+        if not {contract,proofs}<=pinned:raise ValueError('Lean task and proof data must be source-pinned')
+        if type(f['task_sha256'])is not str or not re.fullmatch('[0-9a-f]{64}',f['task_sha256'])or sha(contract)!=f['task_sha256']:raise ValueError('Lean task digest mismatch')
+        ct=read(contract)
+        if ct.get('schema')!='fsa-lean-efsm-task-v1'or resolve(workspace,ct['model'])!=resolve(workspace,t['model']):raise ValueError('Lean contract must cover the flow model itself')
+        from formal_spec_agent.lean_backend import prepare
+        from ..ir import model_files
+        contract_inputs=prepare(contract,workspace,f['task_sha256'])[2]
+        required_contract_inputs={resolve(workspace,n.split('/',1)[1])for n in contract_inputs if n.startswith('workspace/')}
+        if not required_contract_inputs<=pinned|set(model_files(resolve(workspace,t['model']))):raise ValueError('Every Lean contract workspace input must be flow-pinned')
+    elif t['schema']=='spec-flow-task-v5':
         if set(f)-{'strategy','solver_timeout_ms'} or f.get('strategy')!='initial-step-contracts':raise ValueError('Unsupported v5 formal strategy/configuration')
     elif t['schema']=='spec-flow-task-v4':
         if 'solver_preprocess' in f:raise ValueError('BMC solver preprocessing is not valid for sequence induction')
@@ -86,6 +104,9 @@ def inputs(filename,workspace,t):
     result={'workspace/'+p.relative_to(workspace).as_posix():sha(p)for p in paths}
     for p in sorted(TOOL.rglob('*')):
         if p.is_file()and p.suffix in ('.py','.c'):result['tool/'+p.relative_to(TOOL).as_posix()]=sha(p)
+    if t['schema']=='spec-flow-task-v6':
+        root=TOOL.parent/'formal_spec_agent'
+        for p in framework_files():result['framework/'+p.relative_to(root).as_posix()]=sha(p)
     return result
 
 
@@ -94,8 +115,13 @@ def check_inputs(snapshot,workspace,tool_root=TOOL):
     expected={n for n in snapshot if n.startswith('tool/')}
     actual={'tool/'+p.relative_to(tool_root).as_posix()for p in tool_root.rglob('*')if p.is_file()and p.suffix in ('.py','.c')}
     if expected!=actual:raise ValueError('Tool source file set changed')
+    framework_root=tool_root.parent/'formal_spec_agent'
+    if any(n.startswith('framework/')for n in snapshot):
+        expected_framework={n for n in snapshot if n.startswith('framework/')}
+        actual_framework={'framework/'+p.relative_to(framework_root).as_posix()for p in framework_root.rglob('*')if p.is_file()and (p.suffix in ('.py','.lean')or p.name=='lean-toolchain')}
+        if expected_framework!=actual_framework:raise ValueError('Lean framework source file set changed')
     for name,h in snapshot.items():
-        prefix,tail=name.split('/',1);root=Path(workspace).resolve()if prefix=='workspace'else tool_root if prefix=='tool'else None
+        prefix,tail=name.split('/',1);root=Path(workspace).resolve()if prefix=='workspace'else tool_root if prefix=='tool'else framework_root if prefix=='framework'else None
         if root is None:raise ValueError('Unknown input namespace')
         path=(root/tail).resolve()
         if not path.is_relative_to(root)or sha(path)!=h:raise ValueError('Source input changed: '+name)
@@ -105,6 +131,8 @@ def freeze_inputs(snapshot,workspace,out):
     roots={'workspace':Path(workspace).resolve(),'tool':TOOL}
     targets={'workspace':Path(out)/'source-snapshot/workspace',
              'tool':Path(out)/'source-snapshot/tool/protocol_lab'}
+    if any(n.startswith('framework/')for n in snapshot):
+        roots['framework']=TOOL.parent/'formal_spec_agent';targets['framework']=Path(out)/'source-snapshot/tool/formal_spec_agent'
     files={}
     for name,h in snapshot.items():
         prefix,tail=name.split('/',1);source=(roots[prefix]/tail).resolve()
@@ -113,4 +141,6 @@ def freeze_inputs(snapshot,workspace,out):
         if hashlib.sha256(raw).hexdigest()!=h:raise ValueError('Input changed while freezing: '+name)
         target=targets[prefix]/tail;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(raw);target.chmod(0o444)
         files[name]=target.relative_to(out).as_posix()
-    return dict(workspace='source-snapshot/workspace',tool='source-snapshot/tool/protocol_lab',files=files)
+    result=dict(workspace='source-snapshot/workspace',tool='source-snapshot/tool/protocol_lab',files=files)
+    if 'framework'in roots:result['framework']='source-snapshot/tool/formal_spec_agent'
+    return result

@@ -1,0 +1,130 @@
+{
+  "scenario_version": "0.2",
+  "id": "independent-scalar-mailbox",
+  "initial": {},
+  "steps": [
+    {
+      "at_ms": 0,
+      "event": "take",
+      "fields": {},
+      "expect_trace": [
+        {
+          "at_ms": 0,
+          "emitted": [
+            {
+              "message": "missing",
+              "fields": {
+                "value": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 1,
+      "event": "put",
+      "fields": {
+        "value": 65
+      },
+      "expect_trace": [
+        {
+          "at_ms": 1,
+          "emitted": [
+            {
+              "message": "stored",
+              "fields": {
+                "value": 65
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 2,
+      "event": "put",
+      "fields": {
+        "value": 255
+      },
+      "expect_trace": [
+        {
+          "at_ms": 2,
+          "emitted": [
+            {
+              "message": "stored",
+              "fields": {
+                "value": 255
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 3,
+      "event": "put",
+      "fields": {
+        "value": 256
+      },
+      "expect_trace": [
+        {
+          "at_ms": 3,
+          "emitted": [
+            {
+              "message": "rejected",
+              "fields": {
+                "value": 256
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 4,
+      "event": "take",
+      "fields": {},
+      "expect_trace": [
+        {
+          "at_ms": 4,
+          "emitted": [
+            {
+              "message": "delivered",
+              "fields": {
+                "value": 255
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 5,
+      "event": "put",
+      "fields": {
+        "value": 0
+      },
+      "expect_trace": [
+        {
+          "at_ms": 5,
+          "emitted": [
+            {
+              "message": "rejected",
+              "fields": {
+                "value": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "state": "EMPTY",
+    "variables": {
+      "slot": 0
+    },
+    "timers": {}
+  }
+}

@@ -22,6 +22,14 @@ Existing UNKNOWNs and implementation Differences remain independent evidence.
 
 ## Next: implementation correspondence
 
+An all-rule timer-free integer EFSM contract now feeds the complete ten-stage
+flow through explicit task-v6. It checks preservation before runtime filtering,
+disjointness, total state/event coverage, initial validity and admitted literal
+witnesses. This is a larger proof boundary than the earlier selected action block;
+it still excludes timers/bytes/native arithmetic and interpreter/compiler proofs.
+See [Lean EFSM flow](lean-efsm-flow.md). Next extend value/operator coverage,
+then scheduling, before migrating TCP/IP and retiring the optional backend.
+
 Lean-first installation no longer requires Z3. An integer, timer-free action-block
 unit now checks ordered set/emit and final-invariant rollback. See the
 [capability gates](lean-first.md) before retiring the optional solver backend.

@@ -36,6 +36,24 @@ changes during extraction. It is framework code, not a copied protocol stack.
 
 ## Install and run without a model provider
 
+The primary Lean example now runs the complete flow without Z3:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -e .
+export FSA_LEAN=/path/to/lean-4.35.0/bin/lean
+TASK_SHA=$(shasum -a 256 examples/lean-efsm/flow.json | cut -d ' ' -f 1)
+.venv/bin/formal-spec-agent run examples/lean-efsm/flow.json \
+  --workspace examples/lean-efsm --task-sha256 "$TASK_SHA" --out /tmp/lean-flow-001
+.venv/bin/formal-spec-agent verify /tmp/lean-flow-001 \
+  --workspace examples/lean-efsm --task-sha256 "$TASK_SHA"
+```
+
+The [two-state example](examples/lean-efsm/README.md) checks all declared rules
+for its timer-free integer fragment. It is not a full TCP/IP or compiler proof.
+Install official Lean separately. [Task-v6 and proof boundaries](docs/lean-efsm-flow.md)
+describe universal obligations, snapshots, explicit failures and fresh rechecking.
+
 Requirements: Python3.11+, a POSIX host and a C99 compiler. The base package has
 no solver dependency. Lean uses a separately pinned toolchain; the older Z3
 pipeline requires an optional extra. No API
