@@ -1,0 +1,102 @@
+{
+  "schema": "fsa-lean-state-task-v1",
+  "id": "ordered-transaction-v1",
+  "model": "model.json",
+  "model_sha256": "f32f63bdd19b196fe0891569313e9e3b546c9edd81a802aa801bcda8d890cd83",
+  "sources": [
+    {
+      "path": "spec.md",
+      "sha256": "23b32d832c356b8f5b2bb4edf4d45f24e2b5c115ac050ce21805d505a7d12eca"
+    }
+  ],
+  "target": "UPDATE",
+  "witnesses": [
+    {
+      "id": "success",
+      "initial": [
+        7,
+        3
+      ],
+      "fields": [
+        65
+      ],
+      "accepted": true,
+      "values": [
+        65,
+        65
+      ],
+      "emitted": [
+        [
+          0,
+          65
+        ],
+        [
+          0,
+          65
+        ]
+      ]
+    },
+    {
+      "id": "negative",
+      "initial": [
+        7,
+        3
+      ],
+      "fields": [
+        -1
+      ],
+      "accepted": false,
+      "values": [
+        7,
+        3
+      ],
+      "emitted": []
+    },
+    {
+      "id": "over_bound",
+      "initial": [
+        7,
+        3
+      ],
+      "fields": [
+        256
+      ],
+      "accepted": false,
+      "values": [
+        7,
+        3
+      ],
+      "emitted": []
+    },
+    {
+      "id": "zero",
+      "initial": [
+        7,
+        3
+      ],
+      "fields": [
+        0
+      ],
+      "accepted": true,
+      "values": [
+        0,
+        0
+      ],
+      "emitted": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    }
+  ],
+  "lean_version": "4.35.0",
+  "foundation_sha256": "8695310fac438f6d89c3d578ba8d3c33cf4fbca088595e435a36f688e5afee60",
+  "state_semantics_sha256": "a375b9ee4348c3759243886d244dc52b1ea68dde62de49aa2235b9e3a192d465",
+  "adapter_sha256": "f098deb4c1dd0364c684c583710f47598f2aef3380d81d52ac73ddd5811c4f2e",
+  "approved_sha256": "1601744eedac57b3c362e33d7981df32de3be89893e56428840bb6bc52ff102b"
+}

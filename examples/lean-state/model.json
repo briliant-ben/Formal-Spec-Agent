@@ -1,0 +1,157 @@
+{
+  "ir_version": "0.5",
+  "semantics": "flat-efsm-atomic-ordered-v1",
+  "protocol": "lean-state-transaction",
+  "scope": {
+    "excluded": [
+      "whole EFSM/native overflow/compiler/scheduler proof"
+    ]
+  },
+  "states": [
+    "READY"
+  ],
+  "initial_state": "READY",
+  "variables": {
+    "x": {
+      "type": "int",
+      "initial": 7
+    },
+    "y": {
+      "type": "int",
+      "initial": 3
+    }
+  },
+  "events": {
+    "update": {
+      "origin": "application",
+      "fields": {
+        "value": "int"
+      }
+    }
+  },
+  "timers": {},
+  "messages": {
+    "observed": {
+      "fields": {
+        "value": "int"
+      }
+    }
+  },
+  "requirements": {
+    "ORDER": {
+      "source": "spec.md",
+      "kind": "modeling_choice",
+      "interpretation": "Revision1 ordered assignments and atomic invariant rollback"
+    }
+  },
+  "transitions": [
+    {
+      "id": "UPDATE",
+      "from": "READY",
+      "to": "READY",
+      "event": "update",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "x",
+            "value": {
+              "event": "value"
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "value": {
+                "var": "x"
+              }
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "y",
+            "value": {
+              "var": "x"
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "value": {
+                "var": "y"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "ORDER"
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "id": "x-bound",
+      "requirements": [
+        "ORDER"
+      ],
+      "assert": {
+        "op": "and",
+        "args": [
+          {
+            "op": "ge",
+            "args": [
+              {
+                "var": "x"
+              },
+              0
+            ]
+          },
+          {
+            "op": "le",
+            "args": [
+              {
+                "var": "x"
+              },
+              255
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "y-bound",
+      "requirements": [
+        "ORDER"
+      ],
+      "assert": {
+        "op": "and",
+        "args": [
+          {
+            "op": "ge",
+            "args": [
+              {
+                "var": "y"
+              },
+              0
+            ]
+          },
+          {
+            "op": "le",
+            "args": [
+              {
+                "var": "y"
+              },
+              255
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

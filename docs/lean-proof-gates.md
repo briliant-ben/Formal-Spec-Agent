@@ -1,7 +1,8 @@
 # Lean expression proof gates (pilot v1)
 
-Lean is an optional proof backend alongside the existing reference interpreter,
-Z3 strategies, C generator and observation pipeline. Nothing upgrades old
+Lean is the primary proof-development direction. The base installation requires
+no Z3; old Z3 strategies remain an explicit optional extra alongside the reference
+interpreter, C generator and observation pipeline. Nothing upgrades old
 UNKNOWN results, finite runs or recorded PCAP into Lean proofs.
 
 ## Exactly what is checked
@@ -94,6 +95,12 @@ output, independently review its definitions/contracts/witnesses, then approve
 the exact digest in a new task. Do not refresh witnesses from a failing subject.
 
 ## Next proof boundary
+
+The [integer action-block unit](lean-first.md) now checks ordered writes,
+buffered emissions and final-invariant rollback, with its own
+`checked_state_contract` status. It does not certify actual C statements or EFSM
+selection. The restricted proof-data language also accepts `dsimp` with the same
+definition-name list syntax as `simp`, solely for definitional reduction.
 
 The [C correspondence pilot](code-generation-paths.md) now covers a typed pure
 read/conditional fragment and a parsed actual C expression under explicit

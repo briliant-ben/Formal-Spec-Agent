@@ -4,7 +4,7 @@ A reusable specification modeling and validation framework, with an executable
 core and optional independent model-proposal roles.
 
 ```text
-Pinned specification and scope → Protocol IR → reference execution / independent Z3
+Pinned specification and scope → Protocol IR → reference execution / Lean contracts
   → generated tests → standalone generated C → execution observations
   → Difference and specification traceability
 ```
@@ -36,14 +36,22 @@ changes during extraction. It is framework code, not a copied protocol stack.
 
 ## Install and run without a model provider
 
-Requirements: Python3.11+, a POSIX host and a C99 compiler. Z3 is pinned. No API
+Requirements: Python3.11+, a POSIX host and a C99 compiler. The base package has
+no solver dependency. Lean uses a separately pinned toolchain; the older Z3
+pipeline requires an optional extra. No API
 key, network privilege or existing network stack is needed for deterministic checks.
 
 ```sh
 python3 -m venv .venv
-.venv/bin/python -m pip install -e .
+.venv/bin/python -m pip install -e '.[z3]'
 .venv/bin/python -m unittest discover -s tests -v
 ```
+
+The optional extra above enables the complete old regression suite and mailbox
+pipeline. For Lean and C generation, install `.` instead. CI checks both an actual
+no-Z3 installation and the old backend: see [Lean-first migration](docs/lean-first.md).
+Requesting Z3 work without the extra blocks that formal stage; it never silently
+falls back to a passing Lean result.
 
 The example is a **finite byte mailbox**, not an Internet protocol. Its source,
 literal seed and finite exploration domain are pinned before execution. Use a
@@ -83,14 +91,15 @@ Protocol byte layout should be expressed in IR. The old TCP-specific `wire` code
 was not extracted into the generic backend: requesting it is explicitly rejected.
 Existing TCP network channels are reproduced in the benchmark repository.
 
-## Optional Lean proof backend
+## Lean-first proof backend
 
 The [Lean expression pilot](docs/lean-proof-gates.md) adds kernel-checked
 contracts for a selected pure IR byte expression. It uses frozen definitions,
 restricted proof data, explicit positive witnesses and a separate axiom audit.
 The [byte example](examples/lean-bytes/README.md) includes DeepSeek-proposed
 proof data which still must pass actual Lean checking. Lean 4.35.0 is pinned.
-Z3 and the existing ten-stage flow remain available and unchanged.
+Z3 and the existing ten-stage flow remain available via the optional `z3` extra.
+Their old results are not relabeled as Lean proofs.
 
 `formal-spec-agent lean-plan` drafts statements for independent approval;
 `lean-check` checks all frozen obligations; `lean-verify` reconstructs a fresh
@@ -103,6 +112,12 @@ an actual generated C assignment, reifies its typed expression and checks it
 against formal IR lowering. It includes an optional `lean-native` route that
 compiles the IR reference through Lean to C and runs frozen witnesses, requiring
 Lean's runtime. Neither route implies native compiler or whole-protocol correctness.
+
+The [state transaction unit](examples/lean-state/README.md) derives ordered integer
+assignments, buffered emissions and final-invariant rollback from an IR action
+block. Its separate `checked_state_contract` result does not certify C statements,
+guard selection, timers or a complete EFSM. The migration guide lists the remaining
+capabilities before the optional Z3 backend can be retired.
 
 ## Optional independent proposal roles
 

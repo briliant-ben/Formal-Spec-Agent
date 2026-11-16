@@ -1,0 +1,185 @@
+{
+  "failure_rolls_back": [
+    {
+      "unfold": [
+        "Approved.failure_rolls_back"
+      ]
+    },
+    {
+      "intro": [
+        "actions",
+        "invariants",
+        "s",
+        "env"
+      ]
+    },
+    {
+      "unfold": [
+        "FormalSpecAgent.StateSubset.execute"
+      ]
+    },
+    {
+      "dsimp": []
+    },
+    {
+      "split": [
+        [
+          {
+            "simp_all": []
+          }
+        ],
+        [
+          {
+            "simp_all": []
+          }
+        ]
+      ]
+    }
+  ],
+  "success_checks_invariants": [
+    {
+      "unfold": [
+        "Approved.success_checks_invariants"
+      ]
+    },
+    {
+      "intro": [
+        "actions",
+        "invariants",
+        "s",
+        "env"
+      ]
+    },
+    {
+      "unfold": [
+        "FormalSpecAgent.StateSubset.execute"
+      ]
+    },
+    {
+      "dsimp": []
+    },
+    {
+      "split": [
+        [
+          {
+            "simp_all": []
+          }
+        ],
+        [
+          {
+            "simp_all": []
+          }
+        ]
+      ]
+    }
+  ],
+  "assignment_then_emission": [
+    {
+      "unfold": [
+        "Approved.assignment_then_emission"
+      ]
+    },
+    {
+      "intro": [
+        "s",
+        "env",
+        "n",
+        "value",
+        "h"
+      ]
+    },
+    {
+      "have": {
+        "name": "hset",
+        "term": "List.getElem?_set_self (l := s) (i := n) (a := value) h"
+      }
+    },
+    {
+      "simp_all": [
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger",
+        "List.getD_eq_getElem?_getD"
+      ]
+    }
+  ],
+  "witness_success": [
+    {
+      "unfold": [
+        "Approved.witness_success"
+      ]
+    },
+    {
+      "rfl": true
+    }
+  ],
+  "witness_success_admitted": [
+    {
+      "unfold": [
+        "Approved.witness_success_admitted"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_negative": [
+    {
+      "unfold": [
+        "Approved.witness_negative"
+      ]
+    },
+    {
+      "rfl": true
+    }
+  ],
+  "witness_negative_admitted": [
+    {
+      "unfold": [
+        "Approved.witness_negative_admitted"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_over_bound": [
+    {
+      "unfold": [
+        "Approved.witness_over_bound"
+      ]
+    },
+    {
+      "rfl": true
+    }
+  ],
+  "witness_over_bound_admitted": [
+    {
+      "unfold": [
+        "Approved.witness_over_bound_admitted"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_zero": [
+    {
+      "unfold": [
+        "Approved.witness_zero"
+      ]
+    },
+    {
+      "rfl": true
+    }
+  ],
+  "witness_zero_admitted": [
+    {
+      "unfold": [
+        "Approved.witness_zero_admitted"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ]
+}

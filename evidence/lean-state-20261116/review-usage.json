@@ -1,0 +1,14 @@
+{
+  "usage": {
+    "prompt_tokens": 12093,
+    "completion_tokens": 4039,
+    "total_tokens": 16132,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 12093
+  },
+  "cached": false,
+  "request_sha256": "384a1b10564780826e13f2a141b169037e1dfd6a2a87ca77d28228c367c53511"
+}
