@@ -59,10 +59,11 @@
   },
   "current_lean_efsm_can_accept": false,
   "remaining": [
-    "byte/seq32/bool/string/rational values and exact operators",
-    "clock-v3, timer ownership/deadline/tie ordering and post targets",
-    "whole-model obligations with explicitly admitted protocol domains",
+    "bytes/seq32/bool/string values and all 26 operators in this pinned case",
+    "five timer instances: ownership, deadlines and tie ordering",
+    "all-rule model obligations with explicitly admitted protocol domains",
     "fresh Lean certificates, code regeneration and protocol evidence under a pinned framework version"
   ],
-  "historical_UNKNOWNs_unchanged": true
+  "historical_UNKNOWNs_unchanged": true,
+  "scope_note": "This inventories the pinned compact case only. Broader framework rational/clock-v3 modules are separate migration gates, not requirements inferred for this atomic-v1 case."
 }
