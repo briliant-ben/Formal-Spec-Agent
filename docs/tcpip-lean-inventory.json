@@ -99,5 +99,17 @@
       "sub"
     ],
     "scope": "Derived typing only; not whole-EFSM safety or scheduling"
+  },
+  "scheduled_machine_view": {
+    "supported": true,
+    "actions": {
+      "set": 2533,
+      "emit": 215,
+      "arm": 119,
+      "cancel": 231
+    },
+    "rules": 335,
+    "frozen_reference_transitions": 9,
+    "scope": "All actions reified and compiled; fixed-input mathematical interpreter correspondence only. No whole-EFSM/batch scheduler/compiler proof."
   }
 }

@@ -54,6 +54,9 @@ def prepare(task_file, workspace, task_sha256, *, draft=False):
     if not task_file.is_relative_to(root) or sha(task_file) != task_sha256:
         raise ValueError('Task outside workspace or digest mismatch')
     task = json.loads(task_file.read_text())
+    if task.get('schema')=='fsa-lean-machine-task-v1':
+        from .lean_machine import prepare as prepare_machine
+        return prepare_machine(task_file,root,task_sha256,draft=draft)
     if task.get('schema')=='fsa-lean-typed-expression-task-v1':
         from .lean_typed import prepare as prepare_typed
         return prepare_typed(task_file,root,task_sha256,draft=draft)
@@ -220,6 +223,9 @@ def proof_lines(steps, indent=2, depth=0):
 
 
 def unit_scope(inputs):
+    if 'tool/lean/TypedMachine.lean'in inputs:
+        from .lean_machine import SCOPE as machine_scope
+        return machine_scope
     if 'tool/lean/TypedIR.lean'in inputs:
         from .lean_typed import SCOPE as typed_scope
         return typed_scope
@@ -236,6 +242,7 @@ def unit_scope(inputs):
 
 
 def contract_status(inputs):
+    if 'tool/lean/TypedMachine.lean'in inputs:return 'checked_scheduled_microstep_contract'
     if 'tool/lean/TypedIR.lean'in inputs:return 'checked_typed_expression_contract'
     if 'tool/lean/EfsmSubset.lean'in inputs:return 'checked_efsm_contract'
     if 'tool/lean/StateSubset.lean'in inputs:return 'checked_state_contract'
@@ -243,7 +250,7 @@ def contract_status(inputs):
 
 
 def resources_for(inputs):
-    return ['Foundation']+[n for n in ['CSubset','StateSubset','EfsmSubset','ValueOps','TypedIR']if 'tool/lean/'+n+'.lean'in inputs]
+    return ['Foundation']+[n for n in ['CSubset','StateSubset','EfsmSubset','ValueOps','TypedIR','TypedMachine','MachineObserve']if 'tool/lean/'+n+'.lean'in inputs]
 
 
 def proof_prefix(inputs):
@@ -314,14 +321,14 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
             if set(found)-AXIOMS: raise ValueError('Unapproved proof axioms')
             axioms[n]=found
         kind=contract_status(inputs)
-        result.update(status=kind,axioms=axioms,c_expression_model_refinement_checked=('tool/lean/CSubset.lean'in inputs),state_action_contract_checked=kind=='checked_state_contract',efsm_contract_checked=kind=='checked_efsm_contract',typed_expression_contract_checked=kind=='checked_typed_expression_contract')
+        result.update(status=kind,axioms=axioms,c_expression_model_refinement_checked=('tool/lean/CSubset.lean'in inputs),state_action_contract_checked=kind=='checked_state_contract',efsm_contract_checked=kind=='checked_efsm_contract',typed_expression_contract_checked=kind=='checked_typed_expression_contract',scheduled_microstep_contract_checked=kind=='checked_scheduled_microstep_contract')
     # Frozen input and generated-file identity is rechecked after the actual tool.
     try:
         stable=prepare(task_file,root,task_sha256)[2]==inputs and proofs_file.read_bytes()==proofs_bytes and all(sha(out/n)==h for n,h in source_hashes.items())
     except (ValueError,OSError):
         stable=False
     if not stable:
-        result.update(status='invalidated_inputs',classification='evidence_changed',c_expression_model_refinement_checked=False,state_action_contract_checked=False,efsm_contract_checked=False,typed_expression_contract_checked=False)
+        result.update(status='invalidated_inputs',classification='evidence_changed',c_expression_model_refinement_checked=False,state_action_contract_checked=False,efsm_contract_checked=False,typed_expression_contract_checked=False,scheduled_microstep_contract_checked=False)
     result['outputs']={p.name:sha(p)for p in out.iterdir()if p.is_file()}
     write(out/'result.json',result);return result
 
@@ -349,7 +356,7 @@ def inspect_certificate(bundle, task_file, workspace, task_sha256, *, require_pa
     """
     bundle=Path(bundle).resolve()
     result=json.loads((bundle/'result.json').read_text())
-    completed=result.get('status')in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract')
+    completed=result.get('status')in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract','checked_scheduled_microstep_contract')
     partial=not require_pass and result.get('status')=='fail'and result.get('classification')=='resource_unknown'
     if result.get('schema')!='fsa-lean-expression-result-v1' or not (completed or partial):
         raise ValueError('Only completed scoped Lean certificates can be rechecked')
@@ -366,6 +373,8 @@ def inspect_certificate(bundle, task_file, workspace, task_sha256, *, require_pa
         raise ValueError('Retained certificate claim differs from its task')
     if result.get('efsm_contract_checked',False)!=(completed and expected_status=='checked_efsm_contract'):
         raise ValueError('Retained EFSM claim differs from its task')
+    if result.get('scheduled_microstep_contract_checked',False)!=(completed and expected_status=='checked_scheduled_microstep_contract'):
+        raise ValueError('Retained scheduled-microstep claim differs from its task')
     if result.get('typed_expression_contract_checked',False)!=(completed and expected_status=='checked_typed_expression_contract'):
         raise ValueError('Retained typed-expression claim differs from its task')
     if result.get('c_expression_model_refinement_checked',False)!=(completed and 'tool/lean/CSubset.lean'in result['inputs']) or result.get('scope')!=unit_scope(result['inputs']) or result.get('compiler_correctness_proved') is not False or result.get('protocol_correctness_proved') is not False:
@@ -421,7 +430,7 @@ def verify_main(argv=None):
     p.add_argument('--out',type=Path,required=True);p.add_argument('--task-sha256',required=True);p.add_argument('--lean',default='lean')
     a=p.parse_args(argv)
     try:
-        r=verify(a.bundle,a.task,a.workspace,a.out,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract')else 1
+        r=verify(a.bundle,a.task,a.workspace,a.out,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract','checked_scheduled_microstep_contract')else 1
     except (ValueError,OSError,subprocess.SubprocessError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2
 
@@ -432,6 +441,6 @@ def main(argv=None):
     p.add_argument('--proofs',type=Path,required=True);p.add_argument('--task-sha256',required=True);p.add_argument('--lean',default='lean')
     a=p.parse_args(argv)
     try:
-        r=check(a.task,a.workspace,a.out,a.proofs,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract')else 1
+        r=check(a.task,a.workspace,a.out,a.proofs,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract','checked_scheduled_microstep_contract')else 1
     except (ValueError,OSError,subprocess.SubprocessError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2

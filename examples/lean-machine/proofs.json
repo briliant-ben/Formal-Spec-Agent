@@ -1,0 +1,430 @@
+{
+  "get_set_same": [
+    {
+      "exact": "FormalSpecAgent.TypedMachine.get_set_same"
+    }
+  ],
+  "rollback_error": [
+    {
+      "exact": "FormalSpecAgent.TypedMachine.rollback_error"
+    }
+  ],
+  "cancel_membership": [
+    {
+      "exact": "FormalSpecAgent.TypedMachine.cancel_membership"
+    }
+  ],
+  "fire_invariant": [
+    {
+      "exact": "FormalSpecAgent.TypedMachine.fire_invariant"
+    }
+  ],
+  "initial_valid_0": [
+    {
+      "simp_only": [
+        "Approved.initial_valid_0"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_0_0": [
+    {
+      "simp_only": [
+        "Approved.witness_0_0"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_0_1": [
+    {
+      "simp_only": [
+        "Approved.witness_0_1"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_0_2": [
+    {
+      "simp_only": [
+        "Approved.witness_0_2"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_0_3": [
+    {
+      "simp_only": [
+        "Approved.witness_0_3"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "initial_valid_1": [
+    {
+      "simp_only": [
+        "Approved.initial_valid_1"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_1_0": [
+    {
+      "simp_only": [
+        "Approved.witness_1_0"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_1_1": [
+    {
+      "simp_only": [
+        "Approved.witness_1_1"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_1_2": [
+    {
+      "simp_only": [
+        "Approved.witness_1_2"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_1_3": [
+    {
+      "simp_only": [
+        "Approved.witness_1_3"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "initial_valid_2": [
+    {
+      "simp_only": [
+        "Approved.initial_valid_2"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_2_0": [
+    {
+      "simp_only": [
+        "Approved.witness_2_0"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_2_1": [
+    {
+      "simp_only": [
+        "Approved.witness_2_1"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "initial_valid_3": [
+    {
+      "simp_only": [
+        "Approved.initial_valid_3"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_3_0": [
+    {
+      "simp_only": [
+        "Approved.witness_3_0"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "initial_valid_4": [
+    {
+      "simp_only": [
+        "Approved.initial_valid_4"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_4_0": [
+    {
+      "simp_only": [
+        "Approved.witness_4_0"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_4_1": [
+    {
+      "simp_only": [
+        "Approved.witness_4_1"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_4_2": [
+    {
+      "simp_only": [
+        "Approved.witness_4_2"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "initial_valid_5": [
+    {
+      "simp_only": [
+        "Approved.initial_valid_5"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_5_0": [
+    {
+      "simp_only": [
+        "Approved.witness_5_0"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_5_1": [
+    {
+      "simp_only": [
+        "Approved.witness_5_1"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_5_2": [
+    {
+      "simp_only": [
+        "Approved.witness_5_2"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "initial_valid_6": [
+    {
+      "simp_only": [
+        "Approved.initial_valid_6"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_6_0": [
+    {
+      "simp": [
+        "Approved.witness_6_0",
+        "Approved.result_6_0",
+        "Approved.initial_6",
+        "Approved.model",
+        "Approved.schema",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "Approved.rule_6",
+        "Approved.rule_7",
+        "Approved.e0",
+        "Approved.e5",
+        "Approved.e6",
+        "Approved.e7",
+        "Approved.e8",
+        "Approved.e9",
+        "Approved.e10",
+        "Approved.e11",
+        "Approved.e12",
+        "Approved.e13",
+        "Approved.e14",
+        "Approved.e15",
+        "Approved.e16",
+        "Approved.e17",
+        "Approved.e18",
+        "Approved.e19",
+        "Approved.e20",
+        "Approved.e21",
+        "Approved.e22",
+        "Approved.e23",
+        "Approved.e24",
+        "Approved.e25",
+        "Approved.e26",
+        "Approved.e27",
+        "Approved.e28",
+        "Approved.e29",
+        "FormalSpecAgent.TypedMachine.external",
+        "FormalSpecAgent.TypedMachine.nextTimer",
+        "FormalSpecAgent.TypedMachine.fire",
+        "FormalSpecAgent.TypedMachine.enabled",
+        "FormalSpecAgent.TypedMachine.runRule",
+        "FormalSpecAgent.TypedMachine.withoutFiring",
+        "FormalSpecAgent.TypedMachine.work",
+        "FormalSpecAgent.TypedMachine.context",
+        "FormalSpecAgent.TypedMachine.eval",
+        "FormalSpecAgent.TypedMachine.setValue",
+        "FormalSpecAgent.TypedMachine.armTimer",
+        "FormalSpecAgent.TypedMachine.invariantsHold",
+        "FormalSpecAgent.TypedMachine.zeroValues",
+        "FormalSpecAgent.MachineObserve.outcome",
+        "FormalSpecAgent.MachineObserve.snapshot",
+        "FormalSpecAgent.MachineObserve.message",
+        "FormalSpecAgent.MachineObserve.packed",
+        "FormalSpecAgent.TypedIR.eval",
+        "FormalSpecAgent.TypedIR.getValue",
+        "FormalSpecAgent.ValueOps.seqAdd"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ]
+}
