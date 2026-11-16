@@ -137,6 +137,13 @@ block. Its separate `checked_state_contract` result does not certify C statement
 guard selection, timers or a complete EFSM. The migration guide lists the remaining
 capabilities before the optional Z3 backend can be retired.
 
+The [typed value layer](docs/lean-typed-values.md) now covers all five types and
+26 operators of the pinned compact TCP/IP model. Its entire expression view can
+be typechecked, with explicit source bindings; this is distinct from proving the
+335-rule EFSM safe. A separate 59-obligation benchmark and compiled Lean reference
+exercise exact values, long buffers, wrap, checksum and Unicode/NUL. Typed
+transition and timer proofs still remain before whole-case migration.
+
 ## Optional independent proposal roles
 
 `formal-spec-agent propose` executes one to four independent JSON roles with

@@ -22,6 +22,13 @@ Existing UNKNOWNs and implementation Differences remain independent evidence.
 
 ## Next: implementation correspondence
 
+The compact case's five types and 26 pure operators are now represented by typed
+Lean data and evaluated by a pure interpreter. Complete case expression typing,
+59 kernel obligations and compiled reference values are separate claims. Exact
+long-buffer content is preserved, and timer membership is not scheduling. See
+[typed values](lean-typed-values.md). Extend this layer to transition effects and
+timer scheduling next; the whole335-rule EFSM is not yet certified.
+
 An all-rule timer-free integer EFSM contract now feeds the complete ten-stage
 flow through explicit task-v6. It checks preservation before runtime filtering,
 disjointness, total state/event coverage, initial validity and admitted literal

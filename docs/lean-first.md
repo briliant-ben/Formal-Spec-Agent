@@ -26,7 +26,7 @@ only for a requested solver operation.
 
 | Capability | Lean coverage | Remaining work |
 |---|---|---|
-| Pure expressions | Selected byte contract and witnesses | More operators and domains |
+| Pure expressions | Five types and all26 compact-case operators reified; complete case expression typing, 56 values and3 generic properties | Typed transition connection and broader proof automation; not universal interpreter equivalence |
 | Generated C correspondence | Independently parsed pure expression under runtime/ABI contracts | Ordered C statements, native failure and memory contracts |
 | IR state effects | Integer block, ordered set/emit, final-invariant rollback | More types, arithmetic, native limits and target states |
 | EFSM validity | All-rule preservation, pairwise overlap, complete state/event coverage, initial validity and enabling witnesses in the integer fragment | Broader types/operators, reachability, temporal properties and an interpreter/dispatcher connection |

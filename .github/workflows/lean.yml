@@ -26,10 +26,19 @@ jobs:
           /tmp/lean-framework-venv/bin/python -m pip install '.[z3]'
           python3 -m venv /tmp/lean-only-venv
           /tmp/lean-only-venv/bin/python -m pip install .
+      - name: Fetch the immutable TCPIP pure-expression input
+        run: |
+          mkdir -p /tmp/tcpip-typed-input
+          curl --fail --location --connect-timeout 20 --max-time 180 \
+            https://raw.githubusercontent.com/briliant-ben/TCPIP-Model/dda2f02f90229146b017421fade8701c74534308/model/ipv4-endpoint-virtual-link.json \
+            --output /tmp/tcpip-typed-input/model.json
+          echo '7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5  /tmp/tcpip-typed-input/model.json' | sha256sum --check
       - name: Check installed package and actual kernel positive/negative cases
         env:
           FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
           FSA_LEAN_REQUIRED: '1'
+          FSA_TCPIP_MODEL: /tmp/tcpip-typed-input/model.json
+          FSA_TCPIP_REQUIRED: '1'
         run: |
           cd /tmp
           /tmp/lean-framework-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/lean-tests.log" 2>&1
@@ -47,6 +56,8 @@ jobs:
           FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
           FSA_LEAN_REQUIRED: '1'
           FSA_Z3_ABSENT_REQUIRED: '1'
+          FSA_TCPIP_MODEL: /tmp/tcpip-typed-input/model.json
+          FSA_TCPIP_REQUIRED: '1'
         run: |
           cd /tmp
           /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -p 'test_lean*.py' -v > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
@@ -86,6 +97,21 @@ jobs:
           /tmp/lean-only-venv/bin/formal-spec-agent lean-native examples/lean-c-read/task.json \
             --workspace examples/lean-c-read --proofs examples/lean-c-read/proofs.json \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-native-reference
+      - name: Check all compact-case operators and compiled typed values without Z3
+        run: |
+          TASK_SHA=$(sha256sum examples/lean-values/task.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-values/task.json \
+            --workspace examples/lean-values --proofs examples/lean-values/proofs.json \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-typed-values
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-verify /tmp/lean-typed-values \
+            --task examples/lean-values/task.json --workspace examples/lean-values \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-typed-values-recheck
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-native examples/lean-values/task.json \
+            --workspace examples/lean-values --proofs examples/lean-values/proofs.json \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-typed-native
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-types /tmp/tcpip-typed-input/model.json \
+            --workspace /tmp/tcpip-typed-input --model-sha256 7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5 \
+            --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/tcpip-typed-view
       - name: Preserve raw source, kernel logs, audits and test result
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -105,4 +131,8 @@ jobs:
             /tmp/lean-state-recheck
             /tmp/lean-efsm-flow
             /tmp/lean-efsm-recheck
+            /tmp/lean-typed-values
+            /tmp/lean-typed-values-recheck
+            /tmp/lean-typed-native
+            /tmp/tcpip-typed-view
           if-no-files-found: error
