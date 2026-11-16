@@ -22,6 +22,11 @@ Existing UNKNOWNs and implementation Differences remain independent evidence.
 
 ## Next: implementation correspondence
 
+Lean-first installation no longer requires Z3. An integer, timer-free action-block
+unit now checks ordered set/emit and final-invariant rollback. See the
+[capability gates](lean-first.md) before retiring the optional solver backend.
+Neither milestone replaces whole-EFSM checking or proves C statements.
+
 Extend the typed pure expression fragment to statements and its evaluation contract.
 Establish a checked connection to a C subset or per-output translation validation,
 starting with byte access/slices and conditional evaluation. Then cover ordered

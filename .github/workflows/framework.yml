@@ -17,7 +17,7 @@ jobs:
       - name: Install independent package
         run: |
           python3 -m venv /tmp/framework-venv
-          /tmp/framework-venv/bin/python -m pip install .
+          /tmp/framework-venv/bin/python -m pip install '.[z3]'
       - name: Test installed package from unrelated directory, without provider calls
         run: |
           cd /tmp

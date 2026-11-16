@@ -54,6 +54,9 @@ def prepare(task_file, workspace, task_sha256, *, draft=False):
     if not task_file.is_relative_to(root) or sha(task_file) != task_sha256:
         raise ValueError('Task outside workspace or digest mismatch')
     task = json.loads(task_file.read_text())
+    if task.get('schema')=='fsa-lean-state-task-v1':
+        from .lean_state import prepare as prepare_state
+        return prepare_state(task_file,root,task_sha256,draft=draft)
     if task.get('schema')=='fsa-lean-c-expression-task-v1':
         from .lean_c import prepare as prepare_c
         return prepare_c(task_file,root,task_sha256,draft=draft)
@@ -174,7 +177,7 @@ def proof_lines(steps, indent=2, depth=0):
             rows.append(pad+k)
         elif k in ('exact','apply'):
             rows.append(pad+k+' '+term(v))
-        elif k in ('simp','simp_all'):
+        elif k in ('simp','simp_all','dsimp'):
             if type(v) is not list: raise ValueError('Simp name list required')
             ns=names(v) if v else []
             rows.append(pad+k+(' ['+', '.join(ns)+']'if ns else''))
@@ -206,6 +209,9 @@ def proof_lines(steps, indent=2, depth=0):
 
 
 def unit_scope(inputs):
+    if 'tool/lean/StateSubset.lean'in inputs:
+        from .lean_state import SCOPE as state_scope
+        return state_scope
     if 'tool/lean/CSubset.lean'in inputs:
         from .lean_c import SCOPE as c_scope
         return c_scope
@@ -230,6 +236,7 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
     out.mkdir(parents=True)
     resources=['Foundation']
     if 'tool/lean/CSubset.lean'in inputs:resources.append('CSubset')
+    if 'tool/lean/StateSubset.lean'in inputs:resources.append('StateSubset')
     for module in resources:(out/(module+'.lean')).write_bytes((HERE/('lean/'+module+'.lean')).read_bytes())
     for n,s in [('Approved.lean',approved),('Proofs.lean',candidate),('Audit.lean',audit)]: (out/n).write_text(s)
     (out/'proofs.json').write_bytes(proofs_bytes)
@@ -269,14 +276,15 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
                 found=[x.strip()for x in match[1].split(',')if x.strip()]
             if set(found)-AXIOMS: raise ValueError('Unapproved proof axioms')
             axioms[n]=found
-        result.update(status='checked_expression_contract',axioms=axioms,c_expression_model_refinement_checked=('tool/lean/CSubset.lean'in inputs))
+        state_unit='tool/lean/StateSubset.lean'in inputs
+        result.update(status='checked_state_contract'if state_unit else'checked_expression_contract',axioms=axioms,c_expression_model_refinement_checked=('tool/lean/CSubset.lean'in inputs),state_action_contract_checked=state_unit)
     # Frozen input and generated-file identity is rechecked after the actual tool.
     try:
         stable=prepare(task_file,root,task_sha256)[2]==inputs and proofs_file.read_bytes()==proofs_bytes and all(sha(out/n)==h for n,h in source_hashes.items())
     except (ValueError,OSError):
         stable=False
     if not stable:
-        result.update(status='invalidated_inputs',classification='evidence_changed',c_expression_model_refinement_checked=False)
+        result.update(status='invalidated_inputs',classification='evidence_changed',c_expression_model_refinement_checked=False,state_action_contract_checked=False)
     result['outputs']={p.name:sha(p)for p in out.iterdir()if p.is_file()}
     write(out/'result.json',result);return result
 
@@ -300,8 +308,8 @@ def verify(bundle, task_file, workspace, out, task_sha256, lean='lean'):
     """Rebuild approved statements with the trusted checker; never run archived Lean."""
     bundle=Path(bundle).resolve()
     result=json.loads((bundle/'result.json').read_text())
-    if result.get('schema')!='fsa-lean-expression-result-v1' or result.get('status')!='checked_expression_contract':
-        raise ValueError('Only completed expression certificates can be rechecked')
+    if result.get('schema')!='fsa-lean-expression-result-v1' or result.get('status')not in ('checked_expression_contract','checked_state_contract'):
+        raise ValueError('Only completed scoped Lean certificates can be rechecked')
     expected=result['outputs']
     if any(p.is_symlink()for p in bundle.iterdir()): raise ValueError('Retained evidence must not contain symlinks')
     actual={p.name for p in bundle.iterdir()if p.is_file()and p.name!='result.json'}
@@ -309,6 +317,11 @@ def verify(bundle, task_file, workspace, out, task_sha256, lean='lean'):
         raise ValueError('Retained evidence changed')
     if result['task_sha256']!=task_sha256 or result['inputs']!=prepare(task_file,workspace,task_sha256)[2]:
         raise ValueError('Task/checker epoch differs from retained certificate')
+    expected_status='checked_state_contract'if 'tool/lean/StateSubset.lean'in result['inputs']else'checked_expression_contract'
+    if result['status']!=expected_status or result.get('state_action_contract_checked',False)!=(expected_status=='checked_state_contract'):
+        raise ValueError('Retained certificate claim differs from its task')
+    if result.get('c_expression_model_refinement_checked',False)!=('tool/lean/CSubset.lean'in result['inputs']) or result.get('scope')!=unit_scope(result['inputs']) or result.get('compiler_correctness_proved') is not False or result.get('protocol_correctness_proved') is not False:
+        raise ValueError('Retained certificate scope/claim differs from its task')
     if sha(bundle/'proofs.json')!=result['proofs_sha256']: raise ValueError('Retained proof data changed')
     fresh=check(task_file,workspace,out,bundle/'proofs.json',task_sha256,lean)
     if fresh['sources']!=result['sources'] or fresh['goals']!=result['goals']:
@@ -322,7 +335,7 @@ def verify_main(argv=None):
     p.add_argument('--out',type=Path,required=True);p.add_argument('--task-sha256',required=True);p.add_argument('--lean',default='lean')
     a=p.parse_args(argv)
     try:
-        r=verify(a.bundle,a.task,a.workspace,a.out,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']=='checked_expression_contract'else 1
+        r=verify(a.bundle,a.task,a.workspace,a.out,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract')else 1
     except (ValueError,OSError,subprocess.SubprocessError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2
 
@@ -333,6 +346,6 @@ def main(argv=None):
     p.add_argument('--proofs',type=Path,required=True);p.add_argument('--task-sha256',required=True);p.add_argument('--lean',default='lean')
     a=p.parse_args(argv)
     try:
-        r=check(a.task,a.workspace,a.out,a.proofs,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']=='checked_expression_contract'else 1
+        r=check(a.task,a.workspace,a.out,a.proofs,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract')else 1
     except (ValueError,OSError,subprocess.SubprocessError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2

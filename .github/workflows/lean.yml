@@ -23,7 +23,9 @@ jobs:
           tar --zstd -xf /tmp/lean.tar.zst -C /tmp
           /tmp/lean-4.35.0-linux/bin/lean --version
           python3 -m venv /tmp/lean-framework-venv
-          /tmp/lean-framework-venv/bin/python -m pip install .
+          /tmp/lean-framework-venv/bin/python -m pip install '.[z3]'
+          python3 -m venv /tmp/lean-only-venv
+          /tmp/lean-only-venv/bin/python -m pip install .
       - name: Check installed package and actual kernel positive/negative cases
         env:
           FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
@@ -40,16 +42,34 @@ jobs:
           /tmp/lean-framework-venv/bin/formal-spec-agent lean-verify /tmp/lean-byte-check \
             --task examples/lean-bytes/task.json --workspace examples/lean-bytes \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-byte-recheck
+      - name: Prove Lean-only installation has no Z3 and checks all scoped units
+        env:
+          FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
+          FSA_LEAN_REQUIRED: '1'
+          FSA_Z3_ABSENT_REQUIRED: '1'
+        run: |
+          cd /tmp
+          /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -p 'test_lean*.py' -v > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
+          /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -p 'test_no_z3.py' -v >> "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
+      - name: Check and recheck ordered state transaction without Z3
+        run: |
+          TASK_SHA=$(sha256sum examples/lean-state/task.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-state/task.json \
+            --workspace examples/lean-state --proofs examples/lean-state/proofs.json \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-state-check
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-verify /tmp/lean-state-check \
+            --task examples/lean-state/task.json --workspace examples/lean-state \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-state-recheck
       - name: Check actual C-expression correspondence and compiled Lean reference
         run: |
           TASK_SHA=$(sha256sum examples/lean-c-read/task.json | cut -d ' ' -f 1)
-          /tmp/lean-framework-venv/bin/formal-spec-agent lean-check examples/lean-c-read/task.json \
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-c-read/task.json \
             --workspace examples/lean-c-read --proofs examples/lean-c-read/proofs.json \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-c-read-check
-          /tmp/lean-framework-venv/bin/formal-spec-agent lean-verify /tmp/lean-c-read-check \
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-verify /tmp/lean-c-read-check \
             --task examples/lean-c-read/task.json --workspace examples/lean-c-read \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-c-read-recheck
-          /tmp/lean-framework-venv/bin/formal-spec-agent lean-native examples/lean-c-read/task.json \
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-native examples/lean-c-read/task.json \
             --workspace examples/lean-c-read --proofs examples/lean-c-read/proofs.json \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-native-reference
       - name: Preserve raw source, kernel logs, audits and test result
@@ -59,9 +79,12 @@ jobs:
           name: lean-expression-${{ github.sha }}
           path: |
             lean-tests.log
+            lean-only-tests.log
             /tmp/lean-byte-check
             /tmp/lean-byte-recheck
             /tmp/lean-c-read-check
             /tmp/lean-c-read-recheck
             /tmp/lean-native-reference
+            /tmp/lean-state-check
+            /tmp/lean-state-recheck
           if-no-files-found: error
