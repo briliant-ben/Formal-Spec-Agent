@@ -3,8 +3,11 @@ import TypedMachine
 namespace FormalSpecAgent.TimerRank
 open TypedMachine
 
-def WellTimed (s : Snapshot) : Prop :=
+abbrev WellTimed (s : Snapshot) : Prop :=
   s.timers.all (fun entry => decide (s.now ≤ entry.due)) = true
+
+instance (s : Snapshot) : Decidable (WellTimed s) :=
+  inferInstanceAs (Decidable (s.timers.all (fun entry => decide (s.now ≤ entry.due)) = true))
 
 def dueCount (s : Snapshot) : Nat :=
   (s.timers.filter fun entry => decide (entry.due ≤ s.now)).length

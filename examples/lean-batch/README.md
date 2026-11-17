@@ -15,11 +15,18 @@ The actual Lean kernel checks the generic minimum/effects/progress theorems,
 the total well-founded scheduler and its new proof-carrying replay bridge. No
 arbitrary cutoff, progress axiom or length-only projection is used.
 
-**The development `task.json` / `proofs.json` is not yet an accepted certificate.**
-The original 31 statements are retained, with 22 stronger internal-result
-obligations for proof reuse. Monolithic proof composition still reaches resource
-UNKNOWN; the replay bridge needs to be connected to these literal proofs.
-Execution matches and generic totality do not upgrade that result.
+The kernel certificate now checks all 57 obligations and supports independent
+fresh rechecking: the original 31 statements, 22 stronger execution equalities
+and four auxiliary byte-content/length facts. The original 53 proposition bodies
+remain unchanged. The 4096-byte case is instantiated from a stronger exact-content
+lemma covering arbitrary byte values of that length; no bytes are discarded.
+
+The kernel-checked `advance_expand` equation exposes each real scheduler step
+without expanding well-founded proof objects. The original proof-data language
+and resource limits are unchanged. Earlier monolithic resource UNKNOWNs are
+retained, not retroactively promoted. This remains a frozen execution contract,
+not universal preservation before runtime invariant filtering or a compiler,
+whole-EFSM/protocol correctness proof.
 
 See [batch semantics and commands](../../docs/lean-batch-scheduling.md). Existing
 Z3/UNKNOWN evidence, universal before-filter obligations and compiler/protocol

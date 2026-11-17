@@ -40,4 +40,21 @@ theorem serial_wrap_from_value (s : ValueOps.Seq32) (h : s.val = 4294967295) :
   simp only [ValueOps.seqAdd, h]
   decide
 
+/-- Canonical order for independent boolean slots after simplification. -/
+theorem function_bool_or_order (lo hi : Nat) (_h : lo < hi) :
+    (fun n => decide (n = hi) || decide (n = lo)) =
+      (fun n => decide (n = lo) || decide (n = hi)) := by
+  funext n
+  exact Bool.or_comm _ _
+
+/-- Clearing one boolean slot does not disturb a distinct true slot. -/
+theorem function_bool_remove (lo hi : Nat) (h : lo ≠ hi) :
+    (fun n => !decide (n = hi) && (decide (n = lo) || decide (n = hi))) =
+      (fun n => decide (n = lo)) := by
+  funext n
+  by_cases hn : n = hi
+  · subst n
+    simp_all [Ne.symm h]
+  · simp [hn]
+
 end FormalSpecAgent.StoreFacts

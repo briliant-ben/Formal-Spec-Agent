@@ -67,13 +67,64 @@ class BatchGateTests(unittest.TestCase):
 
     def test_batch_approval_pins_and_semantic_axiom_audit_are_strict(self):
         _, goals, inputs = gate.prepare(EX / 'task.json', EX, gate.sha(EX / 'task.json'))
-        self.assertEqual(len(goals), 53)
+        self.assertEqual(len(goals), 57)
         self.assertEqual(gate.contract_status(inputs), 'checked_batch_contract')
         self.assertIn('FormalSpecAgent.BatchReplay.sound', gate.semantic_audit_targets(inputs))
         for text in ['', "'subject' depends on axioms: [sorryAx]"]:
             with self.assertRaises(ValueError):
                 gate.read_axioms(text, 'subject')
         self.assertEqual(gate.read_axioms("'subject' depends on axioms: [propext]", 'subject'), ['propext'])
+
+    def test_unrecognized_proof_tactics_and_resource_options_are_rejected(self):
+        # The final certificate uses the original finite proof-data language;
+        # candidates cannot install a custom discharger or raise limits.
+        for step in [{'simp_decide': ['Nat.add_zero']},
+                     {'simp_guarded': {'lemmas': ['Nat.add_zero'], 'discharge': ['run_tac']}},
+                     {'simp': ['native_decide']},
+                     {'simp': ['x; import IO']},
+                     {'simp': [], 'maxSteps': 999999}]:
+            with self.assertRaises(ValueError):
+                gate.proof_lines([step])
+
+    def test_large_literal_uses_stronger_exact_content_contract(self):
+        source, goals, _ = gate.prepare(EX / 'task.json', EX, gate.sha(EX / 'task.json'))
+        self.assertIn('buffer_execution_6_0', goals)
+        self.assertIn('buffer_execution_6_1', goals)
+        self.assertIn('∀ (payload : List (Fin 256)), payload.length = 4096', source)
+        # Subject commands still use actual previous results; the new general
+        # proof contract does not supply their poststates or expected buffers.
+        self.assertIn('BatchMachine.rollback initial_6 result_6_0', source)
+        self.assertTrue('BatchMachine.tick model after_6_0 (5)' in source, 'Tick must consume actual previous state')
+
+    @unittest.skipUnless(LEAN, 'Pinned Lean required')
+    def test_complete_batch_certificate_rechecks_and_rebound_wrong_bytes_fail(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workspace = root / 'workspace'
+            shutil.copytree(EX, workspace)
+            task, proofs = workspace / 'task.json', workspace / 'proofs.json'
+            result = gate.check(task, workspace, root / 'checked', proofs, gate.sha(task), LEAN)
+            self.assertEqual(result['status'], 'checked_batch_contract', result.get('classification'))
+            self.assertEqual(len(result['goals']), 57)
+            self.assertFalse(result['compiler_correctness_proved'])
+            self.assertFalse(result['protocol_correctness_proved'])
+            audit = gate.verify(root / 'checked', task, workspace, root / 'rechecked', gate.sha(task), LEAN)
+            self.assertEqual(audit['status'], 'checked_batch_contract')
+            changed = json.loads(task.read_text())
+            variables = changed['cases'][0]['steps'][0]['expected']['after']['variables']
+            name = next(n for n, v in load(workspace / 'model.json')['variables'].items() if v['type'] == 'bytes')
+            variables[name][0] ^= 1
+            (workspace / 'cases.json').write_text(json.dumps(changed['cases']))
+            for pinned in changed['sources']:
+                if pinned['path'] == 'cases.json':
+                    pinned['sha256'] = gate.sha(workspace / 'cases.json')
+            task.write_text(json.dumps(changed))
+            source, _, _ = gate.prepare(task, workspace, gate.sha(task), draft=True)
+            changed['approved_sha256'] = __import__('hashlib').sha256(source.encode()).hexdigest()
+            task.write_text(json.dumps(changed))
+            rejected = gate.check(task, workspace, root / 'wrong-bytes', proofs, gate.sha(task), LEAN)
+            self.assertNotEqual(rejected['status'], 'checked_batch_contract')
+            self.assertEqual(rejected.get('classification'), 'proof_failure')
 
     @unittest.skipUnless(LEAN, 'Pinned Lean required')
     def test_real_kernel_totality_replay_and_rejection_of_leaked_prefix(self):

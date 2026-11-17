@@ -76,6 +76,8 @@ than being silently paid for again. The checker, not an agent, owns completion.
 The actual selector/action/timer semantics now support a kernel-checked total
 batch scheduler with whole-batch rollback and no fuel cutoff. A checked replay
 bridge decomposes it into real selector/step equations. Compiled Lean matches
-22 frozen operations, but the full literal proof composition remains resource
-UNKNOWN. Finish its decomposition before whole-case/full-flow migration; do not
+22 frozen operations. Its 57-obligation literal certificate now checks using
+exact next-step equations and stronger byte-content lemmas; the original resource
+UNKNOWN attempts remain independent history. Extend universal typed-rule
+preservation/coverage before whole-case/full-flow migration; do not
 retire the optional Z3 backend yet. See [batch scheduling](lean-batch-scheduling.md).

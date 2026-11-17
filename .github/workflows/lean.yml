@@ -135,6 +135,15 @@ jobs:
             --workspace /tmp/tcpip-typed-input --cases /tmp/tcpip-typed-input/cases.json \
             --model-sha256 7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5 \
             --cases-sha256 "$CASES_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/tcpip-machine-runtime
+      - name: Check and freshly recheck the complete typed batch certificate
+        run: |
+          TASK_SHA=$(sha256sum examples/lean-batch/task.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-batch/task.json \
+            --workspace examples/lean-batch --proofs examples/lean-batch/proofs.json \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-batch-check
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-verify /tmp/lean-batch-check \
+            --task examples/lean-batch/task.json --workspace examples/lean-batch \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-batch-recheck
       - name: Run the total typed batch reference without Z3
         run: |
           /tmp/lean-only-venv/bin/formal-spec-agent lean-batch-run examples/lean-batch/model.json \
@@ -170,4 +179,6 @@ jobs:
             /tmp/lean-machine-runtime
             /tmp/tcpip-machine-runtime
             /tmp/lean-batch-runtime
+            /tmp/lean-batch-check
+            /tmp/lean-batch-recheck
           if-no-files-found: error

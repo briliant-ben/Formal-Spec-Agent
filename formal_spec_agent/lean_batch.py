@@ -129,14 +129,30 @@ def prepare(task_file,workspace,task_sha256,*,draft=False):
         if type(c)is not dict or set(c)!={'id','initial','steps'}or type(c['id'])is not str or c['id']in ids or type(c['steps'])is not list or not 1<=len(c['steps'])<=128:raise ValueError('Invalid batch case')
         ids.add(c['id']);s+='\ndef initial_'+str(i)+' : FormalSpecAgent.TypedMachine.Snapshot := '+view.snapshot(c['initial'])+'\n'
         goals['initial_valid_'+str(i)]='FormalSpecAgent.TypedMachine.invariantsHold model initial_'+str(i)+' = true ∧ FormalSpecAgent.TimerRank.WellTimed initial_'+str(i)
-        before='initial_'+str(i);order=sorted(c['initial']['timers'])
+        before='initial_'+str(i);order=sorted(c['initial']['timers']);before_state=c['initial']
         for j,step in enumerate(c['steps']):
             if type(step)is not dict or 'expected'not in step:raise ValueError('Batch operation oracle required')
             name=str(i)+'_'+str(j);cmd={k:v for k,v in step.items()if k!='expected'};s+='\ndef result_'+name+' := '+view.command(cmd,before)+'\n'
+            before_order=list(order)
             full,order=view.full_expected(step['expected'],order)
+            # A large literal is also checked by a stronger parameterized
+            # execution lemma. This is proof data only: the original actual
+            # command/result and every original observable goal stay intact.
+            candidates=[before_state['variables'][n] for n,v in view.m['variables'].items() if v['type']=='bytes']
+            if cmd['kind']=='dispatch':
+                candidates += [cmd['fields'][n] for n,k in view.m['events'][cmd['event']]['fields'].items() if k=='bytes']
+            large=max(candidates,key=len,default=[])
+            if len(large)>64:
+                raw=literal(large,'bytes');payload='payload_'+name
+                s+='\ndef '+payload+' : List (Fin 256) := '+raw+'\n'
+                goals['buffer_length_'+name]=payload+'.length = '+str(len(large))
+                closed=view.command(cmd,view.full_snapshot(before_state,before_order))+' = '+full
+                if raw not in closed:raise ValueError('Large literal proof abstraction did not match actual typed term')
+                goals['buffer_execution_'+name]='∀ (payload : List (Fin 256)), payload.length = '+str(len(large))+' → '+closed.replace(raw,'payload')
             goals['execution_'+name]='result_'+name+' = '+full
             goals['witness_'+name]=OBS+'outcome schema eventSchemas '+before+' result_'+name+' = '+view.expected(step['expected'],before,cmd)
             s+='\ndef after_'+name+' : FormalSpecAgent.TypedMachine.Snapshot := '+NS+'rollback '+before+' result_'+name+'\n';before='after_'+name;rows+=1
+            if step['expected']['status']=='ok':before_state=step['expected']['after']
     if rows>512:raise ValueError('Batch trace resource limit exceeded')
     s+='\n\n'.join('def '+n+' : Prop :=\n  '+p for n,p in goals.items())+'\n\nend Approved\n'
     if not draft and hashlib.sha256(s.encode()).hexdigest()!=t['approved_sha256']:raise ValueError('Frozen batch statements differ')

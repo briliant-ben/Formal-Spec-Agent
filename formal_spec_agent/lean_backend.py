@@ -277,7 +277,7 @@ def semantic_audit_targets(inputs):
             'FormalSpecAgent.TimerEffects.work_summary',
             'FormalSpecAgent.TimerProgress.step_progress',
             *['FormalSpecAgent.BatchMachine.'+n for n in ['advanceAux','advance','tick','dispatch','rollback']],
-            *(['FormalSpecAgent.BatchReplay.'+n for n in ['sound','advance_result','tick_failure','tick_success','dispatch_timer_failure','dispatch_after_timers','prefix_failure_rolls_back']]if 'tool/lean/BatchReplay.lean'in inputs else [])]
+            *(['FormalSpecAgent.BatchReplay.'+n for n in ['sound','advance_equation','advance_expand','advance_past','advance_result','tick_failure','tick_success','dispatch_timer_failure','dispatch_after_timers','prefix_failure_rolls_back']]if 'tool/lean/BatchReplay.lean'in inputs else [])]
 
 
 def read_axioms(text,name):

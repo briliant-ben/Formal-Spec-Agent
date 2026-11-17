@@ -30,7 +30,7 @@ only for a requested solver operation.
 | Generated C correspondence | Independently parsed pure expression under runtime/ABI contracts | Ordered C statements, native failure and memory contracts |
 | IR state effects | Five types, all compact-case expressions, ordered set/emit/arm/cancel, target states and final-invariant rollback | Universal before-filter preservation and native arithmetic/memory correspondence |
 | EFSM validity | All-rule preservation, pairwise overlap, complete state/event coverage, initial validity and enabling witnesses in the integer fragment | Broader types/operators, reachability, temporal properties and an interpreter/dispatcher connection |
-| Time | Typed single steps plus kernel-checked total batch progress/scheduler and replay bridge; 22 compiled batch operations match frozen literals | Decomposed batch literal certificate integration (resource UNKNOWN retained), broader clocks and full-flow adaptation |
+| Time | Typed single steps plus kernel-checked total batch progress/scheduler and replay bridge; 22 compiled batch operations match frozen literals | 57-obligation batch literal certificate accepted; broader clocks, universal typed rule checking and full-flow adaptation remain |
 | Test generation | Existing literal/exploration/native tests | Lean-backed witness/coverage generation and replay |
 | End-to-end flow | Explicit task-v6 Lean formal stage, complete snapshots, all ten stages and honest retained/fresh checks | Broader IR semantics and TCP/IP adaptation |
 | TCP/IP case | Existing model/C/demo and historical evidence | Pin the validated framework, regenerate and recheck covered claims |
@@ -65,5 +65,6 @@ The status is `checked_state_contract`, with C-expression refinement and compile
 correctness flags false. New checker epochs require fresh evidence; old evidence
 is preserved under its original version.
 
-[Total batch scheduling](lean-batch-scheduling.md) separates the checked generic
-termination/replay core from the still-unresolved literal certificate.
+[Total batch scheduling](lean-batch-scheduling.md) describes the checked generic
+termination/replay core and accepted 57-obligation literal certificate, while
+preserving the earlier unresolved attempts.
