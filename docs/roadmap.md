@@ -29,6 +29,12 @@ long-buffer content is preserved, and timer membership is not scheduling. See
 [typed values](lean-typed-values.md). Extend this layer to transition effects and
 timer scheduling next; the whole335-rule EFSM is not yet certified.
 
+Typed ordered actions and scheduled single-step timers now have a separate
+[29-obligation contract](lean-scheduled-microsteps.md). Complete case actions
+compile and nine frozen native/reference transitions match compiled Lean. This
+does not certify batched scheduling or universal rule preservation before runtime
+invariant filtering. Extend those obligations before whole-case migration.
+
 An all-rule timer-free integer EFSM contract now feeds the complete ten-stage
 flow through explicit task-v6. It checks preservation before runtime filtering,
 disjointness, total state/event coverage, initial validity and admitted literal

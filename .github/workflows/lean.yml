@@ -39,6 +39,7 @@ jobs:
           FSA_LEAN_REQUIRED: '1'
           FSA_TCPIP_MODEL: /tmp/tcpip-typed-input/model.json
           FSA_TCPIP_REQUIRED: '1'
+          FSA_TCPIP_MACHINE_REQUIRED: '1'
         run: |
           cd /tmp
           /tmp/lean-framework-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/lean-tests.log" 2>&1
@@ -58,6 +59,7 @@ jobs:
           FSA_Z3_ABSENT_REQUIRED: '1'
           FSA_TCPIP_MODEL: /tmp/tcpip-typed-input/model.json
           FSA_TCPIP_REQUIRED: '1'
+          FSA_TCPIP_MACHINE_REQUIRED: '1'
         run: |
           cd /tmp
           /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -p 'test_lean*.py' -v > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
@@ -112,6 +114,27 @@ jobs:
           /tmp/lean-only-venv/bin/formal-spec-agent lean-types /tmp/tcpip-typed-input/model.json \
             --workspace /tmp/tcpip-typed-input --model-sha256 7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5 \
             --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/tcpip-typed-view
+      - name: Check typed actions and scheduled timers, then run the complete case interpreter
+        run: |
+          TASK_SHA=$(sha256sum examples/lean-machine/task.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-machine/task.json \
+            --workspace examples/lean-machine --proofs examples/lean-machine/proofs.json \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-machine-check
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-verify /tmp/lean-machine-check \
+            --task examples/lean-machine/task.json --workspace examples/lean-machine \
+            --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-machine-recheck
+          MODEL_SHA=$(sha256sum examples/lean-machine/model.json | cut -d ' ' -f 1)
+          CASES_SHA=$(sha256sum examples/lean-machine/cases.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-machine-run examples/lean-machine/model.json \
+            --workspace examples/lean-machine --cases examples/lean-machine/cases.json \
+            --model-sha256 "$MODEL_SHA" --cases-sha256 "$CASES_SHA" \
+            --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-machine-runtime
+          cp examples/lean-machine/tcpip-cases.json /tmp/tcpip-typed-input/cases.json
+          CASES_SHA=$(sha256sum /tmp/tcpip-typed-input/cases.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-machine-run /tmp/tcpip-typed-input/model.json \
+            --workspace /tmp/tcpip-typed-input --cases /tmp/tcpip-typed-input/cases.json \
+            --model-sha256 7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5 \
+            --cases-sha256 "$CASES_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/tcpip-machine-runtime
       - name: Preserve raw source, kernel logs, audits and test result
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -135,4 +158,8 @@ jobs:
             /tmp/lean-typed-values-recheck
             /tmp/lean-typed-native
             /tmp/tcpip-typed-view
+            /tmp/lean-machine-check
+            /tmp/lean-machine-recheck
+            /tmp/lean-machine-runtime
+            /tmp/tcpip-machine-runtime
           if-no-files-found: error

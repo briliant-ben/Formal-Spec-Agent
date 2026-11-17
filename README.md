@@ -142,7 +142,14 @@ The [typed value layer](docs/lean-typed-values.md) now covers all five types and
 be typechecked, with explicit source bindings; this is distinct from proving the
 335-rule EFSM safe. A separate 59-obligation benchmark and compiled Lean reference
 exercise exact values, long buffers, wrap, checksum and Unicode/NUL. Typed
-transition and timer proofs still remain before whole-case migration.
+transition and complete scheduler proofs still remain before whole-case migration.
+
+The [scheduled microstep layer](docs/lean-scheduled-microsteps.md) now derives
+all compact-case actions, unique guard selection, typed updates/messages and
+individual timer firings. A separate29-obligation kernel contract covers ordered
+effects, conflicts and rollback; compiled Lean matches18 benchmark operations and
+nine unchanged TCPIP transitions. Batch dispatch and all-rule typed preservation
+remain migration gates, so these scoped results do not retire Z3.
 
 ## Optional independent proposal roles
 
