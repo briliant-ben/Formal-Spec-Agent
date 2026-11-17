@@ -2,6 +2,7 @@
 import argparse
 import copy
 import json
+import os
 from pathlib import Path
 import subprocess
 import traceback
@@ -80,6 +81,12 @@ def stage(name,t,workspace,job,out):
         return result(data=dict(model_semantic_sha256=model_hash(model),model_scope=model['scope'],
                                 rules=len(model['transitions']),invariants=len(model['invariants'])))
     if name=='formal':
+        if t['schema']=='spec-flow-task-v6':
+            from formal_spec_agent.lean_backend import check
+            f=t['formal']
+            checked=check(resolve(workspace,f['task']),workspace,out/'queries',resolve(workspace,f['proofs']),f['task_sha256'],os.environ.get('FSA_LEAN')or'lean')
+            status='pass'if checked['status']=='checked_efsm_contract'else'blocked'if checked['status']=='blocked'else'unknown'if checked.get('classification')=='resource_unknown'else'fail'
+            return result(status,None if status=='pass'else checked.get('classification',checked['status']),checked)
         if t['schema']=='spec-flow-task-v5':
             from ..initial_step import check, PASS, UNRESOLVED
             r=check(model,out/'queries',solver_timeout_ms=t['formal'].get('solver_timeout_ms',10000))

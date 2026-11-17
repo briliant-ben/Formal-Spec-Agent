@@ -1,0 +1,136 @@
+[
+  {
+    "rule": "PUT_EMPTY",
+    "values": {
+      "slot": 0
+    },
+    "fields": {
+      "value": 65
+    },
+    "after": {
+      "state": "FULL",
+      "variables": {
+        "slot": 65
+      },
+      "emitted": [
+        {
+          "message": "stored",
+          "fields": {
+            "value": 65
+          }
+        }
+      ]
+    }
+  },
+  {
+    "rule": "REJECT_EMPTY",
+    "values": {
+      "slot": 0
+    },
+    "fields": {
+      "value": 0
+    },
+    "after": {
+      "state": "EMPTY",
+      "variables": {
+        "slot": 0
+      },
+      "emitted": [
+        {
+          "message": "rejected",
+          "fields": {
+            "value": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "rule": "PUT_FULL",
+    "values": {
+      "slot": 65
+    },
+    "fields": {
+      "value": 255
+    },
+    "after": {
+      "state": "FULL",
+      "variables": {
+        "slot": 255
+      },
+      "emitted": [
+        {
+          "message": "stored",
+          "fields": {
+            "value": 255
+          }
+        }
+      ]
+    }
+  },
+  {
+    "rule": "REJECT_FULL",
+    "values": {
+      "slot": 65
+    },
+    "fields": {
+      "value": 256
+    },
+    "after": {
+      "state": "FULL",
+      "variables": {
+        "slot": 65
+      },
+      "emitted": [
+        {
+          "message": "rejected",
+          "fields": {
+            "value": 256
+          }
+        }
+      ]
+    }
+  },
+  {
+    "rule": "TAKE_EMPTY",
+    "values": {
+      "slot": 0
+    },
+    "fields": {},
+    "after": {
+      "state": "EMPTY",
+      "variables": {
+        "slot": 0
+      },
+      "emitted": [
+        {
+          "message": "missing",
+          "fields": {
+            "value": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "rule": "TAKE_FULL",
+    "values": {
+      "slot": 65
+    },
+    "fields": {},
+    "after": {
+      "state": "EMPTY",
+      "variables": {
+        "slot": 0
+      },
+      "emitted": [
+        {
+          "message": "delivered",
+          "fields": {
+            "value": 65
+          }
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,69 @@
+{
+  "schema": "tcpip-lean-migration-inventory-v1",
+  "case_repository": "briliant-ben/TCPIP-Model",
+  "local_case_commit": "dda2f02f90229146b017421fade8701c74534308",
+  "model_path": "model/ipv4-endpoint-virtual-link.json",
+  "model_sha256": "7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5",
+  "ir_version": "0.6",
+  "semantics": "flat-efsm-atomic-ordered-v1",
+  "states": 1,
+  "rules": 335,
+  "invariants": 65,
+  "variables": {
+    "bytes": 24,
+    "int": 15,
+    "bool": 3,
+    "string": 7,
+    "seq32": 9
+  },
+  "event_field_types": {
+    "bytes": 6,
+    "int": 5,
+    "bool": 2,
+    "seq32": 12
+  },
+  "timers": 5,
+  "operators": {
+    "add": 11711,
+    "and": 8358,
+    "bytes_at_or_zero": 24217,
+    "bytes_concat": 3514,
+    "bytes_internet_checksum16": 664,
+    "bytes_len": 3437,
+    "bytes_pack16be_mod": 915,
+    "bytes_pack32be_mod": 294,
+    "bytes_pack8_mod": 147,
+    "bytes_slice": 11438,
+    "eq": 8426,
+    "ge": 1709,
+    "implies": 44,
+    "ite": 1439,
+    "le": 1193,
+    "min": 21,
+    "mul": 10803,
+    "ne": 11,
+    "not": 123,
+    "or": 1377,
+    "seq_add": 488,
+    "seq_comparable": 23,
+    "seq_distance": 335,
+    "seq_le": 6,
+    "seq_lt": 22,
+    "sub": 527
+  },
+  "actions": {
+    "arm": 119,
+    "cancel": 231,
+    "emit": 215,
+    "set": 2533
+  },
+  "current_lean_efsm_can_accept": false,
+  "remaining": [
+    "bytes/seq32/bool/string values and all 26 operators in this pinned case",
+    "five timer instances: ownership, deadlines and tie ordering",
+    "all-rule model obligations with explicitly admitted protocol domains",
+    "fresh Lean certificates, code regeneration and protocol evidence under a pinned framework version"
+  ],
+  "historical_UNKNOWNs_unchanged": true,
+  "scope_note": "This inventories the pinned compact case only. Broader framework rational/clock-v3 modules are separate migration gates, not requirements inferred for this atomic-v1 case."
+}

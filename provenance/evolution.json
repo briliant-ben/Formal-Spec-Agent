@@ -11,6 +11,21 @@
       "extracted_sha256": "355a90badcb18aecd8217755e03d5f290cfd758b3fa3f3a4224db7928a8b3895",
       "current_sha256": "0f344fa7d7934dcdb29ae9eacebf6ad79bd339d277a3e7593784321e1cca741f",
       "change": "compact-c-generation-v5"
+    },
+    "protocol_lab/pipeline/task.py": {
+      "extracted_sha256": "059cf6e401837ae74042c37907a0673e7b05f26f9232b9e5cb3e3c0091f4980e",
+      "current_sha256": "67b264bef873f66bd6553df6dc290a90b086510b2b1ebea8425b65529b0cf1f8",
+      "change": "lean-efsm-flow-v6"
+    },
+    "protocol_lab/pipeline/worker.py": {
+      "extracted_sha256": "cab78a75d197fd9def988aaf5f1584bac501e2c04ea989d99cd55e3b1b109879",
+      "current_sha256": "b848c9851525795a6a6fe0b17714ae35476e9d3dcc908bf98b67b51c2708da11",
+      "change": "lean-efsm-flow-v6"
+    },
+    "protocol_lab/pipeline/runner.py": {
+      "extracted_sha256": "cbd78b3749b3368ba39fbd4a1fa1f89e69cc7212feb7af4dd196b97404a65750",
+      "current_sha256": "b0c1c290d3ccc5c70f186de41ae6522c0e967716993e4cab1ffca3ed3046a940",
+      "change": "lean-efsm-flow-v6"
     }
   }
 }

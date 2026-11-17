@@ -135,7 +135,12 @@ def verify(out,workspace,expected_task_sha256=None):
     elif wire:raise ValueError('Undeclared wire evidence')
     frozen=r['source_snapshot']
     if frozen['workspace']!='source-snapshot/workspace'or frozen['tool']!='source-snapshot/tool/protocol_lab':raise ValueError('Snapshot locations changed')
-    expected_files={n:('source-snapshot/workspace/'+n.split('/',1)[1]if n.startswith('workspace/')else'source-snapshot/tool/protocol_lab/'+n.split('/',1)[1])for n in r['input_hashes']}
+    locations={'workspace':'source-snapshot/workspace','tool':'source-snapshot/tool/protocol_lab'}
+    if canonical['schema']=='spec-flow-task-v6':
+        locations['framework']='source-snapshot/tool/formal_spec_agent'
+        if frozen.get('framework')!=locations['framework']or not any(n.startswith('framework/')for n in r['input_hashes']):raise ValueError('Missing Lean framework snapshot')
+    if set(frozen)!=set(locations)|{'files'}:raise ValueError('Snapshot namespaces changed')
+    expected_files={n:locations[n.split('/',1)[0]]+'/'+n.split('/',1)[1]for n in r['input_hashes']}
     if frozen['files']!=expected_files:raise ValueError('Snapshot coverage changed')
     check_inputs(r['input_hashes'],out/frozen['workspace'],out/frozen['tool'])
     actual={p.relative_to(out).as_posix():sha(p)for p in out.rglob('*')if p.is_file()and p!=out/'flow.json'}
@@ -145,8 +150,13 @@ def verify(out,workspace,expected_task_sha256=None):
         if stage!=read(out/'stages'/name/'result.json'):raise ValueError('Stage/report disagreement')
         if stage['stage']!=name or stage['schema']!='spec-flow-stage-v1':raise ValueError('Stage identity changed')
         if stage['status']=='pass'and any(r['stages'][d]['status']not in ('pass','unknown')for d in DEPENDENCIES[name]):raise ValueError('Dependency falsely promoted')
-        expected_formal={'spec-flow-task-v4':'inductive_invariants_pass','spec-flow-task-v5':'initial_step_contracts_pass'}.get(canonical['schema'],'bounded_pass')
+        expected_formal={'spec-flow-task-v4':'inductive_invariants_pass','spec-flow-task-v5':'initial_step_contracts_pass','spec-flow-task-v6':'checked_efsm_contract'}.get(canonical['schema'],'bounded_pass')
         if name=='formal'and stage['status']=='pass'and stage['data'].get('status')!=expected_formal:raise ValueError('Unknown/failed formal result falsely promoted')
+        if name=='formal'and canonical['schema']=='spec-flow-task-v6'and stage['status']in ('pass','unknown'):
+            from formal_spec_agent.lean_backend import inspect_certificate
+            f=canonical['formal']
+            checked=inspect_certificate(out/'stages/formal/queries',resolve(workspace,f['task']),workspace,f['task_sha256'],require_pass=stage['status']=='pass')
+            if checked!=stage['data']:raise ValueError('Lean formal report/claim differs')
         if name=='formal'and canonical['schema']=='spec-flow-task-v4'and stage['status']in ('pass','unknown'):
             from ..sequence_induction import verify as verify_induction
             from ..ir import load
@@ -159,9 +169,9 @@ def verify(out,workspace,expected_task_sha256=None):
             if checked['status']!=expected_check:raise ValueError('Initialized formal evidence rejected: '+str(checked))
         if name=='formal'and stage['status']in ('pass','unknown')and stage['data']!=read(out/'stages/formal/queries/result.json'):
             raise ValueError('Underlying formal report changed')
-        if name=='formal'and stage['status']in ('pass','unknown')and stage['data'].get('solver_timeout_ms',10000)!=canonical['formal'].get('solver_timeout_ms',10000):raise ValueError('Formal solver budget differs from task')
-        if name=='formal'and canonical['schema']not in ('spec-flow-task-v4','spec-flow-task-v5')and stage['status']in ('pass','unknown')and stage['data'].get('solver_preprocess','none')!=canonical['formal'].get('solver_preprocess','none'):raise ValueError('Formal solver preprocessing policy differs from task')
-        if name=='formal'and canonical['schema']not in ('spec-flow-task-v4','spec-flow-task-v5')and stage['status']in ('pass','unknown'):
+        if name=='formal'and canonical['schema']!='spec-flow-task-v6'and stage['status']in ('pass','unknown')and stage['data'].get('solver_timeout_ms',10000)!=canonical['formal'].get('solver_timeout_ms',10000):raise ValueError('Formal solver budget differs from task')
+        if name=='formal'and canonical['schema']not in ('spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6')and stage['status']in ('pass','unknown')and stage['data'].get('solver_preprocess','none')!=canonical['formal'].get('solver_preprocess','none'):raise ValueError('Formal solver preprocessing policy differs from task')
+        if name=='formal'and canonical['schema']not in ('spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6')and stage['status']in ('pass','unknown'):
             _policy=canonical['formal'].get('solver_preprocess','none')
             if _policy=='exact-v1'and not {'solver_preprocess','solver_tactics','solver_preprocess_source'}<=set(stage['data']):raise ValueError('Formal solver preprocessing metadata missing')
             _canon_tactics=['propagate-values','solve-eqs','simplify','smt']if _policy=='exact-v1'else([]if _policy=='none'else None)

@@ -1,0 +1,590 @@
+{
+  "initial_valid": [
+    {
+      "unfold": [
+        "Approved.initial_valid"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "preserve_0": [
+    {
+      "unfold": [
+        "Approved.preserve_0"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "f0",
+        "Hinv",
+        "Hguard"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "preserve_1": [
+    {
+      "unfold": [
+        "Approved.preserve_1"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "f0",
+        "Hinv",
+        "Hguard"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "preserve_2": [
+    {
+      "unfold": [
+        "Approved.preserve_2"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "f0",
+        "Hinv",
+        "Hguard"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "preserve_3": [
+    {
+      "unfold": [
+        "Approved.preserve_3"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "f0",
+        "Hinv",
+        "Hguard"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "preserve_4": [
+    {
+      "unfold": [
+        "Approved.preserve_4"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "Hinv",
+        "Hguard"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "preserve_5": [
+    {
+      "unfold": [
+        "Approved.preserve_5"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "Hinv",
+        "Hguard"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "overlap_0_1": [
+    {
+      "unfold": [
+        "Approved.overlap_0_1"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "f0",
+        "Hinv"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "overlap_2_3": [
+    {
+      "unfold": [
+        "Approved.overlap_2_3"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "f0",
+        "Hinv"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "cover_0_0": [
+    {
+      "unfold": [
+        "Approved.cover_0_0"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "f0",
+        "Hinv"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "cover_0_1": [
+    {
+      "unfold": [
+        "Approved.cover_0_1"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "Hinv"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "cover_1_0": [
+    {
+      "unfold": [
+        "Approved.cover_1_0"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "f0",
+        "Hinv"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "cover_1_1": [
+    {
+      "unfold": [
+        "Approved.cover_1_1"
+      ]
+    },
+    {
+      "intro": [
+        "v0",
+        "Hinv"
+      ]
+    },
+    {
+      "simp_all": [
+        "Approved.invariants",
+        "Approved.rule_0",
+        "Approved.rule_1",
+        "Approved.rule_2",
+        "Approved.rule_3",
+        "Approved.rule_4",
+        "Approved.rule_5",
+        "FormalSpecAgent.EfsmSubset.invariantsHold",
+        "FormalSpecAgent.EfsmSubset.guardHolds",
+        "FormalSpecAgent.EfsmSubset.evalPredicate",
+        "FormalSpecAgent.EfsmSubset.covered",
+        "FormalSpecAgent.StateSubset.work",
+        "FormalSpecAgent.StateSubset.evalInteger"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "omega": true
+        }
+      ]
+    }
+  ],
+  "live_0": [
+    {
+      "unfold": [
+        "Approved.live_0"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "live_1": [
+    {
+      "unfold": [
+        "Approved.live_1"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "live_2": [
+    {
+      "unfold": [
+        "Approved.live_2"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "live_3": [
+    {
+      "unfold": [
+        "Approved.live_3"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "live_4": [
+    {
+      "unfold": [
+        "Approved.live_4"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "live_5": [
+    {
+      "unfold": [
+        "Approved.live_5"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_0": [
+    {
+      "unfold": [
+        "Approved.witness_0"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_1": [
+    {
+      "unfold": [
+        "Approved.witness_1"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_2": [
+    {
+      "unfold": [
+        "Approved.witness_2"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_3": [
+    {
+      "unfold": [
+        "Approved.witness_3"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_4": [
+    {
+      "unfold": [
+        "Approved.witness_4"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_5": [
+    {
+      "unfold": [
+        "Approved.witness_5"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ]
+}

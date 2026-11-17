@@ -54,6 +54,9 @@ def prepare(task_file, workspace, task_sha256, *, draft=False):
     if not task_file.is_relative_to(root) or sha(task_file) != task_sha256:
         raise ValueError('Task outside workspace or digest mismatch')
     task = json.loads(task_file.read_text())
+    if task.get('schema')=='fsa-lean-efsm-task-v1':
+        from .lean_efsm import prepare as prepare_efsm
+        return prepare_efsm(task_file,root,task_sha256,draft=draft)
     if task.get('schema')=='fsa-lean-state-task-v1':
         from .lean_state import prepare as prepare_state
         return prepare_state(task_file,root,task_sha256,draft=draft)
@@ -209,6 +212,9 @@ def proof_lines(steps, indent=2, depth=0):
 
 
 def unit_scope(inputs):
+    if 'tool/lean/EfsmSubset.lean'in inputs:
+        from .lean_efsm import SCOPE as efsm_scope
+        return efsm_scope
     if 'tool/lean/StateSubset.lean'in inputs:
         from .lean_state import SCOPE as state_scope
         return state_scope
@@ -216,6 +222,16 @@ def unit_scope(inputs):
         from .lean_c import SCOPE as c_scope
         return c_scope
     return SCOPE
+
+
+def contract_status(inputs):
+    if 'tool/lean/EfsmSubset.lean'in inputs:return 'checked_efsm_contract'
+    if 'tool/lean/StateSubset.lean'in inputs:return 'checked_state_contract'
+    return 'checked_expression_contract'
+
+
+def resources_for(inputs):
+    return ['Foundation']+[n for n in ['CSubset','StateSubset','EfsmSubset']if 'tool/lean/'+n+'.lean'in inputs]
 
 
 def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
@@ -234,9 +250,7 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
     for n in goals:
         audit+='example : Approved.'+n+' := Proofs.'+n+'\n#print axioms Proofs.'+n+'\n'
     out.mkdir(parents=True)
-    resources=['Foundation']
-    if 'tool/lean/CSubset.lean'in inputs:resources.append('CSubset')
-    if 'tool/lean/StateSubset.lean'in inputs:resources.append('StateSubset')
+    resources=resources_for(inputs)
     for module in resources:(out/(module+'.lean')).write_bytes((HERE/('lean/'+module+'.lean')).read_bytes())
     for n,s in [('Approved.lean',approved),('Proofs.lean',candidate),('Audit.lean',audit)]: (out/n).write_text(s)
     (out/'proofs.json').write_bytes(proofs_bytes)
@@ -276,15 +290,15 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
                 found=[x.strip()for x in match[1].split(',')if x.strip()]
             if set(found)-AXIOMS: raise ValueError('Unapproved proof axioms')
             axioms[n]=found
-        state_unit='tool/lean/StateSubset.lean'in inputs
-        result.update(status='checked_state_contract'if state_unit else'checked_expression_contract',axioms=axioms,c_expression_model_refinement_checked=('tool/lean/CSubset.lean'in inputs),state_action_contract_checked=state_unit)
+        kind=contract_status(inputs)
+        result.update(status=kind,axioms=axioms,c_expression_model_refinement_checked=('tool/lean/CSubset.lean'in inputs),state_action_contract_checked=kind=='checked_state_contract',efsm_contract_checked=kind=='checked_efsm_contract')
     # Frozen input and generated-file identity is rechecked after the actual tool.
     try:
         stable=prepare(task_file,root,task_sha256)[2]==inputs and proofs_file.read_bytes()==proofs_bytes and all(sha(out/n)==h for n,h in source_hashes.items())
     except (ValueError,OSError):
         stable=False
     if not stable:
-        result.update(status='invalidated_inputs',classification='evidence_changed',c_expression_model_refinement_checked=False,state_action_contract_checked=False)
+        result.update(status='invalidated_inputs',classification='evidence_changed',c_expression_model_refinement_checked=False,state_action_contract_checked=False,efsm_contract_checked=False)
     result['outputs']={p.name:sha(p)for p in out.iterdir()if p.is_file()}
     write(out/'result.json',result);return result
 
@@ -304,25 +318,70 @@ def plan_main(argv=None):
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2
 
 
-def verify(bundle, task_file, workspace, out, task_sha256, lean='lean'):
-    """Rebuild approved statements with the trusted checker; never run archived Lean."""
+def inspect_certificate(bundle, task_file, workspace, task_sha256, *, require_pass=True):
+    """Retained integrity only. Reconstruct trusted source, never execute archives.
+
+    Actual historical kernel execution/authenticity needs a trusted provenance;
+    call verify for fresh kernel checking. This helper never supplies a new proof.
+    """
     bundle=Path(bundle).resolve()
     result=json.loads((bundle/'result.json').read_text())
-    if result.get('schema')!='fsa-lean-expression-result-v1' or result.get('status')not in ('checked_expression_contract','checked_state_contract'):
+    completed=result.get('status')in ('checked_expression_contract','checked_state_contract','checked_efsm_contract')
+    partial=not require_pass and result.get('status')=='fail'and result.get('classification')=='resource_unknown'
+    if result.get('schema')!='fsa-lean-expression-result-v1' or not (completed or partial):
         raise ValueError('Only completed scoped Lean certificates can be rechecked')
     expected=result['outputs']
     if any(p.is_symlink()for p in bundle.iterdir()): raise ValueError('Retained evidence must not contain symlinks')
     actual={p.name for p in bundle.iterdir()if p.is_file()and p.name!='result.json'}
     if set(expected)!=actual or any(sha(bundle/n)!=h for n,h in expected.items()):
         raise ValueError('Retained evidence changed')
-    if result['task_sha256']!=task_sha256 or result['inputs']!=prepare(task_file,workspace,task_sha256)[2]:
+    approved,goals,inputs=prepare(task_file,workspace,task_sha256)
+    if result['task_sha256']!=task_sha256 or result['inputs']!=inputs:
         raise ValueError('Task/checker epoch differs from retained certificate')
-    expected_status='checked_state_contract'if 'tool/lean/StateSubset.lean'in result['inputs']else'checked_expression_contract'
-    if result['status']!=expected_status or result.get('state_action_contract_checked',False)!=(expected_status=='checked_state_contract'):
+    expected_status=contract_status(inputs)
+    if completed and result['status']!=expected_status or result.get('state_action_contract_checked',False)!=(completed and expected_status=='checked_state_contract'):
         raise ValueError('Retained certificate claim differs from its task')
-    if result.get('c_expression_model_refinement_checked',False)!=('tool/lean/CSubset.lean'in result['inputs']) or result.get('scope')!=unit_scope(result['inputs']) or result.get('compiler_correctness_proved') is not False or result.get('protocol_correctness_proved') is not False:
+    if result.get('efsm_contract_checked',False)!=(completed and expected_status=='checked_efsm_contract'):
+        raise ValueError('Retained EFSM claim differs from its task')
+    if result.get('c_expression_model_refinement_checked',False)!=(completed and 'tool/lean/CSubset.lean'in result['inputs']) or result.get('scope')!=unit_scope(result['inputs']) or result.get('compiler_correctness_proved') is not False or result.get('protocol_correctness_proved') is not False:
         raise ValueError('Retained certificate scope/claim differs from its task')
     if sha(bundle/'proofs.json')!=result['proofs_sha256']: raise ValueError('Retained proof data changed')
+    proofs=json.loads((bundle/'proofs.json').read_text())
+    if type(proofs)is not dict or set(proofs)!=set(goals)or result['goals']!=goals:raise ValueError('Retained proof/goal coverage differs')
+    candidate='import Approved\n\nnamespace Proofs\n\n'
+    audit='import Proofs\n\n'
+    for n in goals:
+        candidate+='theorem '+n+' : Approved.'+n+' := by\n'+'\n'.join(proof_lines(proofs[n]))+'\n\n'
+        audit+='example : Approved.'+n+' := Proofs.'+n+'\n#print axioms Proofs.'+n+'\n'
+    candidate+='end Proofs\n'
+    sources={n+'.lean':(HERE/('lean/'+n+'.lean')).read_text()for n in resources_for(inputs)}
+    sources.update({'Approved.lean':approved,'Proofs.lean':candidate,'Audit.lean':audit})
+    expected_hashes={n:hashlib.sha256(s.encode()).hexdigest()for n,s in sources.items()}
+    if result['sources']!=expected_hashes or any((bundle/n).read_text()!=s for n,s in sources.items()):raise ValueError('Retained sources differ from trusted reconstruction')
+    expected_modules=[*resources_for(inputs),'Approved','Proofs','Audit']
+    if partial:
+        commands=result.get('commands',[])
+        if result.get('axioms')or not commands or [c.get('module')for c in commands]!=expected_modules[:len(commands)]or commands[-1].get('returncode')is not None or any(c.get('returncode')!=0 for c in commands[:-1]):raise ValueError('Retained unresolved checker prefix differs')
+        if any(c.get('stdout_sha256')!=sha(bundle/(c['module']+'.stdout'))or c.get('stderr_sha256')!=sha(bundle/(c['module']+'.stderr'))for c in commands):raise ValueError('Retained unresolved checker logs differ')
+        return result
+    if result.get('allowed_axioms')!=sorted(AXIOMS)or set(result.get('axioms',{}))!=set(goals):raise ValueError('Retained axiom audit coverage differs')
+    text=(bundle/'Audit.stdout').read_text()
+    for n in goals:
+        prefix="'Proofs."+n+"' "
+        if prefix+'does not depend on any axioms'in text:found=[]
+        else:
+            match=re.search(re.escape(prefix)+r'depends on axioms: \[([^\]]*)\]',text)
+            if not match:raise ValueError('Missing retained axiom audit')
+            found=[x.strip()for x in match[1].split(',')if x.strip()]
+        if set(found)-AXIOMS or found!=result['axioms'][n]:raise ValueError('Retained axiom audit claim differs')
+    if [c.get('module')for c in result.get('commands',[])]!=expected_modules or any(c.get('returncode')!=0 or c.get('stdout_sha256')!=sha(bundle/(c['module']+'.stdout'))or c.get('stderr_sha256')!=sha(bundle/(c['module']+'.stderr'))for c in result['commands']):raise ValueError('Retained successful checker commands differ')
+    return result
+
+
+def verify(bundle, task_file, workspace, out, task_sha256, lean='lean'):
+    """Rebuild approved statements with the trusted checker; never run archived Lean."""
+    bundle=Path(bundle).resolve()
+    result=inspect_certificate(bundle,task_file,workspace,task_sha256)
     fresh=check(task_file,workspace,out,bundle/'proofs.json',task_sha256,lean)
     if fresh['sources']!=result['sources'] or fresh['goals']!=result['goals']:
         raise ValueError('Fresh statement/proof rendering differs')
@@ -335,7 +394,7 @@ def verify_main(argv=None):
     p.add_argument('--out',type=Path,required=True);p.add_argument('--task-sha256',required=True);p.add_argument('--lean',default='lean')
     a=p.parse_args(argv)
     try:
-        r=verify(a.bundle,a.task,a.workspace,a.out,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract')else 1
+        r=verify(a.bundle,a.task,a.workspace,a.out,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract')else 1
     except (ValueError,OSError,subprocess.SubprocessError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2
 
@@ -346,6 +405,6 @@ def main(argv=None):
     p.add_argument('--proofs',type=Path,required=True);p.add_argument('--task-sha256',required=True);p.add_argument('--lean',default='lean')
     a=p.parse_args(argv)
     try:
-        r=check(a.task,a.workspace,a.out,a.proofs,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract')else 1
+        r=check(a.task,a.workspace,a.out,a.proofs,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract')else 1
     except (ValueError,OSError,subprocess.SubprocessError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2
