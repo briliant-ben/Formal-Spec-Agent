@@ -54,6 +54,9 @@ def prepare(task_file, workspace, task_sha256, *, draft=False):
     if not task_file.is_relative_to(root) or sha(task_file) != task_sha256:
         raise ValueError('Task outside workspace or digest mismatch')
     task = json.loads(task_file.read_text())
+    if task.get('schema')=='fsa-lean-typed-expression-task-v1':
+        from .lean_typed import prepare as prepare_typed
+        return prepare_typed(task_file,root,task_sha256,draft=draft)
     if task.get('schema')=='fsa-lean-efsm-task-v1':
         from .lean_efsm import prepare as prepare_efsm
         return prepare_efsm(task_file,root,task_sha256,draft=draft)
@@ -180,10 +183,15 @@ def proof_lines(steps, indent=2, depth=0):
             rows.append(pad+k)
         elif k in ('exact','apply'):
             rows.append(pad+k+' '+term(v))
-        elif k in ('simp','simp_all','dsimp'):
+        elif k in ('simp','simp_all','dsimp','simp_only'):
             if type(v) is not list: raise ValueError('Simp name list required')
             ns=names(v) if v else []
-            rows.append(pad+k+(' ['+', '.join(ns)+']'if ns else''))
+            rows.append(pad+('simp only'if k=='simp_only'else k)+(' ['+', '.join(ns)+']'if ns else''))
+        elif k=='rewrite':
+            rows.append(pad+'rw ['+', '.join(names(v))+']')
+        elif k=='attempt':
+            rows.append(pad+'try')
+            rows.extend(proof_lines(v,indent+2,depth+1))
         elif k=='have':
             if type(v) is not dict or set(v)!={'name','term'} or not NAME.fullmatch(v['name']) or '.' in v['name']: raise ValueError('Invalid local lemma')
             rows.append(pad+'have '+term(v['name'])+' := '+term(v['term']))
@@ -212,6 +220,9 @@ def proof_lines(steps, indent=2, depth=0):
 
 
 def unit_scope(inputs):
+    if 'tool/lean/TypedIR.lean'in inputs:
+        from .lean_typed import SCOPE as typed_scope
+        return typed_scope
     if 'tool/lean/EfsmSubset.lean'in inputs:
         from .lean_efsm import SCOPE as efsm_scope
         return efsm_scope
@@ -225,13 +236,25 @@ def unit_scope(inputs):
 
 
 def contract_status(inputs):
+    if 'tool/lean/TypedIR.lean'in inputs:return 'checked_typed_expression_contract'
     if 'tool/lean/EfsmSubset.lean'in inputs:return 'checked_efsm_contract'
     if 'tool/lean/StateSubset.lean'in inputs:return 'checked_state_contract'
     return 'checked_expression_contract'
 
 
 def resources_for(inputs):
-    return ['Foundation']+[n for n in ['CSubset','StateSubset','EfsmSubset']if 'tool/lean/'+n+'.lean'in inputs]
+    return ['Foundation']+[n for n in ['CSubset','StateSubset','EfsmSubset','ValueOps','TypedIR']if 'tool/lean/'+n+'.lean'in inputs]
+
+
+def proof_prefix(inputs):
+    # Fixed declared capacity for typed buffer witnesses, not worker options.
+    return 'import Approved\n\n'+('set_option maxRecDepth 16384\n\n'if 'tool/lean/TypedIR.lean'in inputs else'')+'namespace Proofs\n\n'
+
+
+def resource_failure(returncode,stdout,stderr):
+    if returncode is None:return True
+    messages=stdout+'\n'+stderr
+    return returncode==1 and bool(re.search(r'(?m)^(?:[^\n]*:\d+:\d+: )?error(?:\([^\n]*\))?: (?:Tactic `[^`]+` failed with a nested error:\n)?(?:maximum recursion depth has been reached|maximum number of heartbeats|\(deterministic\) timeout)',messages))
 
 
 def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
@@ -242,7 +265,7 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
     if len(proofs_bytes)>100000: raise ValueError('Proof data too large')
     proofs=json.loads(proofs_bytes)
     if type(proofs) is not dict or set(proofs)!=set(goals): raise ValueError('Every frozen obligation requires exactly one proof')
-    candidate='import Approved\n\nnamespace Proofs\n\n'
+    candidate=proof_prefix(inputs)
     for n in goals:
         candidate+='theorem '+n+' : Approved.'+n+' := by\n'+'\n'.join(proof_lines(proofs[n]))+'\n\n'
     candidate+='end Proofs\n'
@@ -277,7 +300,7 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
         (out/(n+'.stdout')).write_text(stdout);(out/(n+'.stderr')).write_text(stderr)
         result['commands'].append(dict(module=n,returncode=rc,stdout_sha256=sha(out/(n+'.stdout')),stderr_sha256=sha(out/(n+'.stderr'))))
         if rc!=0:
-            result.update(status='fail',classification='resource_unknown'if rc is None else'tool_execution_failure'if rc<0 else'proof_failure',failed_module=n)
+            result.update(status='fail',classification='resource_unknown'if resource_failure(rc,stdout,stderr)else'tool_execution_failure'if rc<0 else'proof_failure',failed_module=n)
             break
     else:
         axioms={};text=(out/'Audit.stdout').read_text()
@@ -291,14 +314,14 @@ def check(task_file, workspace, out, proofs_file, task_sha256, lean='lean'):
             if set(found)-AXIOMS: raise ValueError('Unapproved proof axioms')
             axioms[n]=found
         kind=contract_status(inputs)
-        result.update(status=kind,axioms=axioms,c_expression_model_refinement_checked=('tool/lean/CSubset.lean'in inputs),state_action_contract_checked=kind=='checked_state_contract',efsm_contract_checked=kind=='checked_efsm_contract')
+        result.update(status=kind,axioms=axioms,c_expression_model_refinement_checked=('tool/lean/CSubset.lean'in inputs),state_action_contract_checked=kind=='checked_state_contract',efsm_contract_checked=kind=='checked_efsm_contract',typed_expression_contract_checked=kind=='checked_typed_expression_contract')
     # Frozen input and generated-file identity is rechecked after the actual tool.
     try:
         stable=prepare(task_file,root,task_sha256)[2]==inputs and proofs_file.read_bytes()==proofs_bytes and all(sha(out/n)==h for n,h in source_hashes.items())
     except (ValueError,OSError):
         stable=False
     if not stable:
-        result.update(status='invalidated_inputs',classification='evidence_changed',c_expression_model_refinement_checked=False,state_action_contract_checked=False,efsm_contract_checked=False)
+        result.update(status='invalidated_inputs',classification='evidence_changed',c_expression_model_refinement_checked=False,state_action_contract_checked=False,efsm_contract_checked=False,typed_expression_contract_checked=False)
     result['outputs']={p.name:sha(p)for p in out.iterdir()if p.is_file()}
     write(out/'result.json',result);return result
 
@@ -326,7 +349,7 @@ def inspect_certificate(bundle, task_file, workspace, task_sha256, *, require_pa
     """
     bundle=Path(bundle).resolve()
     result=json.loads((bundle/'result.json').read_text())
-    completed=result.get('status')in ('checked_expression_contract','checked_state_contract','checked_efsm_contract')
+    completed=result.get('status')in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract')
     partial=not require_pass and result.get('status')=='fail'and result.get('classification')=='resource_unknown'
     if result.get('schema')!='fsa-lean-expression-result-v1' or not (completed or partial):
         raise ValueError('Only completed scoped Lean certificates can be rechecked')
@@ -343,12 +366,14 @@ def inspect_certificate(bundle, task_file, workspace, task_sha256, *, require_pa
         raise ValueError('Retained certificate claim differs from its task')
     if result.get('efsm_contract_checked',False)!=(completed and expected_status=='checked_efsm_contract'):
         raise ValueError('Retained EFSM claim differs from its task')
+    if result.get('typed_expression_contract_checked',False)!=(completed and expected_status=='checked_typed_expression_contract'):
+        raise ValueError('Retained typed-expression claim differs from its task')
     if result.get('c_expression_model_refinement_checked',False)!=(completed and 'tool/lean/CSubset.lean'in result['inputs']) or result.get('scope')!=unit_scope(result['inputs']) or result.get('compiler_correctness_proved') is not False or result.get('protocol_correctness_proved') is not False:
         raise ValueError('Retained certificate scope/claim differs from its task')
     if sha(bundle/'proofs.json')!=result['proofs_sha256']: raise ValueError('Retained proof data changed')
     proofs=json.loads((bundle/'proofs.json').read_text())
     if type(proofs)is not dict or set(proofs)!=set(goals)or result['goals']!=goals:raise ValueError('Retained proof/goal coverage differs')
-    candidate='import Approved\n\nnamespace Proofs\n\n'
+    candidate=proof_prefix(inputs)
     audit='import Proofs\n\n'
     for n in goals:
         candidate+='theorem '+n+' : Approved.'+n+' := by\n'+'\n'.join(proof_lines(proofs[n]))+'\n\n'
@@ -361,8 +386,10 @@ def inspect_certificate(bundle, task_file, workspace, task_sha256, *, require_pa
     expected_modules=[*resources_for(inputs),'Approved','Proofs','Audit']
     if partial:
         commands=result.get('commands',[])
-        if result.get('axioms')or not commands or [c.get('module')for c in commands]!=expected_modules[:len(commands)]or commands[-1].get('returncode')is not None or any(c.get('returncode')!=0 for c in commands[:-1]):raise ValueError('Retained unresolved checker prefix differs')
+        if result.get('axioms')or not commands or [c.get('module')for c in commands]!=expected_modules[:len(commands)]or any(c.get('returncode')!=0 for c in commands[:-1]):raise ValueError('Retained unresolved checker prefix differs')
         if any(c.get('stdout_sha256')!=sha(bundle/(c['module']+'.stdout'))or c.get('stderr_sha256')!=sha(bundle/(c['module']+'.stderr'))for c in commands):raise ValueError('Retained unresolved checker logs differ')
+        last=commands[-1]
+        if not resource_failure(last['returncode'],(bundle/(last['module']+'.stdout')).read_text(),(bundle/(last['module']+'.stderr')).read_text()):raise ValueError('Retained unresolved checker reason differs')
         return result
     if result.get('allowed_axioms')!=sorted(AXIOMS)or set(result.get('axioms',{}))!=set(goals):raise ValueError('Retained axiom audit coverage differs')
     text=(bundle/'Audit.stdout').read_text()
@@ -394,7 +421,7 @@ def verify_main(argv=None):
     p.add_argument('--out',type=Path,required=True);p.add_argument('--task-sha256',required=True);p.add_argument('--lean',default='lean')
     a=p.parse_args(argv)
     try:
-        r=verify(a.bundle,a.task,a.workspace,a.out,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract')else 1
+        r=verify(a.bundle,a.task,a.workspace,a.out,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract')else 1
     except (ValueError,OSError,subprocess.SubprocessError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2
 
@@ -405,6 +432,6 @@ def main(argv=None):
     p.add_argument('--proofs',type=Path,required=True);p.add_argument('--task-sha256',required=True);p.add_argument('--lean',default='lean')
     a=p.parse_args(argv)
     try:
-        r=check(a.task,a.workspace,a.out,a.proofs,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract')else 1
+        r=check(a.task,a.workspace,a.out,a.proofs,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract')else 1
     except (ValueError,OSError,subprocess.SubprocessError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2

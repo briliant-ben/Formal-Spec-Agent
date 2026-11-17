@@ -1,0 +1,782 @@
+{
+  "ir_version": "0.6",
+  "semantics": "flat-efsm-atomic-ordered-v1",
+  "protocol": "typed-value-contracts",
+  "scope": {
+    "terminal_states": [],
+    "excluded": [
+      "EFSM/scheduler/native/compiler/specification proof"
+    ]
+  },
+  "states": [
+    "READY",
+    "OTHER"
+  ],
+  "initial_state": "READY",
+  "variables": {
+    "n": {
+      "type": "int",
+      "initial": -257
+    },
+    "flag": {
+      "type": "bool",
+      "initial": true
+    },
+    "text": {
+      "type": "string",
+      "initial": "CLOSED"
+    },
+    "data": {
+      "type": "bytes",
+      "initial": [
+        0,
+        128,
+        255,
+        4
+      ]
+    },
+    "seq": {
+      "type": "seq32",
+      "initial": 4294967295
+    },
+    "result_add": {
+      "type": "int",
+      "initial": 0
+    },
+    "result_mul": {
+      "type": "int",
+      "initial": 0
+    },
+    "result_sub": {
+      "type": "int",
+      "initial": 0
+    },
+    "result_min": {
+      "type": "int",
+      "initial": 0
+    },
+    "result_le": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_ge": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_eq": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_ne": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_and": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_or": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_not": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_implies": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_ite": {
+      "type": "bytes",
+      "initial": []
+    },
+    "result_seq_add": {
+      "type": "seq32",
+      "initial": 0
+    },
+    "result_seq_distance": {
+      "type": "int",
+      "initial": 0
+    },
+    "result_seq_comparable": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_seq_lt": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_seq_le": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_bytes_len": {
+      "type": "int",
+      "initial": 0
+    },
+    "result_bytes_concat": {
+      "type": "bytes",
+      "initial": []
+    },
+    "result_bytes_slice": {
+      "type": "bytes",
+      "initial": []
+    },
+    "result_bytes_at_or_zero": {
+      "type": "int",
+      "initial": 0
+    },
+    "result_bytes_pack8_mod": {
+      "type": "bytes",
+      "initial": []
+    },
+    "result_bytes_pack16be_mod": {
+      "type": "bytes",
+      "initial": []
+    },
+    "result_bytes_pack32be_mod": {
+      "type": "bytes",
+      "initial": []
+    },
+    "result_bytes_internet_checksum16": {
+      "type": "int",
+      "initial": 0
+    },
+    "result_state": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_timer": {
+      "type": "bool",
+      "initial": false
+    },
+    "result_text_value": {
+      "type": "string",
+      "initial": ""
+    }
+  },
+  "events": {
+    "sample": {
+      "origin": "application",
+      "fields": {
+        "offset": "int",
+        "count": "int",
+        "delta": "int",
+        "input": "bytes",
+        "other": "seq32",
+        "enable": "bool"
+      }
+    },
+    "timeout": {
+      "origin": "timer",
+      "fields": {}
+    }
+  },
+  "timers": {
+    "retry": {
+      "event": "timeout"
+    }
+  },
+  "messages": {
+    "observed": {
+      "fields": {
+        "value_add": "int",
+        "value_mul": "int",
+        "value_sub": "int",
+        "value_min": "int",
+        "value_le": "bool",
+        "value_ge": "bool",
+        "value_eq": "bool",
+        "value_ne": "bool",
+        "value_and": "bool",
+        "value_or": "bool",
+        "value_not": "bool",
+        "value_implies": "bool",
+        "value_ite": "bytes",
+        "value_seq_add": "seq32",
+        "value_seq_distance": "int",
+        "value_seq_comparable": "bool",
+        "value_seq_lt": "bool",
+        "value_seq_le": "bool",
+        "value_bytes_len": "int",
+        "value_bytes_concat": "bytes",
+        "value_bytes_slice": "bytes",
+        "value_bytes_at_or_zero": "int",
+        "value_bytes_pack8_mod": "bytes",
+        "value_bytes_pack16be_mod": "bytes",
+        "value_bytes_pack32be_mod": "bytes",
+        "value_bytes_internet_checksum16": "int",
+        "value_state": "bool",
+        "value_timer": "bool",
+        "value_text_value": "string"
+      }
+    }
+  },
+  "requirements": {
+    "VALUE": {
+      "source": "spec.md",
+      "kind": "modeling_choice",
+      "interpretation": "Revision1 explicit total pure operators; literal arithmetic fixtures and source scope"
+    }
+  },
+  "transitions": [
+    {
+      "id": "OPS",
+      "from": "READY",
+      "to": "READY",
+      "event": "sample",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "result_add",
+            "value": {
+              "op": "add",
+              "args": [
+                {
+                  "var": "n"
+                },
+                5
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_mul",
+            "value": {
+              "op": "mul",
+              "args": [
+                {
+                  "var": "n"
+                },
+                -3
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_sub",
+            "value": {
+              "op": "sub",
+              "args": [
+                {
+                  "var": "n"
+                },
+                5
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_min",
+            "value": {
+              "op": "min",
+              "args": [
+                {
+                  "var": "n"
+                },
+                5
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_le",
+            "value": {
+              "op": "le",
+              "args": [
+                {
+                  "var": "n"
+                },
+                5
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_ge",
+            "value": {
+              "op": "ge",
+              "args": [
+                {
+                  "var": "n"
+                },
+                5
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_eq",
+            "value": {
+              "op": "eq",
+              "args": [
+                {
+                  "var": "text"
+                },
+                "CLOSED"
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_ne",
+            "value": {
+              "op": "ne",
+              "args": [
+                {
+                  "var": "seq"
+                },
+                {
+                  "event": "other"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_and",
+            "value": {
+              "op": "and",
+              "args": [
+                {
+                  "var": "flag"
+                },
+                {
+                  "event": "enable"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_or",
+            "value": {
+              "op": "or",
+              "args": [
+                {
+                  "var": "flag"
+                },
+                {
+                  "event": "enable"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_not",
+            "value": {
+              "op": "not",
+              "args": [
+                {
+                  "var": "flag"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_implies",
+            "value": {
+              "op": "implies",
+              "args": [
+                {
+                  "var": "flag"
+                },
+                {
+                  "event": "enable"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_ite",
+            "value": {
+              "op": "ite",
+              "args": [
+                {
+                  "event": "enable"
+                },
+                {
+                  "op": "bytes_concat",
+                  "args": [
+                    {
+                      "var": "data"
+                    },
+                    {
+                      "event": "input"
+                    }
+                  ]
+                },
+                {
+                  "bytes": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_seq_add",
+            "value": {
+              "op": "seq_add",
+              "args": [
+                {
+                  "var": "seq"
+                },
+                {
+                  "event": "delta"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_seq_distance",
+            "value": {
+              "op": "seq_distance",
+              "args": [
+                {
+                  "var": "seq"
+                },
+                {
+                  "event": "other"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_seq_comparable",
+            "value": {
+              "op": "seq_comparable",
+              "args": [
+                {
+                  "var": "seq"
+                },
+                {
+                  "event": "other"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_seq_lt",
+            "value": {
+              "op": "seq_lt",
+              "args": [
+                {
+                  "var": "seq"
+                },
+                {
+                  "event": "other"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_seq_le",
+            "value": {
+              "op": "seq_le",
+              "args": [
+                {
+                  "var": "seq"
+                },
+                {
+                  "event": "other"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_bytes_len",
+            "value": {
+              "op": "bytes_len",
+              "args": [
+                {
+                  "var": "data"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_bytes_concat",
+            "value": {
+              "op": "bytes_concat",
+              "args": [
+                {
+                  "var": "data"
+                },
+                {
+                  "event": "input"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_bytes_slice",
+            "value": {
+              "op": "bytes_slice",
+              "args": [
+                {
+                  "var": "data"
+                },
+                {
+                  "event": "offset"
+                },
+                {
+                  "event": "count"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_bytes_at_or_zero",
+            "value": {
+              "op": "bytes_at_or_zero",
+              "args": [
+                {
+                  "var": "data"
+                },
+                {
+                  "event": "offset"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_bytes_pack8_mod",
+            "value": {
+              "op": "bytes_pack8_mod",
+              "args": [
+                {
+                  "var": "n"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_bytes_pack16be_mod",
+            "value": {
+              "op": "bytes_pack16be_mod",
+              "args": [
+                {
+                  "var": "n"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_bytes_pack32be_mod",
+            "value": {
+              "op": "bytes_pack32be_mod",
+              "args": [
+                {
+                  "var": "n"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_bytes_internet_checksum16",
+            "value": {
+              "op": "bytes_internet_checksum16",
+              "args": [
+                {
+                  "event": "input"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_state",
+            "value": {
+              "state": "READY"
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_timer",
+            "value": {
+              "timer_active": "retry"
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "result_text_value",
+            "value": {
+              "op": "ite",
+              "args": [
+                {
+                  "event": "enable"
+                },
+                {
+                  "var": "text"
+                },
+                "OTHER"
+              ]
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "value_add": {
+                "var": "result_add"
+              },
+              "value_mul": {
+                "var": "result_mul"
+              },
+              "value_sub": {
+                "var": "result_sub"
+              },
+              "value_min": {
+                "var": "result_min"
+              },
+              "value_le": {
+                "var": "result_le"
+              },
+              "value_ge": {
+                "var": "result_ge"
+              },
+              "value_eq": {
+                "var": "result_eq"
+              },
+              "value_ne": {
+                "var": "result_ne"
+              },
+              "value_and": {
+                "var": "result_and"
+              },
+              "value_or": {
+                "var": "result_or"
+              },
+              "value_not": {
+                "var": "result_not"
+              },
+              "value_implies": {
+                "var": "result_implies"
+              },
+              "value_ite": {
+                "var": "result_ite"
+              },
+              "value_seq_add": {
+                "var": "result_seq_add"
+              },
+              "value_seq_distance": {
+                "var": "result_seq_distance"
+              },
+              "value_seq_comparable": {
+                "var": "result_seq_comparable"
+              },
+              "value_seq_lt": {
+                "var": "result_seq_lt"
+              },
+              "value_seq_le": {
+                "var": "result_seq_le"
+              },
+              "value_bytes_len": {
+                "var": "result_bytes_len"
+              },
+              "value_bytes_concat": {
+                "var": "result_bytes_concat"
+              },
+              "value_bytes_slice": {
+                "var": "result_bytes_slice"
+              },
+              "value_bytes_at_or_zero": {
+                "var": "result_bytes_at_or_zero"
+              },
+              "value_bytes_pack8_mod": {
+                "var": "result_bytes_pack8_mod"
+              },
+              "value_bytes_pack16be_mod": {
+                "var": "result_bytes_pack16be_mod"
+              },
+              "value_bytes_pack32be_mod": {
+                "var": "result_bytes_pack32be_mod"
+              },
+              "value_bytes_internet_checksum16": {
+                "var": "result_bytes_internet_checksum16"
+              },
+              "value_state": {
+                "var": "result_state"
+              },
+              "value_timer": {
+                "var": "result_timer"
+              },
+              "value_text_value": {
+                "var": "result_text_value"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "VALUE"
+      ]
+    },
+    {
+      "id": "TIMEOUT",
+      "from": "READY",
+      "to": "READY",
+      "event": "timeout",
+      "guard": true,
+      "actions": [],
+      "requirements": [
+        "VALUE"
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "id": "fixture-only",
+      "requirements": [
+        "VALUE"
+      ],
+      "assert": true
+    }
+  ]
+}

@@ -59,11 +59,45 @@
   },
   "current_lean_efsm_can_accept": false,
   "remaining": [
-    "bytes/seq32/bool/string values and all 26 operators in this pinned case",
+    "typed transition effects over bytes/seq32/bool/string/int; pure expression typing is now supported",
     "five timer instances: ownership, deadlines and tie ordering",
     "all-rule model obligations with explicitly admitted protocol domains",
     "fresh Lean certificates, code regeneration and protocol evidence under a pinned framework version"
   ],
   "historical_UNKNOWNs_unchanged": true,
-  "scope_note": "This inventories the pinned compact case only. Broader framework rational/clock-v3 modules are separate migration gates, not requirements inferred for this atomic-v1 case."
+  "scope_note": "This inventories the pinned compact case only. Broader framework rational/clock-v3 modules are separate migration gates, not requirements inferred for this atomic-v1 case.",
+  "pure_expression_view": {
+    "supported": true,
+    "nodes": 1722,
+    "roots": 3330,
+    "operators": [
+      "add",
+      "and",
+      "bytes_at_or_zero",
+      "bytes_concat",
+      "bytes_internet_checksum16",
+      "bytes_len",
+      "bytes_pack16be_mod",
+      "bytes_pack32be_mod",
+      "bytes_pack8_mod",
+      "bytes_slice",
+      "eq",
+      "ge",
+      "implies",
+      "ite",
+      "le",
+      "min",
+      "mul",
+      "ne",
+      "not",
+      "or",
+      "seq_add",
+      "seq_comparable",
+      "seq_distance",
+      "seq_le",
+      "seq_lt",
+      "sub"
+    ],
+    "scope": "Derived typing only; not whole-EFSM safety or scheduling"
+  }
 }

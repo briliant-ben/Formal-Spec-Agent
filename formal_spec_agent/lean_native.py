@@ -16,6 +16,9 @@ def run(task_file,workspace,out,proofs_file,task_sha256,lean='lean'):
     if out.exists()or out.is_relative_to(root)or out.is_relative_to(gate.HERE.parent):raise ValueError('Fresh external native-reference output required')
     if gate.sha(task_file)!=task_sha256:raise ValueError('Native-reference task digest mismatch')
     t=json.loads(task_file.read_text())
+    if t.get('schema')=='fsa-lean-typed-expression-task-v1':
+        from .lean_typed_native import run as typed_run
+        return typed_run(task_file,root,out,proofs_file,task_sha256,lean)
     if t.get('schema')!='fsa-lean-c-expression-task-v1':raise ValueError('Native-reference pilot requires the C-expression task')
     out.mkdir(parents=True)
     checked=gate.check(task_file,root,out/'certificate',proofs_file,task_sha256,lean)
@@ -27,7 +30,8 @@ def run(task_file,workspace,out,proofs_file,task_sha256,lean='lean'):
         result.update(classification='certificate_not_checked');return save()
     tool=Path(shutil.which(str(lean))).resolve();leanc=tool.parent/'leanc'
     if not leanc.is_file():result.update(classification='environment',reason='Matching Lean C compiler driver unavailable');return save()
-    project=out/'certificate'
+    certificate=out/'certificate';project=out/'runtime';project.mkdir()
+    for n in ['Foundation','CSubset','Approved']:(project/(n+'.lean')).write_bytes((certificate/(n+'.lean')).read_bytes())
     m=load(gate.inside(root,t['model']));r=next(r for r in m['transitions']if r['id']==t['target']['rule']);fields=m['events'][r['event']]['fields']
     runner='import Approved\n\ndef main : IO Unit := do\n'
     for w in t['witnesses']:
@@ -37,7 +41,8 @@ def run(task_file,workspace,out,proofs_file,task_sha256,lean='lean'):
     temporary=out/'compiler-tmp';temporary.mkdir()
     env=dict(PATH=os.defpath,LEAN_PATH=str(project),LANG='C.UTF-8',TMPDIR=str(temporary))
     result.update(lean_binary_sha256=gate.sha(tool),leanc_binary_sha256=gate.sha(leanc),lean_version=checked['lean_version'],inputs=checked['inputs'])
-    commands=[[str(tool),'-c',n+'.c',n+'.lean']for n in ['Foundation','CSubset','Approved','Runner']]
+    runtime_sources={p.name:gate.sha(p)for p in project.glob('*.lean')};result['runtime_sources']=runtime_sources
+    commands=[[str(tool),'-o',n+'.olean','-c',n+'.c',n+'.lean']for n in ['Foundation','CSubset','Approved','Runner']]
     commands.append([str(leanc),'Foundation.c','CSubset.c','Approved.c','Runner.c','-o','lean-reference'])
     commands.append([str(project/'lean-reference')])
     for index,cmd in enumerate(commands):
@@ -54,7 +59,7 @@ def run(task_file,workspace,out,proofs_file,task_sha256,lean='lean'):
     except ValueError:observed=None
     result.update(status='native_reference_match'if observed==expected else'fail',observed=observed,expected=expected,comparison='Frozen expected values are read only after the executable has returned; they are never sent to it.')
     try:
-        stable=gate.prepare(task_file,root,task_sha256)[2]==checked['inputs'] and gate.sha(Path(__file__).resolve())==result['checker_sha256'] and all(gate.sha(project/n)==h for n,h in checked['sources'].items())
+        stable=gate.prepare(task_file,root,task_sha256)[2]==checked['inputs'] and gate.sha(Path(__file__).resolve())==result['checker_sha256'] and all(gate.sha(certificate/n)==h for n,h in checked['sources'].items()) and all(gate.sha(project/n)==h for n,h in runtime_sources.items())
     except (ValueError,OSError):
         stable=False
     if not stable:
