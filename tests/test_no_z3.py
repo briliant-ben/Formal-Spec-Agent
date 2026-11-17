@@ -33,7 +33,7 @@ Machine(m)
 assert 'z3' not in sys.modules
 print(json.dumps(dict(goals=len(goals),solver_imported=False)))
 '''
-        for example in ['lean-bytes', 'lean-c-read', 'lean-state', 'lean-efsm']:
+        for example in ['lean-bytes', 'lean-c-read', 'lean-state', 'lean-efsm', 'lean-values', 'lean-machine']:
             p = subprocess.run([sys.executable, '-c', program, str(ROOT/'examples'/example)], capture_output=True, text=True, timeout=15)
             self.assertEqual(p.returncode, 0, p.stderr)
             self.assertFalse(json.loads(p.stdout)['solver_imported'])

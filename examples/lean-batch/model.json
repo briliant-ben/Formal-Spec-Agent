@@ -1,0 +1,929 @@
+{
+  "ir_version": "0.6",
+  "semantics": "flat-efsm-atomic-ordered-v1",
+  "protocol": "typed-total-batch-scheduling",
+  "scope": {
+    "terminal_states": [],
+    "excluded": [
+      "universal protocol invariant preservation before filtering",
+      "native compiler proof",
+      "English/RFC interpretation"
+    ]
+  },
+  "states": [
+    "IDLE",
+    "BUSY",
+    "DONE"
+  ],
+  "initial_state": "IDLE",
+  "requirements": {
+    "TRANSACTION": {
+      "source": "spec.md#contract",
+      "interpretation": "Explicit ordered full-batch time advance and rollback, exact timer deadlines, lexical ties and positive rearming."
+    }
+  },
+  "variables": {
+    "n": {
+      "type": "int",
+      "initial": 0
+    },
+    "flag": {
+      "type": "bool",
+      "initial": false
+    },
+    "seq": {
+      "type": "seq32",
+      "initial": 4294967295
+    },
+    "data": {
+      "type": "bytes",
+      "initial": []
+    },
+    "text": {
+      "type": "string",
+      "initial": "start"
+    },
+    "fail_z": {
+      "type": "bool",
+      "initial": false
+    }
+  },
+  "events": {
+    "start": {
+      "origin": "application",
+      "fields": {
+        "payload": "bytes"
+      }
+    },
+    "bad_delay": {
+      "origin": "application",
+      "fields": {
+        "delay": "int"
+      }
+    },
+    "bad_final": {
+      "origin": "application",
+      "fields": {}
+    },
+    "rearm": {
+      "origin": "application",
+      "fields": {}
+    },
+    "ambiguous": {
+      "origin": "application",
+      "fields": {}
+    },
+    "gap": {
+      "origin": "network",
+      "fields": {}
+    },
+    "a.expired": {
+      "origin": "timer",
+      "fields": {}
+    },
+    "z.expired": {
+      "origin": "timer",
+      "fields": {}
+    },
+    "loop": {
+      "origin": "application",
+      "fields": {}
+    },
+    "poison": {
+      "origin": "application",
+      "fields": {}
+    },
+    "fix": {
+      "origin": "application",
+      "fields": {}
+    },
+    "cycle.expired": {
+      "origin": "timer",
+      "fields": {}
+    }
+  },
+  "messages": {
+    "observed": {
+      "fields": {
+        "n": "int",
+        "flag": "bool",
+        "seq": "seq32",
+        "data": "bytes",
+        "text": "string",
+        "source_idle": "bool",
+        "fired_active": "bool",
+        "other_active": "bool"
+      }
+    }
+  },
+  "timers": {
+    "z": {
+      "event": "z.expired"
+    },
+    "a": {
+      "event": "a.expired"
+    },
+    "cycle": {
+      "event": "cycle.expired"
+    }
+  },
+  "transitions": [
+    {
+      "id": "START",
+      "from": "IDLE",
+      "to": "BUSY",
+      "event": "start",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "data",
+            "value": {
+              "event": "payload"
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "n",
+            "value": 4
+          }
+        },
+        {
+          "set": {
+            "var": "n",
+            "value": {
+              "op": "add",
+              "args": [
+                {
+                  "var": "n"
+                },
+                1
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "flag",
+            "value": true
+          }
+        },
+        {
+          "set": {
+            "var": "seq",
+            "value": {
+              "op": "seq_add",
+              "args": [
+                {
+                  "var": "seq"
+                },
+                1
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "text",
+            "value": "开\n\u0000"
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "n": {
+                "var": "n"
+              },
+              "flag": {
+                "var": "flag"
+              },
+              "seq": {
+                "var": "seq"
+              },
+              "data": {
+                "var": "data"
+              },
+              "text": {
+                "var": "text"
+              },
+              "source_idle": {
+                "state": "IDLE"
+              },
+              "fired_active": {
+                "timer_active": "a"
+              },
+              "other_active": {
+                "timer_active": "z"
+              }
+            }
+          }
+        },
+        {
+          "arm": {
+            "timer": "z",
+            "delay_ms": 5
+          }
+        },
+        {
+          "arm": {
+            "timer": "a",
+            "delay_ms": 5
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "BAD-DELAY",
+      "from": "IDLE",
+      "to": "BUSY",
+      "event": "bad_delay",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "n",
+            "value": 10
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "n": {
+                "var": "n"
+              },
+              "flag": {
+                "var": "flag"
+              },
+              "seq": {
+                "var": "seq"
+              },
+              "data": {
+                "var": "data"
+              },
+              "text": {
+                "var": "text"
+              },
+              "source_idle": {
+                "state": "IDLE"
+              },
+              "fired_active": {
+                "timer_active": "a"
+              },
+              "other_active": {
+                "timer_active": "z"
+              }
+            }
+          }
+        },
+        {
+          "arm": {
+            "timer": "a",
+            "delay_ms": {
+              "event": "delay"
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "BAD-FINAL",
+      "from": "IDLE",
+      "to": "DONE",
+      "event": "bad_final",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "n",
+            "value": -1
+          }
+        },
+        {
+          "arm": {
+            "timer": "a",
+            "delay_ms": 5
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "n": {
+                "var": "n"
+              },
+              "flag": {
+                "var": "flag"
+              },
+              "seq": {
+                "var": "seq"
+              },
+              "data": {
+                "var": "data"
+              },
+              "text": {
+                "var": "text"
+              },
+              "source_idle": {
+                "state": "IDLE"
+              },
+              "fired_active": {
+                "timer_active": "a"
+              },
+              "other_active": {
+                "timer_active": "z"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "A",
+      "from": "BUSY",
+      "to": "BUSY",
+      "event": "a.expired",
+      "guard": {
+        "timer_active": "a"
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "n",
+            "value": {
+              "op": "add",
+              "args": [
+                {
+                  "var": "n"
+                },
+                1
+              ]
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "n": {
+                "var": "n"
+              },
+              "flag": {
+                "var": "flag"
+              },
+              "seq": {
+                "var": "seq"
+              },
+              "data": {
+                "var": "data"
+              },
+              "text": {
+                "var": "text"
+              },
+              "source_idle": {
+                "state": "IDLE"
+              },
+              "fired_active": {
+                "timer_active": "a"
+              },
+              "other_active": {
+                "timer_active": "z"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "Z",
+      "from": "BUSY",
+      "to": "DONE",
+      "event": "z.expired",
+      "guard": {
+        "op": "and",
+        "args": [
+          {
+            "timer_active": "z"
+          },
+          {
+            "op": "not",
+            "args": [
+              {
+                "var": "fail_z"
+              }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "n",
+            "value": {
+              "op": "add",
+              "args": [
+                {
+                  "var": "n"
+                },
+                1
+              ]
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "n": {
+                "var": "n"
+              },
+              "flag": {
+                "var": "flag"
+              },
+              "seq": {
+                "var": "seq"
+              },
+              "data": {
+                "var": "data"
+              },
+              "text": {
+                "var": "text"
+              },
+              "source_idle": {
+                "state": "IDLE"
+              },
+              "fired_active": {
+                "timer_active": "a"
+              },
+              "other_active": {
+                "timer_active": "z"
+              }
+            }
+          }
+        },
+        {
+          "cancel": "a"
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "REARM",
+      "from": "BUSY",
+      "to": "BUSY",
+      "event": "rearm",
+      "guard": true,
+      "actions": [
+        {
+          "arm": {
+            "timer": "a",
+            "delay_ms": 3
+          }
+        },
+        {
+          "arm": {
+            "timer": "a",
+            "delay_ms": 7
+          }
+        },
+        {
+          "cancel": "z"
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "n": {
+                "var": "n"
+              },
+              "flag": {
+                "var": "flag"
+              },
+              "seq": {
+                "var": "seq"
+              },
+              "data": {
+                "var": "data"
+              },
+              "text": {
+                "var": "text"
+              },
+              "source_idle": {
+                "state": "IDLE"
+              },
+              "fired_active": {
+                "timer_active": "a"
+              },
+              "other_active": {
+                "timer_active": "z"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "CONFLICT-1",
+      "from": "IDLE",
+      "to": "IDLE",
+      "event": "ambiguous",
+      "guard": true,
+      "actions": [],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "CONFLICT-2",
+      "from": "IDLE",
+      "to": "BUSY",
+      "event": "ambiguous",
+      "guard": true,
+      "actions": [],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "BAD-Z",
+      "from": "BUSY",
+      "to": "DONE",
+      "event": "z.expired",
+      "guard": {
+        "op": "and",
+        "args": [
+          {
+            "timer_active": "z"
+          },
+          {
+            "var": "fail_z"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "n",
+            "value": 99
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "n": {
+                "var": "n"
+              },
+              "flag": {
+                "var": "flag"
+              },
+              "seq": {
+                "var": "seq"
+              },
+              "data": {
+                "var": "data"
+              },
+              "text": {
+                "var": "text"
+              },
+              "source_idle": {
+                "state": "IDLE"
+              },
+              "fired_active": {
+                "timer_active": "a"
+              },
+              "other_active": {
+                "timer_active": "z"
+              }
+            }
+          }
+        },
+        {
+          "arm": {
+            "timer": "a",
+            "delay_ms": 0
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "POISON",
+      "from": "BUSY",
+      "to": "BUSY",
+      "event": "poison",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "fail_z",
+            "value": true
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "FIX",
+      "from": "BUSY",
+      "to": "BUSY",
+      "event": "fix",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "fail_z",
+            "value": false
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "LOOP",
+      "from": "IDLE",
+      "to": "BUSY",
+      "event": "loop",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "n",
+            "value": 0
+          }
+        },
+        {
+          "set": {
+            "var": "flag",
+            "value": true
+          }
+        },
+        {
+          "set": {
+            "var": "seq",
+            "value": {
+              "seq": 0
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "data",
+            "value": {
+              "bytes": [
+                0,
+                128,
+                255,
+                7
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "text",
+            "value": "开\n\u0000"
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "n": {
+                "var": "n"
+              },
+              "flag": {
+                "var": "flag"
+              },
+              "seq": {
+                "var": "seq"
+              },
+              "data": {
+                "var": "data"
+              },
+              "text": {
+                "var": "text"
+              },
+              "source_idle": {
+                "state": "IDLE"
+              },
+              "fired_active": {
+                "timer_active": "a"
+              },
+              "other_active": {
+                "timer_active": "z"
+              }
+            }
+          }
+        },
+        {
+          "arm": {
+            "timer": "cycle",
+            "delay_ms": 2
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "CYCLE-MORE",
+      "from": "BUSY",
+      "to": "BUSY",
+      "event": "cycle.expired",
+      "guard": {
+        "op": "le",
+        "args": [
+          {
+            "var": "n"
+          },
+          1
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "n",
+            "value": {
+              "op": "add",
+              "args": [
+                {
+                  "var": "n"
+                },
+                1
+              ]
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "n": {
+                "var": "n"
+              },
+              "flag": {
+                "var": "flag"
+              },
+              "seq": {
+                "var": "seq"
+              },
+              "data": {
+                "var": "data"
+              },
+              "text": {
+                "var": "text"
+              },
+              "source_idle": {
+                "state": "IDLE"
+              },
+              "fired_active": {
+                "timer_active": "a"
+              },
+              "other_active": {
+                "timer_active": "z"
+              }
+            }
+          }
+        },
+        {
+          "arm": {
+            "timer": "cycle",
+            "delay_ms": 2
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "CYCLE-LAST",
+      "from": "BUSY",
+      "to": "DONE",
+      "event": "cycle.expired",
+      "guard": {
+        "op": "ge",
+        "args": [
+          {
+            "var": "n"
+          },
+          2
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "n",
+            "value": {
+              "op": "add",
+              "args": [
+                {
+                  "var": "n"
+                },
+                1
+              ]
+            }
+          }
+        },
+        {
+          "emit": {
+            "message": "observed",
+            "fields": {
+              "n": {
+                "var": "n"
+              },
+              "flag": {
+                "var": "flag"
+              },
+              "seq": {
+                "var": "seq"
+              },
+              "data": {
+                "var": "data"
+              },
+              "text": {
+                "var": "text"
+              },
+              "source_idle": {
+                "state": "IDLE"
+              },
+              "fired_active": {
+                "timer_active": "a"
+              },
+              "other_active": {
+                "timer_active": "z"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "TRANSACTION"
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "id": "NONNEGATIVE",
+      "assert": {
+        "op": "ge",
+        "args": [
+          {
+            "var": "n"
+          },
+          0
+        ]
+      },
+      "requirements": [
+        "TRANSACTION"
+      ]
+    },
+    {
+      "id": "BUFFER",
+      "assert": {
+        "op": "le",
+        "args": [
+          {
+            "op": "bytes_len",
+            "args": [
+              {
+                "var": "data"
+              }
+            ]
+          },
+          4096
+        ]
+      },
+      "requirements": [
+        "TRANSACTION"
+      ]
+    }
+  ]
+}

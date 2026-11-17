@@ -22,6 +22,19 @@ Existing UNKNOWNs and implementation Differences remain independent evidence.
 
 ## Next: implementation correspondence
 
+The compact case's five types and 26 pure operators are now represented by typed
+Lean data and evaluated by a pure interpreter. Complete case expression typing,
+59 kernel obligations and compiled reference values are separate claims. Exact
+long-buffer content is preserved, and timer membership is not scheduling. See
+[typed values](lean-typed-values.md). Extend this layer to transition effects and
+timer scheduling next; the whole335-rule EFSM is not yet certified.
+
+Typed ordered actions and scheduled single-step timers now have a separate
+[29-obligation contract](lean-scheduled-microsteps.md). Complete case actions
+compile and nine frozen native/reference transitions match compiled Lean. This
+does not certify batched scheduling or universal rule preservation before runtime
+invariant filtering. Extend those obligations before whole-case migration.
+
 An all-rule timer-free integer EFSM contract now feeds the complete ten-stage
 flow through explicit task-v6. It checks preservation before runtime filtering,
 disjointness, total state/event coverage, initial validity and admitted literal
@@ -57,3 +70,14 @@ feedback and a single integrator. Cache completed obligations by complete input,
 semantics and checker identity. Expose the same workflow to CLI, MCP, Skills or
 other agent harnesses. Failed/uncertain provider calls remain terminal rather
 than being silently paid for again. The checker, not an agent, owns completion.
+
+## Typed batch scheduler checkpoint
+
+The actual selector/action/timer semantics now support a kernel-checked total
+batch scheduler with whole-batch rollback and no fuel cutoff. A checked replay
+bridge decomposes it into real selector/step equations. Compiled Lean matches
+22 frozen operations. Its 57-obligation literal certificate now checks using
+exact next-step equations and stronger byte-content lemmas; the original resource
+UNKNOWN attempts remain independent history. Extend universal typed-rule
+preservation/coverage before whole-case/full-flow migration; do not
+retire the optional Z3 backend yet. See [batch scheduling](lean-batch-scheduling.md).

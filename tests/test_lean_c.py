@@ -140,10 +140,12 @@ class CKernelTests(unittest.TestCase):
         r=run(self.task,self.w,self.root/'native-reference',self.w/'proofs.json',gate.sha(self.task),LEAN)
         self.assertEqual(r['status'],'native_reference_match')
         self.assertEqual(r['observed'],[65,0,0,0,255])
-        c=(self.root/'native-reference/certificate/Runner.c').read_text()
+        c=(self.root/'native-reference/runtime/Runner.c').read_text()
         self.assertIn('lean/lean.h',c)
         self.assertEqual(r['runtime'],'Lean runtime required')
         self.assertFalse(r['compiler_correctness_proved'])
+        again=gate.verify(self.root/'native-reference/certificate',self.task,self.w,self.root/'native-certificate-recheck',gate.sha(self.task),LEAN)
+        self.assertEqual(again['status'],'checked_expression_contract')
 
     def test_rebound_wrong_index_fails_Lean_not_just_old_hash(self):
         self.rebound_source(self.source.read_text().replace('byte_at_or_zero(bf[0],f[1])','byte_at_or_zero(bf[0],INT64_C(0))'))

@@ -3,6 +3,15 @@ import sys
 
 
 def main():
+    if len(sys.argv)>1 and sys.argv[1]=='lean-batch-run':
+        from .lean_batch_native import main as batch
+        return batch(sys.argv[2:])
+    if len(sys.argv)>1 and sys.argv[1]=='lean-machine-run':
+        from .lean_machine_native import main as machine
+        return machine(sys.argv[2:])
+    if len(sys.argv)>1 and sys.argv[1]=='lean-types':
+        from .lean_typed import type_main
+        return type_main(sys.argv[2:])
     if len(sys.argv)>1 and sys.argv[1]=='lean-native':
         from .lean_native import main as native
         return native(sys.argv[2:])

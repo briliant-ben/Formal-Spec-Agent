@@ -1,0 +1,7 @@
+{
+  "source_commit": "dda2f02f90229146b017421fade8701c74534308",
+  "source_path": "tests/expected.json",
+  "source_sha256": "b6046b53c3700eb27070c6192aa9b628e2aae30873234c2e03f89e4d2f4b5bea",
+  "cases_sha256": "1d7ba8cf4a4a461ddf1f4e3f2ec2a20a9455d2b16264606f62ed0949cdc8c6dc",
+  "scope": "Exact projection of pre-existing model/reference/native fixture; no expected value recomputation. Not independent RFC oracle or new live network evidence."
+}

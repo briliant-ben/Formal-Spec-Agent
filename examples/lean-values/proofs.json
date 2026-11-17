@@ -1,0 +1,2223 @@
+{
+  "checksum_range": [
+    {
+      "unfold": [
+        "Approved.checksum_range"
+      ]
+    },
+    {
+      "intro": [
+        "data"
+      ]
+    },
+    {
+      "exact": "FormalSpecAgent.ValueOps.checksum_range data"
+    }
+  ],
+  "sequence_distance_range": [
+    {
+      "unfold": [
+        "Approved.sequence_distance_range"
+      ]
+    },
+    {
+      "intro": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "unfold": [
+        "FormalSpecAgent.ValueOps.seqDistance"
+      ]
+    },
+    {
+      "omega": true
+    }
+  ],
+  "half_space_unordered": [
+    {
+      "unfold": [
+        "Approved.half_space_unordered"
+      ]
+    },
+    {
+      "intro": [
+        "a",
+        "b",
+        "h"
+      ]
+    },
+    {
+      "simp_all": [
+        "FormalSpecAgent.ValueOps.seqComparable",
+        "FormalSpecAgent.ValueOps.seqLt",
+        "FormalSpecAgent.ValueOps.seqLe"
+      ]
+    }
+  ],
+  "witness_0": [
+    {
+      "unfold": [
+        "Approved.witness_0"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_1": [
+    {
+      "unfold": [
+        "Approved.witness_1"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_2": [
+    {
+      "unfold": [
+        "Approved.witness_2"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_3": [
+    {
+      "unfold": [
+        "Approved.witness_3"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_4": [
+    {
+      "unfold": [
+        "Approved.witness_4"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_5": [
+    {
+      "unfold": [
+        "Approved.witness_5"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_6": [
+    {
+      "unfold": [
+        "Approved.witness_6"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_7": [
+    {
+      "unfold": [
+        "Approved.witness_7"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_8": [
+    {
+      "unfold": [
+        "Approved.witness_8"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_9": [
+    {
+      "unfold": [
+        "Approved.witness_9"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_10": [
+    {
+      "unfold": [
+        "Approved.witness_10"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_11": [
+    {
+      "unfold": [
+        "Approved.witness_11"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_12": [
+    {
+      "unfold": [
+        "Approved.witness_12"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_13": [
+    {
+      "unfold": [
+        "Approved.witness_13"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_14": [
+    {
+      "unfold": [
+        "Approved.witness_14"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_15": [
+    {
+      "unfold": [
+        "Approved.witness_15"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_16": [
+    {
+      "unfold": [
+        "Approved.witness_16"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_17": [
+    {
+      "unfold": [
+        "Approved.witness_17"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_18": [
+    {
+      "unfold": [
+        "Approved.witness_18"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_19": [
+    {
+      "unfold": [
+        "Approved.witness_19"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_20": [
+    {
+      "unfold": [
+        "Approved.witness_20"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_21": [
+    {
+      "unfold": [
+        "Approved.witness_21"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_22": [
+    {
+      "unfold": [
+        "Approved.witness_22"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_23": [
+    {
+      "unfold": [
+        "Approved.witness_23"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_24": [
+    {
+      "unfold": [
+        "Approved.witness_24"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_25": [
+    {
+      "unfold": [
+        "Approved.witness_25"
+      ]
+    },
+    {
+      "dsimp": [
+        "Approved.e0",
+        "Approved.e1",
+        "Approved.e2",
+        "Approved.e3",
+        "Approved.e4",
+        "Approved.e5",
+        "Approved.e6",
+        "Approved.e7",
+        "Approved.e8",
+        "Approved.e9",
+        "Approved.e10",
+        "Approved.e11",
+        "Approved.e12",
+        "Approved.e13",
+        "Approved.e14",
+        "Approved.e15",
+        "Approved.e16",
+        "Approved.e17",
+        "Approved.e18",
+        "Approved.e19",
+        "Approved.e20",
+        "Approved.e21",
+        "Approved.e22",
+        "Approved.e23",
+        "Approved.e24",
+        "Approved.e25",
+        "Approved.e26",
+        "Approved.e27",
+        "Approved.e28",
+        "Approved.e29",
+        "Approved.e30",
+        "Approved.e31",
+        "Approved.e32",
+        "Approved.e33",
+        "Approved.e34",
+        "Approved.e35",
+        "Approved.e36",
+        "Approved.e37",
+        "Approved.e38",
+        "Approved.e39",
+        "Approved.e40",
+        "Approved.e41",
+        "Approved.e42",
+        "Approved.e43",
+        "Approved.e44",
+        "Approved.e45",
+        "Approved.e46",
+        "Approved.e47",
+        "Approved.e48",
+        "Approved.e49",
+        "Approved.e50",
+        "Approved.e51",
+        "Approved.e52",
+        "Approved.e53",
+        "Approved.e54",
+        "Approved.e55",
+        "Approved.e56",
+        "Approved.e57",
+        "Approved.e58",
+        "Approved.e59",
+        "Approved.e60",
+        "Approved.e61",
+        "Approved.e62",
+        "Approved.e63",
+        "Approved.e64",
+        "Approved.e65",
+        "Approved.e66",
+        "Approved.e67",
+        "Approved.e68",
+        "Approved.e69",
+        "Approved.e70",
+        "Approved.e71",
+        "Approved.e72",
+        "Approved.e73",
+        "Approved.e74",
+        "Approved.e75",
+        "Approved.e76",
+        "Approved.e77",
+        "Approved.e78",
+        "Approved.e79",
+        "Approved.e80",
+        "Approved.e81",
+        "Approved.context_0",
+        "Approved.context_1",
+        "Approved.context_2",
+        "Approved.context_3",
+        "Approved.context_4",
+        "Approved.context_5",
+        "Approved.context_6",
+        "Approved.context_7",
+        "Approved.context_8",
+        "Approved.context_9",
+        "Approved.context_10",
+        "Approved.context_11",
+        "Approved.context_12",
+        "Approved.context_13",
+        "Approved.context_14",
+        "Approved.context_15",
+        "Approved.context_16",
+        "Approved.context_17",
+        "Approved.context_18",
+        "Approved.context_19",
+        "Approved.context_20",
+        "Approved.context_21",
+        "Approved.context_22",
+        "Approved.context_23",
+        "Approved.context_24",
+        "Approved.context_25",
+        "Approved.context_26",
+        "Approved.context_27",
+        "Approved.context_28",
+        "Approved.context_29",
+        "Approved.context_30",
+        "Approved.context_31",
+        "Approved.context_32",
+        "Approved.context_33",
+        "Approved.context_34",
+        "Approved.context_35",
+        "Approved.context_36",
+        "Approved.context_37",
+        "Approved.context_38",
+        "Approved.context_39",
+        "Approved.context_40",
+        "Approved.context_41",
+        "Approved.context_42",
+        "Approved.context_43",
+        "Approved.context_44",
+        "Approved.context_45",
+        "Approved.context_46",
+        "Approved.context_47",
+        "Approved.context_48",
+        "Approved.context_49",
+        "Approved.context_50",
+        "Approved.context_51",
+        "Approved.context_52",
+        "Approved.context_53",
+        "Approved.context_54",
+        "Approved.context_55",
+        "FormalSpecAgent.TypedIR.eval",
+        "FormalSpecAgent.TypedIR.getValue",
+        "FormalSpecAgent.ValueOps.checksum",
+        "FormalSpecAgent.ValueOps.wordSum"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_26": [
+    {
+      "unfold": [
+        "Approved.witness_26"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_27": [
+    {
+      "unfold": [
+        "Approved.witness_27"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_28": [
+    {
+      "unfold": [
+        "Approved.witness_28"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_29": [
+    {
+      "unfold": [
+        "Approved.witness_29"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_30": [
+    {
+      "unfold": [
+        "Approved.witness_30"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_31": [
+    {
+      "unfold": [
+        "Approved.witness_31"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_32": [
+    {
+      "unfold": [
+        "Approved.witness_32"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_33": [
+    {
+      "unfold": [
+        "Approved.witness_33"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_34": [
+    {
+      "unfold": [
+        "Approved.witness_34"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_35": [
+    {
+      "unfold": [
+        "Approved.witness_35"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_36": [
+    {
+      "unfold": [
+        "Approved.witness_36"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_37": [
+    {
+      "unfold": [
+        "Approved.witness_37"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_38": [
+    {
+      "unfold": [
+        "Approved.witness_38"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_39": [
+    {
+      "unfold": [
+        "Approved.witness_39"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_40": [
+    {
+      "unfold": [
+        "Approved.witness_40"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_41": [
+    {
+      "unfold": [
+        "Approved.witness_41"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_42": [
+    {
+      "unfold": [
+        "Approved.witness_42"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_43": [
+    {
+      "unfold": [
+        "Approved.witness_43"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_44": [
+    {
+      "unfold": [
+        "Approved.witness_44"
+      ]
+    },
+    {
+      "dsimp": [
+        "Approved.e0",
+        "Approved.e1",
+        "Approved.e2",
+        "Approved.e3",
+        "Approved.e4",
+        "Approved.e5",
+        "Approved.e6",
+        "Approved.e7",
+        "Approved.e8",
+        "Approved.e9",
+        "Approved.e10",
+        "Approved.e11",
+        "Approved.e12",
+        "Approved.e13",
+        "Approved.e14",
+        "Approved.e15",
+        "Approved.e16",
+        "Approved.e17",
+        "Approved.e18",
+        "Approved.e19",
+        "Approved.e20",
+        "Approved.e21",
+        "Approved.e22",
+        "Approved.e23",
+        "Approved.e24",
+        "Approved.e25",
+        "Approved.e26",
+        "Approved.e27",
+        "Approved.e28",
+        "Approved.e29",
+        "Approved.e30",
+        "Approved.e31",
+        "Approved.e32",
+        "Approved.e33",
+        "Approved.e34",
+        "Approved.e35",
+        "Approved.e36",
+        "Approved.e37",
+        "Approved.e38",
+        "Approved.e39",
+        "Approved.e40",
+        "Approved.e41",
+        "Approved.e42",
+        "Approved.e43",
+        "Approved.e44",
+        "Approved.e45",
+        "Approved.e46",
+        "Approved.e47",
+        "Approved.e48",
+        "Approved.e49",
+        "Approved.e50",
+        "Approved.e51",
+        "Approved.e52",
+        "Approved.e53",
+        "Approved.e54",
+        "Approved.e55",
+        "Approved.e56",
+        "Approved.e57",
+        "Approved.e58",
+        "Approved.e59",
+        "Approved.e60",
+        "Approved.e61",
+        "Approved.e62",
+        "Approved.e63",
+        "Approved.e64",
+        "Approved.e65",
+        "Approved.e66",
+        "Approved.e67",
+        "Approved.e68",
+        "Approved.e69",
+        "Approved.e70",
+        "Approved.e71",
+        "Approved.e72",
+        "Approved.e73",
+        "Approved.e74",
+        "Approved.e75",
+        "Approved.e76",
+        "Approved.e77",
+        "Approved.e78",
+        "Approved.e79",
+        "Approved.e80",
+        "Approved.e81",
+        "Approved.context_0",
+        "Approved.context_1",
+        "Approved.context_2",
+        "Approved.context_3",
+        "Approved.context_4",
+        "Approved.context_5",
+        "Approved.context_6",
+        "Approved.context_7",
+        "Approved.context_8",
+        "Approved.context_9",
+        "Approved.context_10",
+        "Approved.context_11",
+        "Approved.context_12",
+        "Approved.context_13",
+        "Approved.context_14",
+        "Approved.context_15",
+        "Approved.context_16",
+        "Approved.context_17",
+        "Approved.context_18",
+        "Approved.context_19",
+        "Approved.context_20",
+        "Approved.context_21",
+        "Approved.context_22",
+        "Approved.context_23",
+        "Approved.context_24",
+        "Approved.context_25",
+        "Approved.context_26",
+        "Approved.context_27",
+        "Approved.context_28",
+        "Approved.context_29",
+        "Approved.context_30",
+        "Approved.context_31",
+        "Approved.context_32",
+        "Approved.context_33",
+        "Approved.context_34",
+        "Approved.context_35",
+        "Approved.context_36",
+        "Approved.context_37",
+        "Approved.context_38",
+        "Approved.context_39",
+        "Approved.context_40",
+        "Approved.context_41",
+        "Approved.context_42",
+        "Approved.context_43",
+        "Approved.context_44",
+        "Approved.context_45",
+        "Approved.context_46",
+        "Approved.context_47",
+        "Approved.context_48",
+        "Approved.context_49",
+        "Approved.context_50",
+        "Approved.context_51",
+        "Approved.context_52",
+        "Approved.context_53",
+        "Approved.context_54",
+        "Approved.context_55",
+        "FormalSpecAgent.TypedIR.eval",
+        "FormalSpecAgent.TypedIR.getValue",
+        "FormalSpecAgent.ValueOps.checksum",
+        "FormalSpecAgent.ValueOps.wordSum"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_45": [
+    {
+      "unfold": [
+        "Approved.witness_45"
+      ]
+    },
+    {
+      "dsimp": [
+        "Approved.e0",
+        "Approved.e1",
+        "Approved.e2",
+        "Approved.e3",
+        "Approved.e4",
+        "Approved.e5",
+        "Approved.e6",
+        "Approved.e7",
+        "Approved.e8",
+        "Approved.e9",
+        "Approved.e10",
+        "Approved.e11",
+        "Approved.e12",
+        "Approved.e13",
+        "Approved.e14",
+        "Approved.e15",
+        "Approved.e16",
+        "Approved.e17",
+        "Approved.e18",
+        "Approved.e19",
+        "Approved.e20",
+        "Approved.e21",
+        "Approved.e22",
+        "Approved.e23",
+        "Approved.e24",
+        "Approved.e25",
+        "Approved.e26",
+        "Approved.e27",
+        "Approved.e28",
+        "Approved.e29",
+        "Approved.e30",
+        "Approved.e31",
+        "Approved.e32",
+        "Approved.e33",
+        "Approved.e34",
+        "Approved.e35",
+        "Approved.e36",
+        "Approved.e37",
+        "Approved.e38",
+        "Approved.e39",
+        "Approved.e40",
+        "Approved.e41",
+        "Approved.e42",
+        "Approved.e43",
+        "Approved.e44",
+        "Approved.e45",
+        "Approved.e46",
+        "Approved.e47",
+        "Approved.e48",
+        "Approved.e49",
+        "Approved.e50",
+        "Approved.e51",
+        "Approved.e52",
+        "Approved.e53",
+        "Approved.e54",
+        "Approved.e55",
+        "Approved.e56",
+        "Approved.e57",
+        "Approved.e58",
+        "Approved.e59",
+        "Approved.e60",
+        "Approved.e61",
+        "Approved.e62",
+        "Approved.e63",
+        "Approved.e64",
+        "Approved.e65",
+        "Approved.e66",
+        "Approved.e67",
+        "Approved.e68",
+        "Approved.e69",
+        "Approved.e70",
+        "Approved.e71",
+        "Approved.e72",
+        "Approved.e73",
+        "Approved.e74",
+        "Approved.e75",
+        "Approved.e76",
+        "Approved.e77",
+        "Approved.e78",
+        "Approved.e79",
+        "Approved.e80",
+        "Approved.e81",
+        "Approved.context_0",
+        "Approved.context_1",
+        "Approved.context_2",
+        "Approved.context_3",
+        "Approved.context_4",
+        "Approved.context_5",
+        "Approved.context_6",
+        "Approved.context_7",
+        "Approved.context_8",
+        "Approved.context_9",
+        "Approved.context_10",
+        "Approved.context_11",
+        "Approved.context_12",
+        "Approved.context_13",
+        "Approved.context_14",
+        "Approved.context_15",
+        "Approved.context_16",
+        "Approved.context_17",
+        "Approved.context_18",
+        "Approved.context_19",
+        "Approved.context_20",
+        "Approved.context_21",
+        "Approved.context_22",
+        "Approved.context_23",
+        "Approved.context_24",
+        "Approved.context_25",
+        "Approved.context_26",
+        "Approved.context_27",
+        "Approved.context_28",
+        "Approved.context_29",
+        "Approved.context_30",
+        "Approved.context_31",
+        "Approved.context_32",
+        "Approved.context_33",
+        "Approved.context_34",
+        "Approved.context_35",
+        "Approved.context_36",
+        "Approved.context_37",
+        "Approved.context_38",
+        "Approved.context_39",
+        "Approved.context_40",
+        "Approved.context_41",
+        "Approved.context_42",
+        "Approved.context_43",
+        "Approved.context_44",
+        "Approved.context_45",
+        "Approved.context_46",
+        "Approved.context_47",
+        "Approved.context_48",
+        "Approved.context_49",
+        "Approved.context_50",
+        "Approved.context_51",
+        "Approved.context_52",
+        "Approved.context_53",
+        "Approved.context_54",
+        "Approved.context_55",
+        "FormalSpecAgent.TypedIR.eval",
+        "FormalSpecAgent.TypedIR.getValue",
+        "FormalSpecAgent.ValueOps.checksum",
+        "FormalSpecAgent.ValueOps.wordSum"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_46": [
+    {
+      "unfold": [
+        "Approved.witness_46"
+      ]
+    },
+    {
+      "dsimp": [
+        "Approved.e0",
+        "Approved.e1",
+        "Approved.e2",
+        "Approved.e3",
+        "Approved.e4",
+        "Approved.e5",
+        "Approved.e6",
+        "Approved.e7",
+        "Approved.e8",
+        "Approved.e9",
+        "Approved.e10",
+        "Approved.e11",
+        "Approved.e12",
+        "Approved.e13",
+        "Approved.e14",
+        "Approved.e15",
+        "Approved.e16",
+        "Approved.e17",
+        "Approved.e18",
+        "Approved.e19",
+        "Approved.e20",
+        "Approved.e21",
+        "Approved.e22",
+        "Approved.e23",
+        "Approved.e24",
+        "Approved.e25",
+        "Approved.e26",
+        "Approved.e27",
+        "Approved.e28",
+        "Approved.e29",
+        "Approved.e30",
+        "Approved.e31",
+        "Approved.e32",
+        "Approved.e33",
+        "Approved.e34",
+        "Approved.e35",
+        "Approved.e36",
+        "Approved.e37",
+        "Approved.e38",
+        "Approved.e39",
+        "Approved.e40",
+        "Approved.e41",
+        "Approved.e42",
+        "Approved.e43",
+        "Approved.e44",
+        "Approved.e45",
+        "Approved.e46",
+        "Approved.e47",
+        "Approved.e48",
+        "Approved.e49",
+        "Approved.e50",
+        "Approved.e51",
+        "Approved.e52",
+        "Approved.e53",
+        "Approved.e54",
+        "Approved.e55",
+        "Approved.e56",
+        "Approved.e57",
+        "Approved.e58",
+        "Approved.e59",
+        "Approved.e60",
+        "Approved.e61",
+        "Approved.e62",
+        "Approved.e63",
+        "Approved.e64",
+        "Approved.e65",
+        "Approved.e66",
+        "Approved.e67",
+        "Approved.e68",
+        "Approved.e69",
+        "Approved.e70",
+        "Approved.e71",
+        "Approved.e72",
+        "Approved.e73",
+        "Approved.e74",
+        "Approved.e75",
+        "Approved.e76",
+        "Approved.e77",
+        "Approved.e78",
+        "Approved.e79",
+        "Approved.e80",
+        "Approved.e81",
+        "Approved.context_0",
+        "Approved.context_1",
+        "Approved.context_2",
+        "Approved.context_3",
+        "Approved.context_4",
+        "Approved.context_5",
+        "Approved.context_6",
+        "Approved.context_7",
+        "Approved.context_8",
+        "Approved.context_9",
+        "Approved.context_10",
+        "Approved.context_11",
+        "Approved.context_12",
+        "Approved.context_13",
+        "Approved.context_14",
+        "Approved.context_15",
+        "Approved.context_16",
+        "Approved.context_17",
+        "Approved.context_18",
+        "Approved.context_19",
+        "Approved.context_20",
+        "Approved.context_21",
+        "Approved.context_22",
+        "Approved.context_23",
+        "Approved.context_24",
+        "Approved.context_25",
+        "Approved.context_26",
+        "Approved.context_27",
+        "Approved.context_28",
+        "Approved.context_29",
+        "Approved.context_30",
+        "Approved.context_31",
+        "Approved.context_32",
+        "Approved.context_33",
+        "Approved.context_34",
+        "Approved.context_35",
+        "Approved.context_36",
+        "Approved.context_37",
+        "Approved.context_38",
+        "Approved.context_39",
+        "Approved.context_40",
+        "Approved.context_41",
+        "Approved.context_42",
+        "Approved.context_43",
+        "Approved.context_44",
+        "Approved.context_45",
+        "Approved.context_46",
+        "Approved.context_47",
+        "Approved.context_48",
+        "Approved.context_49",
+        "Approved.context_50",
+        "Approved.context_51",
+        "Approved.context_52",
+        "Approved.context_53",
+        "Approved.context_54",
+        "Approved.context_55",
+        "FormalSpecAgent.TypedIR.eval",
+        "FormalSpecAgent.TypedIR.getValue",
+        "FormalSpecAgent.ValueOps.checksum",
+        "FormalSpecAgent.ValueOps.wordSum"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_47": [
+    {
+      "unfold": [
+        "Approved.witness_47"
+      ]
+    },
+    {
+      "dsimp": [
+        "Approved.e0",
+        "Approved.e1",
+        "Approved.e2",
+        "Approved.e3",
+        "Approved.e4",
+        "Approved.e5",
+        "Approved.e6",
+        "Approved.e7",
+        "Approved.e8",
+        "Approved.e9",
+        "Approved.e10",
+        "Approved.e11",
+        "Approved.e12",
+        "Approved.e13",
+        "Approved.e14",
+        "Approved.e15",
+        "Approved.e16",
+        "Approved.e17",
+        "Approved.e18",
+        "Approved.e19",
+        "Approved.e20",
+        "Approved.e21",
+        "Approved.e22",
+        "Approved.e23",
+        "Approved.e24",
+        "Approved.e25",
+        "Approved.e26",
+        "Approved.e27",
+        "Approved.e28",
+        "Approved.e29",
+        "Approved.e30",
+        "Approved.e31",
+        "Approved.e32",
+        "Approved.e33",
+        "Approved.e34",
+        "Approved.e35",
+        "Approved.e36",
+        "Approved.e37",
+        "Approved.e38",
+        "Approved.e39",
+        "Approved.e40",
+        "Approved.e41",
+        "Approved.e42",
+        "Approved.e43",
+        "Approved.e44",
+        "Approved.e45",
+        "Approved.e46",
+        "Approved.e47",
+        "Approved.e48",
+        "Approved.e49",
+        "Approved.e50",
+        "Approved.e51",
+        "Approved.e52",
+        "Approved.e53",
+        "Approved.e54",
+        "Approved.e55",
+        "Approved.e56",
+        "Approved.e57",
+        "Approved.e58",
+        "Approved.e59",
+        "Approved.e60",
+        "Approved.e61",
+        "Approved.e62",
+        "Approved.e63",
+        "Approved.e64",
+        "Approved.e65",
+        "Approved.e66",
+        "Approved.e67",
+        "Approved.e68",
+        "Approved.e69",
+        "Approved.e70",
+        "Approved.e71",
+        "Approved.e72",
+        "Approved.e73",
+        "Approved.e74",
+        "Approved.e75",
+        "Approved.e76",
+        "Approved.e77",
+        "Approved.e78",
+        "Approved.e79",
+        "Approved.e80",
+        "Approved.e81",
+        "Approved.context_0",
+        "Approved.context_1",
+        "Approved.context_2",
+        "Approved.context_3",
+        "Approved.context_4",
+        "Approved.context_5",
+        "Approved.context_6",
+        "Approved.context_7",
+        "Approved.context_8",
+        "Approved.context_9",
+        "Approved.context_10",
+        "Approved.context_11",
+        "Approved.context_12",
+        "Approved.context_13",
+        "Approved.context_14",
+        "Approved.context_15",
+        "Approved.context_16",
+        "Approved.context_17",
+        "Approved.context_18",
+        "Approved.context_19",
+        "Approved.context_20",
+        "Approved.context_21",
+        "Approved.context_22",
+        "Approved.context_23",
+        "Approved.context_24",
+        "Approved.context_25",
+        "Approved.context_26",
+        "Approved.context_27",
+        "Approved.context_28",
+        "Approved.context_29",
+        "Approved.context_30",
+        "Approved.context_31",
+        "Approved.context_32",
+        "Approved.context_33",
+        "Approved.context_34",
+        "Approved.context_35",
+        "Approved.context_36",
+        "Approved.context_37",
+        "Approved.context_38",
+        "Approved.context_39",
+        "Approved.context_40",
+        "Approved.context_41",
+        "Approved.context_42",
+        "Approved.context_43",
+        "Approved.context_44",
+        "Approved.context_45",
+        "Approved.context_46",
+        "Approved.context_47",
+        "Approved.context_48",
+        "Approved.context_49",
+        "Approved.context_50",
+        "Approved.context_51",
+        "Approved.context_52",
+        "Approved.context_53",
+        "Approved.context_54",
+        "Approved.context_55",
+        "FormalSpecAgent.TypedIR.eval",
+        "FormalSpecAgent.TypedIR.getValue",
+        "FormalSpecAgent.ValueOps.checksum",
+        "FormalSpecAgent.ValueOps.wordSum"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_48": [
+    {
+      "unfold": [
+        "Approved.witness_48"
+      ]
+    },
+    {
+      "dsimp": [
+        "Approved.e0",
+        "Approved.e1",
+        "Approved.e2",
+        "Approved.e3",
+        "Approved.e4",
+        "Approved.e5",
+        "Approved.e6",
+        "Approved.e7",
+        "Approved.e8",
+        "Approved.e9",
+        "Approved.e10",
+        "Approved.e11",
+        "Approved.e12",
+        "Approved.e13",
+        "Approved.e14",
+        "Approved.e15",
+        "Approved.e16",
+        "Approved.e17",
+        "Approved.e18",
+        "Approved.e19",
+        "Approved.e20",
+        "Approved.e21",
+        "Approved.e22",
+        "Approved.e23",
+        "Approved.e24",
+        "Approved.e25",
+        "Approved.e26",
+        "Approved.e27",
+        "Approved.e28",
+        "Approved.e29",
+        "Approved.e30",
+        "Approved.e31",
+        "Approved.e32",
+        "Approved.e33",
+        "Approved.e34",
+        "Approved.e35",
+        "Approved.e36",
+        "Approved.e37",
+        "Approved.e38",
+        "Approved.e39",
+        "Approved.e40",
+        "Approved.e41",
+        "Approved.e42",
+        "Approved.e43",
+        "Approved.e44",
+        "Approved.e45",
+        "Approved.e46",
+        "Approved.e47",
+        "Approved.e48",
+        "Approved.e49",
+        "Approved.e50",
+        "Approved.e51",
+        "Approved.e52",
+        "Approved.e53",
+        "Approved.e54",
+        "Approved.e55",
+        "Approved.e56",
+        "Approved.e57",
+        "Approved.e58",
+        "Approved.e59",
+        "Approved.e60",
+        "Approved.e61",
+        "Approved.e62",
+        "Approved.e63",
+        "Approved.e64",
+        "Approved.e65",
+        "Approved.e66",
+        "Approved.e67",
+        "Approved.e68",
+        "Approved.e69",
+        "Approved.e70",
+        "Approved.e71",
+        "Approved.e72",
+        "Approved.e73",
+        "Approved.e74",
+        "Approved.e75",
+        "Approved.e76",
+        "Approved.e77",
+        "Approved.e78",
+        "Approved.e79",
+        "Approved.e80",
+        "Approved.e81",
+        "Approved.context_0",
+        "Approved.context_1",
+        "Approved.context_2",
+        "Approved.context_3",
+        "Approved.context_4",
+        "Approved.context_5",
+        "Approved.context_6",
+        "Approved.context_7",
+        "Approved.context_8",
+        "Approved.context_9",
+        "Approved.context_10",
+        "Approved.context_11",
+        "Approved.context_12",
+        "Approved.context_13",
+        "Approved.context_14",
+        "Approved.context_15",
+        "Approved.context_16",
+        "Approved.context_17",
+        "Approved.context_18",
+        "Approved.context_19",
+        "Approved.context_20",
+        "Approved.context_21",
+        "Approved.context_22",
+        "Approved.context_23",
+        "Approved.context_24",
+        "Approved.context_25",
+        "Approved.context_26",
+        "Approved.context_27",
+        "Approved.context_28",
+        "Approved.context_29",
+        "Approved.context_30",
+        "Approved.context_31",
+        "Approved.context_32",
+        "Approved.context_33",
+        "Approved.context_34",
+        "Approved.context_35",
+        "Approved.context_36",
+        "Approved.context_37",
+        "Approved.context_38",
+        "Approved.context_39",
+        "Approved.context_40",
+        "Approved.context_41",
+        "Approved.context_42",
+        "Approved.context_43",
+        "Approved.context_44",
+        "Approved.context_45",
+        "Approved.context_46",
+        "Approved.context_47",
+        "Approved.context_48",
+        "Approved.context_49",
+        "Approved.context_50",
+        "Approved.context_51",
+        "Approved.context_52",
+        "Approved.context_53",
+        "Approved.context_54",
+        "Approved.context_55",
+        "FormalSpecAgent.TypedIR.eval",
+        "FormalSpecAgent.TypedIR.getValue",
+        "FormalSpecAgent.ValueOps.checksum",
+        "FormalSpecAgent.ValueOps.wordSum"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_49": [
+    {
+      "unfold": [
+        "Approved.witness_49"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_50": [
+    {
+      "unfold": [
+        "Approved.witness_50"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_51": [
+    {
+      "unfold": [
+        "Approved.witness_51"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_52": [
+    {
+      "unfold": [
+        "Approved.witness_52"
+      ]
+    },
+    {
+      "decide": true
+    }
+  ],
+  "witness_53": [
+    {
+      "unfold": [
+        "Approved.witness_53"
+      ]
+    },
+    {
+      "dsimp": [
+        "Approved.e0",
+        "Approved.e1",
+        "Approved.e2",
+        "Approved.e3",
+        "Approved.e4",
+        "Approved.e5",
+        "Approved.e6",
+        "Approved.e7",
+        "Approved.e8",
+        "Approved.e9",
+        "Approved.e10",
+        "Approved.e11",
+        "Approved.e12",
+        "Approved.e13",
+        "Approved.e14",
+        "Approved.e15",
+        "Approved.e16",
+        "Approved.e17",
+        "Approved.e18",
+        "Approved.e19",
+        "Approved.e20",
+        "Approved.e21",
+        "Approved.e22",
+        "Approved.e23",
+        "Approved.e24",
+        "Approved.e25",
+        "Approved.e26",
+        "Approved.e27",
+        "Approved.e28",
+        "Approved.e29",
+        "Approved.e30",
+        "Approved.e31",
+        "Approved.e32",
+        "Approved.e33",
+        "Approved.e34",
+        "Approved.e35",
+        "Approved.e36",
+        "Approved.e37",
+        "Approved.e38",
+        "Approved.e39",
+        "Approved.e40",
+        "Approved.e41",
+        "Approved.e42",
+        "Approved.e43",
+        "Approved.e44",
+        "Approved.e45",
+        "Approved.e46",
+        "Approved.e47",
+        "Approved.e48",
+        "Approved.e49",
+        "Approved.e50",
+        "Approved.e51",
+        "Approved.e52",
+        "Approved.e53",
+        "Approved.e54",
+        "Approved.e55",
+        "Approved.e56",
+        "Approved.e57",
+        "Approved.e58",
+        "Approved.e59",
+        "Approved.e60",
+        "Approved.e61",
+        "Approved.e62",
+        "Approved.e63",
+        "Approved.e64",
+        "Approved.e65",
+        "Approved.e66",
+        "Approved.e67",
+        "Approved.e68",
+        "Approved.e69",
+        "Approved.e70",
+        "Approved.e71",
+        "Approved.e72",
+        "Approved.e73",
+        "Approved.e74",
+        "Approved.e75",
+        "Approved.e76",
+        "Approved.e77",
+        "Approved.e78",
+        "Approved.e79",
+        "Approved.e80",
+        "Approved.e81",
+        "Approved.context_0",
+        "Approved.context_1",
+        "Approved.context_2",
+        "Approved.context_3",
+        "Approved.context_4",
+        "Approved.context_5",
+        "Approved.context_6",
+        "Approved.context_7",
+        "Approved.context_8",
+        "Approved.context_9",
+        "Approved.context_10",
+        "Approved.context_11",
+        "Approved.context_12",
+        "Approved.context_13",
+        "Approved.context_14",
+        "Approved.context_15",
+        "Approved.context_16",
+        "Approved.context_17",
+        "Approved.context_18",
+        "Approved.context_19",
+        "Approved.context_20",
+        "Approved.context_21",
+        "Approved.context_22",
+        "Approved.context_23",
+        "Approved.context_24",
+        "Approved.context_25",
+        "Approved.context_26",
+        "Approved.context_27",
+        "Approved.context_28",
+        "Approved.context_29",
+        "Approved.context_30",
+        "Approved.context_31",
+        "Approved.context_32",
+        "Approved.context_33",
+        "Approved.context_34",
+        "Approved.context_35",
+        "Approved.context_36",
+        "Approved.context_37",
+        "Approved.context_38",
+        "Approved.context_39",
+        "Approved.context_40",
+        "Approved.context_41",
+        "Approved.context_42",
+        "Approved.context_43",
+        "Approved.context_44",
+        "Approved.context_45",
+        "Approved.context_46",
+        "Approved.context_47",
+        "Approved.context_48",
+        "Approved.context_49",
+        "Approved.context_50",
+        "Approved.context_51",
+        "Approved.context_52",
+        "Approved.context_53",
+        "Approved.context_54",
+        "Approved.context_55",
+        "FormalSpecAgent.TypedIR.eval",
+        "FormalSpecAgent.TypedIR.getValue",
+        "FormalSpecAgent.ValueOps.checksum",
+        "FormalSpecAgent.ValueOps.wordSum"
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": [
+        {
+          "rewrite": [
+            "FormalSpecAgent.ValueOps.fold16"
+          ]
+        }
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "decide": true
+        }
+      ]
+    }
+  ],
+  "witness_54": [
+    {
+      "unfold": [
+        "Approved.witness_54"
+      ]
+    },
+    {
+      "simp_only": [
+        "Approved.e0",
+        "Approved.e1",
+        "Approved.e2",
+        "Approved.e3",
+        "Approved.e4",
+        "Approved.e5",
+        "Approved.e6",
+        "Approved.e7",
+        "Approved.e8",
+        "Approved.e9",
+        "Approved.e10",
+        "Approved.e11",
+        "Approved.e12",
+        "Approved.e13",
+        "Approved.e14",
+        "Approved.e15",
+        "Approved.e16",
+        "Approved.e17",
+        "Approved.e18",
+        "Approved.e19",
+        "Approved.e20",
+        "Approved.e21",
+        "Approved.e22",
+        "Approved.e23",
+        "Approved.e24",
+        "Approved.e25",
+        "Approved.e26",
+        "Approved.e27",
+        "Approved.e28",
+        "Approved.e29",
+        "Approved.e30",
+        "Approved.e31",
+        "Approved.e32",
+        "Approved.e33",
+        "Approved.e34",
+        "Approved.e35",
+        "Approved.e36",
+        "Approved.e37",
+        "Approved.e38",
+        "Approved.e39",
+        "Approved.e40",
+        "Approved.e41",
+        "Approved.e42",
+        "Approved.e43",
+        "Approved.e44",
+        "Approved.e45",
+        "Approved.e46",
+        "Approved.e47",
+        "Approved.e48",
+        "Approved.e49",
+        "Approved.e50",
+        "Approved.e51",
+        "Approved.e52",
+        "Approved.e53",
+        "Approved.e54",
+        "Approved.e55",
+        "Approved.e56",
+        "Approved.e57",
+        "Approved.e58",
+        "Approved.e59",
+        "Approved.e60",
+        "Approved.e61",
+        "Approved.e62",
+        "Approved.e63",
+        "Approved.e64",
+        "Approved.e65",
+        "Approved.e66",
+        "Approved.e67",
+        "Approved.e68",
+        "Approved.e69",
+        "Approved.e70",
+        "Approved.e71",
+        "Approved.e72",
+        "Approved.e73",
+        "Approved.e74",
+        "Approved.e75",
+        "Approved.e76",
+        "Approved.e77",
+        "Approved.e78",
+        "Approved.e79",
+        "Approved.e80",
+        "Approved.e81",
+        "Approved.context_0",
+        "Approved.context_1",
+        "Approved.context_2",
+        "Approved.context_3",
+        "Approved.context_4",
+        "Approved.context_5",
+        "Approved.context_6",
+        "Approved.context_7",
+        "Approved.context_8",
+        "Approved.context_9",
+        "Approved.context_10",
+        "Approved.context_11",
+        "Approved.context_12",
+        "Approved.context_13",
+        "Approved.context_14",
+        "Approved.context_15",
+        "Approved.context_16",
+        "Approved.context_17",
+        "Approved.context_18",
+        "Approved.context_19",
+        "Approved.context_20",
+        "Approved.context_21",
+        "Approved.context_22",
+        "Approved.context_23",
+        "Approved.context_24",
+        "Approved.context_25",
+        "Approved.context_26",
+        "Approved.context_27",
+        "Approved.context_28",
+        "Approved.context_29",
+        "Approved.context_30",
+        "Approved.context_31",
+        "Approved.context_32",
+        "Approved.context_33",
+        "Approved.context_34",
+        "Approved.context_35",
+        "Approved.context_36",
+        "Approved.context_37",
+        "Approved.context_38",
+        "Approved.context_39",
+        "Approved.context_40",
+        "Approved.context_41",
+        "Approved.context_42",
+        "Approved.context_43",
+        "Approved.context_44",
+        "Approved.context_45",
+        "Approved.context_46",
+        "Approved.context_47",
+        "Approved.context_48",
+        "Approved.context_49",
+        "Approved.context_50",
+        "Approved.context_51",
+        "Approved.context_52",
+        "Approved.context_53",
+        "Approved.context_54",
+        "Approved.context_55",
+        "FormalSpecAgent.TypedIR.eval",
+        "FormalSpecAgent.TypedIR.getValue",
+        "List.length_replicate",
+        "List.append_nil",
+        "List.length_append"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "rfl": true
+        }
+      ]
+    }
+  ],
+  "witness_55": [
+    {
+      "unfold": [
+        "Approved.witness_55"
+      ]
+    },
+    {
+      "simp_only": [
+        "Approved.e0",
+        "Approved.e1",
+        "Approved.e2",
+        "Approved.e3",
+        "Approved.e4",
+        "Approved.e5",
+        "Approved.e6",
+        "Approved.e7",
+        "Approved.e8",
+        "Approved.e9",
+        "Approved.e10",
+        "Approved.e11",
+        "Approved.e12",
+        "Approved.e13",
+        "Approved.e14",
+        "Approved.e15",
+        "Approved.e16",
+        "Approved.e17",
+        "Approved.e18",
+        "Approved.e19",
+        "Approved.e20",
+        "Approved.e21",
+        "Approved.e22",
+        "Approved.e23",
+        "Approved.e24",
+        "Approved.e25",
+        "Approved.e26",
+        "Approved.e27",
+        "Approved.e28",
+        "Approved.e29",
+        "Approved.e30",
+        "Approved.e31",
+        "Approved.e32",
+        "Approved.e33",
+        "Approved.e34",
+        "Approved.e35",
+        "Approved.e36",
+        "Approved.e37",
+        "Approved.e38",
+        "Approved.e39",
+        "Approved.e40",
+        "Approved.e41",
+        "Approved.e42",
+        "Approved.e43",
+        "Approved.e44",
+        "Approved.e45",
+        "Approved.e46",
+        "Approved.e47",
+        "Approved.e48",
+        "Approved.e49",
+        "Approved.e50",
+        "Approved.e51",
+        "Approved.e52",
+        "Approved.e53",
+        "Approved.e54",
+        "Approved.e55",
+        "Approved.e56",
+        "Approved.e57",
+        "Approved.e58",
+        "Approved.e59",
+        "Approved.e60",
+        "Approved.e61",
+        "Approved.e62",
+        "Approved.e63",
+        "Approved.e64",
+        "Approved.e65",
+        "Approved.e66",
+        "Approved.e67",
+        "Approved.e68",
+        "Approved.e69",
+        "Approved.e70",
+        "Approved.e71",
+        "Approved.e72",
+        "Approved.e73",
+        "Approved.e74",
+        "Approved.e75",
+        "Approved.e76",
+        "Approved.e77",
+        "Approved.e78",
+        "Approved.e79",
+        "Approved.e80",
+        "Approved.e81",
+        "Approved.context_0",
+        "Approved.context_1",
+        "Approved.context_2",
+        "Approved.context_3",
+        "Approved.context_4",
+        "Approved.context_5",
+        "Approved.context_6",
+        "Approved.context_7",
+        "Approved.context_8",
+        "Approved.context_9",
+        "Approved.context_10",
+        "Approved.context_11",
+        "Approved.context_12",
+        "Approved.context_13",
+        "Approved.context_14",
+        "Approved.context_15",
+        "Approved.context_16",
+        "Approved.context_17",
+        "Approved.context_18",
+        "Approved.context_19",
+        "Approved.context_20",
+        "Approved.context_21",
+        "Approved.context_22",
+        "Approved.context_23",
+        "Approved.context_24",
+        "Approved.context_25",
+        "Approved.context_26",
+        "Approved.context_27",
+        "Approved.context_28",
+        "Approved.context_29",
+        "Approved.context_30",
+        "Approved.context_31",
+        "Approved.context_32",
+        "Approved.context_33",
+        "Approved.context_34",
+        "Approved.context_35",
+        "Approved.context_36",
+        "Approved.context_37",
+        "Approved.context_38",
+        "Approved.context_39",
+        "Approved.context_40",
+        "Approved.context_41",
+        "Approved.context_42",
+        "Approved.context_43",
+        "Approved.context_44",
+        "Approved.context_45",
+        "Approved.context_46",
+        "Approved.context_47",
+        "Approved.context_48",
+        "Approved.context_49",
+        "Approved.context_50",
+        "Approved.context_51",
+        "Approved.context_52",
+        "Approved.context_53",
+        "Approved.context_54",
+        "Approved.context_55",
+        "FormalSpecAgent.TypedIR.eval",
+        "FormalSpecAgent.TypedIR.getValue",
+        "List.length_replicate",
+        "List.append_nil",
+        "List.length_append"
+      ]
+    },
+    {
+      "all_goals": [
+        {
+          "rfl": true
+        }
+      ]
+    }
+  ]
+}
