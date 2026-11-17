@@ -1,20 +1,26 @@
 # Frozen acceptance contract for total batch scheduling
 
-This is a development checkpoint, **not an accepted Lean batch implementation**.
-`model.json` and `spec.md` fix a generic ordered transaction and timer model.
-`cases.json` contains seven independently written contexts and22 operations,
-including same-deadline order, positive rearms, late pure clock movement, full
-rollback after a second timer or external event fails, timer injection and4096
-complete bytes with Unicode/newline/NUL.
+`model.json` and `spec.md` fix a generic typed transaction and timer model.
+`cases.json` contains seven independently written contexts and 22 operations:
+same-deadline order, positive rearms, clock movement, whole-batch rollback after
+a second timer or external event fails, injection rejection, and 4096 complete
+bytes with Unicode/newline/NUL.
 
-The existing Python reference and independent generated C match these literals.
-Native tests use a fresh process for each operation prefix; this is unit evidence,
-not a continuous live peer. The reference additionally checks rollback of clock
-and prior trace; C's snapshot format does not itself expose clock.
+The Python reference, independent generated C and compiled Lean batch runtime
+match these literals. C tests use a fresh process per operation prefix; they are
+unit evidence, not a continuous live peer. The reference and Lean also observe
+clock rollback; the standalone C snapshot does not expose its clock.
 
-`TimerRank.lean` defines a well-founded candidate measure and proves its timed-state
-characterization. It does not prove that actual transitions decrease that measure.
-The total progress theorem and batch scheduler must pass real Lean checking and
-axiom/source audits before this example gains a Lean task or execution command.
-No arbitrary scheduler cutoff or runtime progress assumption may replace that
-proof. Existing Z3/UNKNOWN evidence and whole-rule obligations remain unchanged.
+The actual Lean kernel checks the generic minimum/effects/progress theorems,
+the total well-founded scheduler and its new proof-carrying replay bridge. No
+arbitrary cutoff, progress axiom or length-only projection is used.
+
+**The development `task.json` / `proofs.json` is not yet an accepted certificate.**
+The original 31 statements are retained, with 22 stronger internal-result
+obligations for proof reuse. Monolithic proof composition still reaches resource
+UNKNOWN; the replay bridge needs to be connected to these literal proofs.
+Execution matches and generic totality do not upgrade that result.
+
+See [batch semantics and commands](../../docs/lean-batch-scheduling.md). Existing
+Z3/UNKNOWN evidence, universal before-filter obligations and compiler/protocol
+proof boundaries remain unchanged.

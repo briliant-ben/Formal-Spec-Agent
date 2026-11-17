@@ -187,3 +187,7 @@ venvs and compiled binaries are not migrated here.
 Current guides are English. The imported `docs/semantics.md` remains a historical
 source contract at its hash-pinned original bytes/language; the
 [English semantics overview](docs/ir-semantics.md) is its reader-facing entry.
+
+The [typed batch scheduler](docs/lean-batch-scheduling.md) now has checked generic
+termination/replay lemmas and a compiled input-only reference. Its full literal
+certificate remains unresolved; this does not yet replace all Z3 tasks.

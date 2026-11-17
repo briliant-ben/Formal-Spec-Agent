@@ -64,6 +64,7 @@ structure Transition where
   after : Snapshot
   rule : Nat
   event : Nat
+  fields : Values
   emitted : List Message
 
 def setValue (k : Kind) (slot : Nat) (v : Value k) (s : Values) : Values :=
@@ -130,7 +131,7 @@ def runRule (model : Model) (snapshot : Snapshot) (r : Rule) (fields : Values)
   | .ok (snap, emitted) =>
     let after := { snap with state := r.target }
     if invariantsHold model after then
-      .ok { after := after, rule := r.id, event := event, emitted := emitted }
+      .ok { after := after, rule := r.id, event := event, fields := fields, emitted := emitted }
     else .error .invariant
 
 def enabled (model : Model) (snapshot : Snapshot) (event : Nat)

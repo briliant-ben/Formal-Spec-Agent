@@ -70,3 +70,12 @@ feedback and a single integrator. Cache completed obligations by complete input,
 semantics and checker identity. Expose the same workflow to CLI, MCP, Skills or
 other agent harnesses. Failed/uncertain provider calls remain terminal rather
 than being silently paid for again. The checker, not an agent, owns completion.
+
+## Typed batch scheduler checkpoint
+
+The actual selector/action/timer semantics now support a kernel-checked total
+batch scheduler with whole-batch rollback and no fuel cutoff. A checked replay
+bridge decomposes it into real selector/step equations. Compiled Lean matches
+22 frozen operations, but the full literal proof composition remains resource
+UNKNOWN. Finish its decomposition before whole-case/full-flow migration; do not
+retire the optional Z3 backend yet. See [batch scheduling](lean-batch-scheduling.md).

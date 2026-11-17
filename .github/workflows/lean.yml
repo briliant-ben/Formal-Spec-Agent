@@ -135,6 +135,13 @@ jobs:
             --workspace /tmp/tcpip-typed-input --cases /tmp/tcpip-typed-input/cases.json \
             --model-sha256 7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5 \
             --cases-sha256 "$CASES_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/tcpip-machine-runtime
+      - name: Run the total typed batch reference without Z3
+        run: |
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-batch-run examples/lean-batch/model.json \
+            --workspace examples/lean-batch --cases examples/lean-batch/cases.json \
+            --model-sha256 d9361456d237a0f4e59f045cc254aa99c6c2d8ff454bec85c880af2c81459e2c \
+            --cases-sha256 1a13b99dee31ddbd71f4d05e6528e378989ec36881eaf4eedcf05d0030084bac \
+            --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-batch-runtime
       - name: Preserve raw source, kernel logs, audits and test result
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -162,4 +169,5 @@ jobs:
             /tmp/lean-machine-recheck
             /tmp/lean-machine-runtime
             /tmp/tcpip-machine-runtime
+            /tmp/lean-batch-runtime
           if-no-files-found: error

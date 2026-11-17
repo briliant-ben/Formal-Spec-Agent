@@ -65,42 +65,65 @@ def input_cases(cases):
     return [dict(id=c['id'],initial=c['initial'],steps=[{k:v for k,v in s.items()if k!='expected'}for s in c['steps']])for c in cases]
 
 
+def canonical_value(value,kind):
+    return dict(kind=kind,value=[ord(c)for c in value]if kind=='string'else value)
+
+
+def canonical_snapshot(view,s):
+    view.snapshot(s)
+    return dict(state=view.v.states.index(s['state']),now_ms=s['now_ms'],
+                variables=[canonical_value(s['variables'][n],v['type'])for n,v in view.m['variables'].items()],
+                timers=[[view.timers.index(n),s['timers'][n]]for n in view.timers if n in s['timers']])
+
+
+def canonical_messages(view,messages):
+    return [dict(message=view.messages.index(msg['message']),
+                 fields=[[i,canonical_value(msg['fields'][n],k)]for i,(n,k)in enumerate(view.m['messages'][msg['message']]['fields'].items())])for msg in messages]
+
+
 def expected_values(view,cases):
-    def val(v,k):return dict(kind=k,value=[ord(c)for c in v]if k=='string'else v)
-    def snap(s):
-        view.snapshot(s)
-        return dict(state=view.v.states.index(s['state']),now_ms=s['now_ms'],variables=[val(s['variables'][n],v['type'])for n,v in view.m['variables'].items()],timers=[[view.timers.index(n),s['timers'][n]]for n in view.timers if n in s['timers']])
     rows=[]
     for c in cases:
         before=c['initial']
         for step in c['steps']:
             e=step['expected'];view.expected(e,view.snapshot(before),step)
-            if e['status']=='error':rows.append(dict(status='error',fault=e['fault'],after=snap(before),emitted=[]));continue
-            r=next(i for i,r in enumerate(view.m['transitions'])if r['id']==e['rule']);messages=[]
-            for message in e['emitted']:
-                schema=view.m['messages'][message['message']]['fields'];fields=[[i,val(message['fields'][n],k)]for i,(n,k)in enumerate(schema.items())]
-                messages.append(dict(message=view.messages.index(message['message']),fields=fields))
-            rows.append(dict(status='ok',rule=r,event=view.events.index(view.m['transitions'][r]['event']),after=snap(e['after']),emitted=messages));before=e['after']
+            if e['status']=='error':rows.append(dict(status='error',fault=e['fault'],after=canonical_snapshot(view,before),emitted=[]));continue
+            r=next(i for i,r in enumerate(view.m['transitions'])if r['id']==e['rule'])
+            rows.append(dict(status='ok',rule=r,event=view.events.index(view.m['transitions'][r]['event']),
+                             after=canonical_snapshot(view,e['after']),emitted=canonical_messages(view,e['emitted'])))
+            before=e['after']
     return rows
 
 
-def run(model_file,workspace,cases_file,out,model_sha256,cases_sha256,lean='lean'):
+def run(model_file,workspace,cases_file,out,model_sha256,cases_sha256,lean='lean',*,_profile='microstep'):
     root=Path(workspace).resolve();out=Path(out).resolve();model_file=Path(model_file).resolve();cases_file=Path(cases_file).resolve()
     if out.exists()or out.is_relative_to(root)or out.is_relative_to(gate.HERE.parent):raise ValueError('Fresh external machine reference output required')
     if not model_file.is_relative_to(root)or not cases_file.is_relative_to(root)or gate.sha(model_file)!=model_sha256 or gate.sha(cases_file)!=cases_sha256:raise ValueError('Machine execution input pins differ')
     from protocol_lab.ir import model_files
     chain=model_files(model_file)
     if any(not p.is_relative_to(root)for p in chain):raise ValueError('Machine model base escapes workspace')
-    view=MachineView(load(model_file));cases=json.loads(cases_file.read_text());source,runner=render_runtime(view,input_cases(cases))
+    if _profile=='microstep':
+        view_class=MachineView;renderer=render_runtime;oracle=expected_values;modules=list(MODULES);extra=[];matched='scheduled_reference_match'
+    elif _profile=='batch':
+        from .lean_batch import BatchView,MODULES as batch_modules
+        from .lean_batch_native import render_runtime as batch_render,expected_values as batch_expected
+        view_class=BatchView;renderer=batch_render;oracle=batch_expected;modules=list(batch_modules)
+        extra=[gate.HERE/'lean_batch.py',gate.HERE/'lean_batch_native.py'];matched='batch_reference_match'
+    else:raise ValueError('Unknown trusted Lean runtime profile')
+    original_inputs={str(p):gate.sha(p)for p in [*chain,cases_file]}
+    if original_inputs[str(model_file)]!=model_sha256 or original_inputs[str(cases_file)]!=cases_sha256:raise ValueError('Approved input changed before rendering')
+    view=view_class(load(model_file));cases=json.loads(cases_file.read_text());source,runner=renderer(view,input_cases(cases))
     # Validate expected shape before execution, but never pass its values to the
     # builder. Actual comparison is deliberately deferred until after exit.
-    expected_values(view,cases)
-    inputs={str(p):gate.sha(p)for p in [*chain,cases_file,Path(__file__).resolve(),gate.HERE/'lean_machine.py',gate.HERE/'lean_typed.py',gate.HERE/'lean_backend.py',gate.HERE.parent/'protocol_lab/ir.py']}
-    for n in MODULES:inputs[str(gate.HERE/('lean/'+n+'.lean'))]=gate.sha(gate.HERE/('lean/'+n+'.lean'))
+    oracle(view,cases)
+    inputs={str(p):gate.sha(p)for p in [*chain,cases_file,Path(__file__).resolve(),gate.HERE/'lean_machine.py',gate.HERE/'lean_typed.py',gate.HERE/'lean_backend.py',gate.HERE.parent/'protocol_lab/ir.py',*extra]}
+    for n in modules:inputs[str(gate.HERE/('lean/'+n+'.lean'))]=gate.sha(gate.HERE/('lean/'+n+'.lean'))
+    if any(gate.sha(p)!=h for p,h in original_inputs.items()):raise ValueError('Approved input changed during rendering')
+    if any(inputs[p]!=h for p,h in original_inputs.items()):raise ValueError('Rendered input epoch differs from approval')
     out.mkdir();runtime=out/'runtime';runtime.mkdir()
-    for n in MODULES:(runtime/(n+'.lean')).write_bytes((gate.HERE/('lean/'+n+'.lean')).read_bytes())
+    for n in modules:(runtime/(n+'.lean')).write_bytes((gate.HERE/('lean/'+n+'.lean')).read_bytes())
     (runtime/'ModelMachine.lean').write_text(source);(runtime/'Runner.lean').write_text(runner);sources={p.name:gate.sha(p)for p in runtime.glob('*.lean')}
-    result=dict(schema='fsa-lean-machine-reference-v1',status='incomplete',inputs=inputs,sources=sources,commands=[],scope='Compiled mathematical IR interpreter on frozen explicitly scheduled inputs; requires Lean runtime. Not batch dispatch/tick, whole-EFSM safety or native/compiler/protocol proof.',kernel_literal_contract_checked=False,efsm_safety_proved=False,compiler_correctness_proved=False,protocol_correctness_proved=False)
+    result=dict(schema='fsa-lean-batch-reference-v1'if _profile=='batch'else'fsa-lean-machine-reference-v1',profile=_profile,model_sha256=model_sha256,cases_sha256=cases_sha256,status='incomplete',inputs=inputs,sources=sources,commands=[],scope=('Compiled total typed batch interpreter with Lean runtime; not all-rule preservation before filtering or compiler/protocol proof.'if _profile=='batch'else'Compiled mathematical IR interpreter on frozen explicitly scheduled inputs; requires Lean runtime. Not batch dispatch/tick, whole-EFSM safety or native/compiler/protocol proof.'),kernel_literal_contract_checked=False,efsm_safety_proved=False,compiler_correctness_proved=False,protocol_correctness_proved=False)
     def save():result['outputs']={str(p.relative_to(out)):gate.sha(p)for p in out.rglob('*')if p.is_file()and p!=out/'result.json'};gate.write(out/'result.json',result);return result
     tool=shutil.which(str(lean))
     if tool is None:result.update(status='blocked',classification='environment');return save()
@@ -110,7 +133,7 @@ def run(model_file,workspace,cases_file,out,model_sha256,cases_sha256,lean='lean
     if version.returncode or not re.search(r'\b'+re.escape(gate.VERSION)+r'\b',version.stdout):result.update(status='blocked',classification='tool_version');return save()
     result.update(lean_version=version.stdout.strip(),lean_binary_sha256=gate.sha(tool),leanc_binary_sha256=gate.sha(leanc))
     temp=out/'compiler-tmp';temp.mkdir();env=dict(PATH=os.defpath,LEAN_PATH=str(runtime),TMPDIR=str(temp),LANG='C.UTF-8')
-    modules=[*MODULES,'ModelMachine','Runner'];cmds=[[str(tool),'-o',n+'.olean','-c',n+'.c',n+'.lean']for n in modules]+[[str(leanc),*[n+'.c'for n in modules],'-o','lean-machine'],[str(runtime/'lean-machine')]]
+    modules=[*modules,'ModelMachine','Runner'];cmds=[[str(tool),'-o',n+'.olean','-c',n+'.c',n+'.lean']for n in modules]+[[str(leanc),*[n+'.c'for n in modules],'-o','lean-machine'],[str(runtime/'lean-machine')]]
     for i,cmd in enumerate(cmds):
         try:x=subprocess.run(cmd,cwd=runtime,env=env,capture_output=True,text=True,timeout=120);stdout,stderr,rc=x.stdout,x.stderr,x.returncode
         except subprocess.TimeoutExpired as e:stdout=(e.stdout or b'').decode()if isinstance(e.stdout,bytes)else(e.stdout or'');stderr='Scheduled runtime wall-clock timeout';rc=None
@@ -118,12 +141,12 @@ def run(model_file,workspace,cases_file,out,model_sha256,cases_sha256,lean='lean
         if rc!=0:result.update(status='fail',classification='resource_unknown'if gate.resource_failure(rc,stdout,stderr)else'native_tool_failure');return save()
     try:observed=[json.loads(line)for line in stdout.splitlines()]
     except ValueError:observed=None
-    expected=expected_values(view,cases);result.update(status='scheduled_reference_match'if observed==expected else'fail',observed=observed,expected=expected,comparison='All stored variables/timers, selected rule/event, outputs and error rollback are compared after subject exit; no expected outcome is compiled into the subject.')
+    expected=oracle(view,cases);result.update(status=matched if observed==expected else'fail',observed=observed,expected=expected,comparison='All stored variables/timers, selected rule/event, outputs and error rollback are compared after subject exit; no expected outcome is compiled into the subject.')
     if any(gate.sha(p)!=h for p,h in inputs.items())or any(gate.sha(runtime/n)!=h for n,h in sources.items()):result.update(status='invalidated_inputs',classification='evidence_changed')
     return save()
 
 
-def main(argv=None):
+def main(argv=None,*,_profile='microstep'):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('model',type=Path);p.add_argument('--workspace',type=Path,required=True);p.add_argument('--cases',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--model-sha256',required=True);p.add_argument('--cases-sha256',required=True);p.add_argument('--lean',default='lean');a=p.parse_args(argv)
-    try:r=run(a.model,a.workspace,a.cases,a.out,a.model_sha256,a.cases_sha256,a.lean);print(json.dumps(r));return 0 if r['status']=='scheduled_reference_match'else 1
+    try:r=run(a.model,a.workspace,a.cases,a.out,a.model_sha256,a.cases_sha256,a.lean,_profile=_profile);print(json.dumps(r));return 0 if r['status']in ('scheduled_reference_match','batch_reference_match')else 1
     except (ValueError,TypeError,KeyError,OSError,subprocess.SubprocessError)as e:print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2
