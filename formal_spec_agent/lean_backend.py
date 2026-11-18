@@ -57,6 +57,9 @@ def prepare(task_file, workspace, task_sha256, *, draft=False):
     if task.get('schema')=='fsa-lean-typed-efsm-task-v1':
         from .lean_typed_efsm import prepare as prepare_typed_efsm
         return prepare_typed_efsm(task_file,root,task_sha256,draft=draft)
+    if task.get('schema')=='fsa-lean-timed-replay-task-v1':
+        from .lean_timed_replay import prepare as prepare_timed_replay
+        return prepare_timed_replay(task_file,root,task_sha256,draft=draft)
     if task.get('schema')=='fsa-lean-batch-task-v1':
         from .lean_batch import prepare as prepare_batch
         return prepare_batch(task_file,root,task_sha256,draft=draft)
@@ -232,6 +235,9 @@ def unit_scope(inputs):
     if 'tool/lean/TypedContracts.lean'in inputs:
         from .lean_typed_efsm import SCOPE as typed_efsm_scope
         return typed_efsm_scope
+    if 'tool/lean_timed_replay.py'in inputs:
+        from .lean_timed_replay import SCOPE as replay_scope
+        return replay_scope
     if 'tool/lean/BatchMachine.lean'in inputs:
         from .lean_batch import SCOPE as batch_scope
         return batch_scope
@@ -253,7 +259,11 @@ def unit_scope(inputs):
     return SCOPE
 
 
+CHECKED_STATUSES = ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract','checked_scheduled_microstep_contract','checked_batch_contract','checked_typed_efsm_contract','checked_timed_replay')
+
+
 def contract_status(inputs):
+    if 'tool/lean_timed_replay.py'in inputs:return 'checked_timed_replay'
     if 'tool/lean/TypedContracts.lean'in inputs:return 'checked_typed_efsm_contract'
     if 'tool/lean/BatchMachine.lean'in inputs:return 'checked_batch_contract'
     if 'tool/lean/TypedMachine.lean'in inputs:return 'checked_scheduled_microstep_contract'
@@ -394,7 +404,7 @@ def inspect_certificate(bundle, task_file, workspace, task_sha256, *, require_pa
     """
     bundle=Path(bundle).resolve()
     result=json.loads((bundle/'result.json').read_text())
-    completed=result.get('status')in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract','checked_scheduled_microstep_contract','checked_batch_contract','checked_typed_efsm_contract')
+    completed=result.get('status')in CHECKED_STATUSES
     partial=not require_pass and result.get('status')=='fail'and result.get('classification')=='resource_unknown'
     if result.get('schema')!='fsa-lean-expression-result-v1' or not (completed or partial):
         raise ValueError('Only completed scoped Lean certificates can be rechecked')
@@ -475,7 +485,7 @@ def verify_main(argv=None):
     p.add_argument('--out',type=Path,required=True);p.add_argument('--task-sha256',required=True);p.add_argument('--lean',default='lean')
     a=p.parse_args(argv)
     try:
-        r=verify(a.bundle,a.task,a.workspace,a.out,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract','checked_scheduled_microstep_contract','checked_batch_contract','checked_typed_efsm_contract')else 1
+        r=verify(a.bundle,a.task,a.workspace,a.out,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in CHECKED_STATUSES else 1
     except (ValueError,OSError,subprocess.SubprocessError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2
 
@@ -486,6 +496,6 @@ def main(argv=None):
     p.add_argument('--proofs',type=Path,required=True);p.add_argument('--task-sha256',required=True);p.add_argument('--lean',default='lean')
     a=p.parse_args(argv)
     try:
-        r=check(a.task,a.workspace,a.out,a.proofs,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in ('checked_expression_contract','checked_state_contract','checked_efsm_contract','checked_typed_expression_contract','checked_scheduled_microstep_contract','checked_batch_contract','checked_typed_efsm_contract')else 1
+        r=check(a.task,a.workspace,a.out,a.proofs,a.task_sha256,a.lean);print(json.dumps(r));return 0 if r['status']in CHECKED_STATUSES else 1
     except (ValueError,OSError,subprocess.SubprocessError)as e:
         print(json.dumps(dict(status='rejected',reason=str(e))),file=sys.stderr);return 2

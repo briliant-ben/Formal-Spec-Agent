@@ -130,3 +130,13 @@ A separate compiled Lean batch replay and the Python reference both rejected
 all eight events with the expected empty trace and rollback from the same
 initial state. This replay used default typed fields and request times 1 to 8.
 The kernel theorem covers arbitrary typed fields and nonnegative times.
+
+## Public timed replay certificates
+
+The [Timed Cell task](../examples/lean-timed-efsm/README.md) uses
+`fsa-lean-timed-replay-task-v1` to bind the model, specification and entire
+literal oracle as separate files. `lean-plan` derives the propositions,
+`lean-check` checks proof data and audits axioms, and `lean-verify` reconstructs
+and rechecks a certificate. Failed operations need the explicit fault,
+rollback snapshot and an empty trace. A certificate covers its named literal
+cases. Universal model and scheduler obligations retain their separate scope.

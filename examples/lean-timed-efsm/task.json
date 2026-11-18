@@ -1,0 +1,41 @@
+{
+  "schema": "fsa-lean-timed-replay-task-v1",
+  "id": "timed_cell_replay",
+  "model": {
+    "path": "model.json",
+    "sha256": "cc8a9349c8edc722b981c34615ffd43f07970bf7a897e0f1ab12b1d706833e6e"
+  },
+  "oracle": {
+    "path": "cases.json",
+    "sha256": "3eefe8ccf5ddaf5940fbf92d3f45ec1caf7b6d605e0c7cd5809851d4f06a9888"
+  },
+  "sources": [
+    {
+      "path": "spec.md",
+      "sha256": "75456866515159edabc2998a97585d1bd891a3c694c83d65f7dd8fbb3f12fdb9"
+    }
+  ],
+  "lean_version": "4.35.0",
+  "semantics_sha256": {
+    "Foundation": "8695310fac438f6d89c3d578ba8d3c33cf4fbca088595e435a36f688e5afee60",
+    "ValueOps": "293be5cf22957e0a21399ce01b0ed021d066b637897aae7668b16f00cefc3247",
+    "TypedIR": "74af72456c835b8be4c2888024bd5409263ef9096d74891650c70c886ae8a6c9",
+    "TypedMachine": "b487d5220fa72969b1ff647eb4e5aebf78cddd1597b9287919349186767279d4",
+    "StoreFacts": "9dc846b883143146a39029beb6521f0f9086dd1dc7152ba5895a24727aed1fbc",
+    "TimerRank": "71f16dc3e66d4e9f484065ab28059cd47aded418ff3a28e4c1a4acd26f0e36a2",
+    "TimerMinimum": "89182a0a535a374bd8c7f9556e1fd9b5143bf6885e0cefd627286791b3509a89",
+    "TimerEffects": "850c6687a2618d91f990a3a26195ef101f3b046a40cbd09f99e6db9b0446de06",
+    "TimerProgress": "1deb5248030aa3594c1204576fa496399381fc2d8779e5a724e9a0bde01ca2da",
+    "BatchMachine": "4617a95fb8cd7cf26deba47d682fc747d2f9c2061a32d76c37a5b4304a22c4fe",
+    "BatchReplay": "76981818610fdbf7fd44af33e3e015d7986e327d3cee94d2da74b986dc3c27ed",
+    "MachineObserve": "732b7f4fd2bd03bdab4888a29660d442a17483f399a08c8242cdeef85c47f650",
+    "BatchObserve": "dbd5b856baa8859b31d4a8d67c0b3d358a62b8adeaceca1a29c7b1b7e2059cc3"
+  },
+  "adapters_sha256": {
+    "lean_timed_replay.py": "e7f28d4457aa2768c78feecaa68208d0337917a06b3b5152856d15fc2be4b6bc",
+    "lean_batch.py": "a413eb25fc43e9df27c15158eff519c314494ef25389e1c70cbc846780b7dbe5",
+    "lean_machine.py": "3d460b717a0e06ac25c83f7f30782e4ebd8adfefd9de28092eb4bb5d62a7b685",
+    "lean_typed.py": "0a23d70e6f39492b293515ae2bd156daf8aceaf4d7b0607c08f84c0720735b22"
+  },
+  "approved_sha256": "f5626b5bd27eb32d720e4521555826b1209c6853a7f497e106c342ea4056c8b8"
+}
