@@ -4,13 +4,13 @@
   "files": {
     "protocol_lab/codegen/__init__.py": {
       "extracted_sha256": "ba9c94b903acd7a7894b9a33ebef4fcd6a571088da0ff31aa15b6c4a0b6a8485",
-      "current_sha256": "82d9c1f42f221806504067303f7acae04c5c4f46dbe10330fb8856054a93d6de",
-      "change": "native-counted-text-v6"
+      "current_sha256": "4b4f4108fff020829f464a427975dc8d39131de7bf254a82e1f8501b731a7b3f",
+      "change": "native-counted-text-v6+typed-observation-v1"
     },
     "protocol_lab/codegen/execute.py": {
       "extracted_sha256": "355a90badcb18aecd8217755e03d5f290cfd758b3fa3f3a4224db7928a8b3895",
-      "current_sha256": "fd80da5f96bd19b4595a5c0d203014528d8feb6902e11ce90007dd31c8e54cea",
-      "change": "native-counted-text-v6"
+      "current_sha256": "c24d4a110fce73070e9ca179ad9600b37d89b110c4675dd7aa9f8217a6dcc7bc",
+      "change": "native-counted-text-v6+typed-observation-v1"
     },
     "protocol_lab/pipeline/task.py": {
       "extracted_sha256": "059cf6e401837ae74042c37907a0673e7b05f26f9232b9e5cb3e3c0091f4980e",
@@ -19,8 +19,8 @@
     },
     "protocol_lab/pipeline/worker.py": {
       "extracted_sha256": "cab78a75d197fd9def988aaf5f1584bac501e2c04ea989d99cd55e3b1b109879",
-      "current_sha256": "c533d57fdfd27b2556f57ce88eeff52ec481c3db90fee32a8a2e1b8af96e3788",
-      "change": "lean-typed-efsm-flow-v7"
+      "current_sha256": "206840ec32a422a82b2ba0887f3707a1ee526aa110bacc5830755126c973bf5f",
+      "change": "lean-typed-efsm-flow-v7+typed-observation-v1"
     },
     "protocol_lab/pipeline/runner.py": {
       "extracted_sha256": "cbd78b3749b3368ba39fbd4a1fa1f89e69cc7212feb7af4dd196b97404a65750",
@@ -31,6 +31,11 @@
       "extracted_sha256": "2458df5d56d386fe086b4988f8a8efddff0d62b52009556382e3e9e6f4b02e07",
       "current_sha256": "7c81fc4b789a32ddcd8236cd8efd639029a4b38f48109183abdc2d08074a0838",
       "change": "native-counted-text-v6"
+    },
+    "protocol_lab/flow.py": {
+      "extracted_sha256": "1a35ee2988a65b8ef12fafcbd434d65e7b07b4a60745a59e185d2ac688c873fe",
+      "current_sha256": "92f367ea8d6c90efe3f9b15ddf18a8825a1f343ffe8f9170088e5d22c4166264",
+      "change": "typed-observation-v1"
     }
   }
 }

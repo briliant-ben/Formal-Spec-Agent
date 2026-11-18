@@ -33,17 +33,17 @@ adapter and universal timed-model certificate remain pending.
 
 [The benchmark](../examples/lean-timed-efsm) freezes the source and ten stimuli
 before model execution. It exercises acceptance, oversize rejection without
-refresh, expiry before an external event at the same deadline, refresh from31
-to35, a no-due tick, full bytes/Unicode/NUL and final backward-time rollback.
+refresh, expiry before an external event at the same deadline, refresh from 31
+to 35, a no-due tick, full bytes/Unicode/NUL and final backward-time rollback.
 
-Reference execution and one persistent generated-C process match all10 operations
-and9 transition rows, including the declared final error. A wrong reject refresh
+Reference execution and one persistent generated-C process match all 10 operations
+and 9 transition rows, including the declared final error. A wrong reject refresh
 passes the model invariants but fails the frozen oracle; a native timer comparison
 fault also fails it. Native reply snapshots do not expose the clock directly:
 transition times, deadlines and subsequent backward-time behavior are checked.
 There is no live network or compiler/memory proof in this benchmark.
 
-The original DeepSeek oracle incorrectly accepted17 bytes and refreshed a timer;
+The original DeepSeek oracle incorrectly accepted 17 bytes and refreshed a timer;
 that result was rejected. Its completed repair fixes the behavior. Six dispatch
 headers were structurally unwrapped, with all values unchanged. Direct code-point
 inspection confirms the original and repaired NUL labels were already correct;
@@ -58,3 +58,16 @@ byte-identical. Historical evidence requires its original checker.
 
 Optional Z3 and historical UNKNOWNs are retained. No entire timed protocol,
 TCPIP case, reachability, C compiler or English specification proof is claimed.
+
+
+## Exact observation types
+
+A synthetic observation mutation of a genuine native trace exposed an oracle
+weakness: Python equality treated JSON Boolean true as integer 1. This was not
+a new Linux run or an observed implementation fault. Both native Difference
+channels now compare JSON scalar types recursively, keeping object key order
+irrelevant and array order/content exact. Integer/float timestamp aliases and
+Boolean/numeric state/message aliases fail. Reference scenario final variable
+expectations must also match the declared IR type; unknown fields are rejected.
+Generation evidence binds the new generic equality helper. No protocol rule,
+input, invariant or frozen expected value changes.

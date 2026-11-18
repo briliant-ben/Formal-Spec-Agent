@@ -15,6 +15,9 @@ class ExtractionTests(unittest.TestCase):
         changes=evolution['files']
         categories={n:'native-counted-text-v6' for n in ['protocol_lab/codegen/__init__.py','protocol_lab/codegen/execute.py','protocol_lab/codegen/harness.c']}
         categories.update({n:'lean-typed-efsm-flow-v7' for n in ['protocol_lab/pipeline/task.py','protocol_lab/pipeline/worker.py','protocol_lab/pipeline/runner.py']})
+        categories.update({n:'native-counted-text-v6+typed-observation-v1' for n in ['protocol_lab/codegen/__init__.py','protocol_lab/codegen/execute.py']})
+        categories['protocol_lab/pipeline/worker.py']='lean-typed-efsm-flow-v7+typed-observation-v1'
+        categories['protocol_lab/flow.py']='typed-observation-v1'
         self.assertEqual(set(changes),set(categories))
         for row in manifest['files']:
             actual=hashlib.sha256((ROOT/row['target']).read_bytes()).hexdigest()

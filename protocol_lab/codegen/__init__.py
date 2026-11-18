@@ -323,7 +323,7 @@ def generate(model_file,out,wire_binding_file=None):
     if wire_binding_file is not None:raise Unsupported("Legacy TCP wire codec is not a generic framework backend")
     model_file=Path(model_file).resolve();out=Path(out).resolve()
     if out.exists():raise ValueError('Fresh output directory required')
-    paths=model_files(model_file)+[HERE/'__init__.py',HERE/'__main__.py',HERE/'runtime.c',HERE/'harness.c',HERE/'execute.py',Path(__file__).parents[1]/'ir.py',Path(__file__).parents[1]/'symbolic.py']
+    paths=model_files(model_file)+[HERE/'__init__.py',HERE/'__main__.py',HERE/'runtime.c',HERE/'harness.c',HERE/'execute.py',Path(__file__).parents[1]/'json_values.py',Path(__file__).parents[1]/'ir.py',Path(__file__).parents[1]/'symbolic.py']
     wire=None
     if wire_binding_file is not None:
         wire_binding_file=Path(wire_binding_file).resolve();wire=json.loads(wire_binding_file.read_text())

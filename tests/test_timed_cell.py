@@ -11,6 +11,7 @@ import unittest
 from protocol_lab.ir import load,Machine,ModelError
 from protocol_lab.codegen import render
 from protocol_lab.codegen.execute import commands
+from protocol_lab.json_values import same_value
 
 ROOT=Path(__file__).resolve().parents[1]
 EX=ROOT/'examples/lean-timed-efsm'
@@ -42,7 +43,7 @@ class TimedCellTests(unittest.TestCase):
     def test_frozen_oracle_and_reference_complete_operations(self):
         self.assertEqual(hashlib.sha256((EX/'cases.json').read_bytes()).hexdigest(),
                          '3eefe8ccf5ddaf5940fbf92d3f45ec1caf7b6d605e0c7cd5809851d4f06a9888')
-        self.assertEqual(observe_reference(self.model,self.case),self.expected)
+        self.assertTrue(same_value(observe_reference(self.model,self.case),self.expected))
         self.assertEqual([r['rule']for r in self.expected[2]['trace']],['EXPIRY.HOT','PUT.ACCEPT.COLD'])
         self.assertEqual(self.expected[7]['trace'],[])
         self.assertEqual(self.expected[-1]['after'],self.expected[-2]['after'])
@@ -67,7 +68,8 @@ class TimedCellTests(unittest.TestCase):
         with tempfile.TemporaryDirectory()as temporary:
             root=Path(temporary);source=render(self.model)
             for name,code in [('actual',source),('late-timer-fault',source.replace(
-                'if(next<0||m->due[next]>at)break;','if(next<0||m->due[next]>=at)break;'))]:
+                'if(next<0||m->due[next]>at)break;','if(next<0||m->due[next]>=at)break;')),
+                ('bool-json-type-fault',source.replace('text(out,m->v[4]?"true":"false");','number(out,m->v[4]);'))]:
                 with self.subTest(name=name):
                     if name!='actual':self.assertNotEqual(code,source)
                     c=root/(name+'.c');exe=root/name;c.write_text(code)
@@ -81,17 +83,17 @@ class TimedCellTests(unittest.TestCase):
                         after=dict(r['after'],now_ms=r['time_ms']),emitted=r['emitted'])
                         for r in rows if r['status']=='transition']
                     if name!='actual':
-                        self.assertNotEqual(actual,expected_trace)
+                        self.assertFalse(same_value(actual,expected_trace))
                         continue
                     # Exit1 is the declared final backward-time rejection, not failure to execute.
                     self.assertEqual(result.returncode,1)
-                    self.assertEqual(actual,expected_trace)
+                    self.assertTrue(same_value(actual,expected_trace))
                     replies=[r for r in rows if r['status']!='transition']
                     self.assertEqual(len(replies),11)
                     self.assertEqual(replies[0]['snapshot'],{k:v for k,v in self.case['initial'].items()if k!='now_ms'})
                     for reply,expected in zip(replies[1:],self.expected):
                         self.assertEqual(reply['status'],expected['status'])
-                        self.assertEqual(reply['snapshot'],{k:v for k,v in expected['after'].items()if k!='now_ms'})
+                        self.assertTrue(same_value(reply['snapshot'],{k:v for k,v in expected['after'].items()if k!='now_ms'}))
                     self.assertEqual(replies[-1]['failure'],'nonmonotonic_time')
                     # Reply snapshots do not directly report clock. Transition clocks,
                     # timer deadlines and the later backwards-time rejection are checked.
