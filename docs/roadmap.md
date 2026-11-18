@@ -94,3 +94,12 @@ Timer composition, native/compiler refinement and whole TCPIP migration remain o
 The 64-message-per-literal, 128-case/128-step and 512-total-step limits are
 explicit witness-generation resource limits; they do not restrict the universal
 store/field quantifiers in preservation or coverage.
+
+## Timed contracts checkpoint
+
+Generic raw firing and actual fire/external/timer preservation bridges are now
+kernel-checked. Timed Cell has independent ten-operation reference/native checks
+and meaningful timer faults. Its universal raw-rule, coverage and repeated-batch
+model obligations still need a strict task adapter and accepted proof data.
+Unknown timer fields are explicitly rejected by typed machine admission. The
+microstep approval epoch changes only its adapter pin, not its propositions.
