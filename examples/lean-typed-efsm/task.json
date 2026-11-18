@@ -1,0 +1,38 @@
+{
+  "schema": "fsa-lean-typed-efsm-task-v1",
+  "id": "typed_cell_full_contract",
+  "model": "model.json",
+  "model_sha256": "e17281fd2c174806bbb3b05247dc9e9aeef72331a8f085d483d3128331239df4",
+  "cases": "cases.json",
+  "cases_sha256": "2e6f5a87da2814e50488248590d64c927d913552afe9d81b4bde14ef3f054ace",
+  "sources": [
+    {
+      "path": "spec.md",
+      "sha256": "c86a9a9144a6cdbb9cae939234c8fed2fe1023b8bf2fcda61219bc775e0c1a4c"
+    }
+  ],
+  "witnesses": [
+    {
+      "rule": "PUT.ACCEPT",
+      "case": "typed-cell-content-and-domain",
+      "step": 0
+    },
+    {
+      "rule": "PUT.REJECT",
+      "case": "typed-cell-content-and-domain",
+      "step": 1
+    }
+  ],
+  "lean_version": "4.35.0",
+  "semantics_sha256": {
+    "Foundation": "8695310fac438f6d89c3d578ba8d3c33cf4fbca088595e435a36f688e5afee60",
+    "ValueOps": "293be5cf22957e0a21399ce01b0ed021d066b637897aae7668b16f00cefc3247",
+    "TypedIR": "74af72456c835b8be4c2888024bd5409263ef9096d74891650c70c886ae8a6c9",
+    "TypedMachine": "b487d5220fa72969b1ff647eb4e5aebf78cddd1597b9287919349186767279d4",
+    "TypedContracts": "e619b518128c597b881e13229ba69da92dee3aa7c9247ada016f667b2572184d",
+    "MachineObserve": "732b7f4fd2bd03bdab4888a29660d442a17483f399a08c8242cdeef85c47f650",
+    "StoreFacts": "9dc846b883143146a39029beb6521f0f9086dd1dc7152ba5895a24727aed1fbc"
+  },
+  "adapter_sha256": "3630d26914282fc4248f7749f140e2d7b1adc24a46d78ae552e67f1a38b4b6ce",
+  "approved_sha256": "2442e2026dac990bdd1538a511f27a04003c01531e10d8d4068561a889763299"
+}

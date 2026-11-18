@@ -191,3 +191,10 @@ source contract at its hash-pinned original bytes/language; the
 The [typed batch scheduler](docs/lean-batch-scheduling.md) now has checked generic
 termination/replay lemmas and a compiled input-only reference. Its 57-obligation literal
 certificate now checks and freshly rechecks; this does not yet replace all Z3 tasks.
+
+The [universal typed EFSM gate](docs/lean-typed-efsm.md) now checks raw
+preservation, guard disjointness and coverage for all five IR value kinds in a
+timer-free fragment. Its [Typed Cell benchmark](examples/lean-typed-efsm) has 14
+kernel-checked obligations plus fresh rechecking. Universal contracts and finite
+execution witnesses are reported separately; standalone C text input and full
+typed flow integration remain pending.

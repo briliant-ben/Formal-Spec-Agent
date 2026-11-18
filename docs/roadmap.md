@@ -81,3 +81,15 @@ exact next-step equations and stronger byte-content lemmas; the original resourc
 UNKNOWN attempts remain independent history. Extend universal typed-rule
 preservation/coverage before whole-case/full-flow migration; do not
 retire the optional Z3 backend yet. See [batch scheduling](lean-batch-scheduling.md).
+
+## Universal typed EFSM checkpoint
+
+The timer-free atomic fragment now has raw before-filter preservation, initial
+validity, guard disjointness and declared-state/event coverage for all five value
+kinds. Typed Cell's 14 obligations and fresh kernel recheck pass; eight new tests
+also reject wrong-byte execution, incomplete witnesses/oracles and certificate
+mutations. The independent base installation checks this without importing Z3.
+Timer composition, full typed flow and native text-input support remain open.
+The 64-message-per-literal, 128-case/128-step and 512-total-step limits are
+explicit witness-generation resource limits; they do not restrict the universal
+store/field quantifiers in preservation or coverage.
