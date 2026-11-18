@@ -140,3 +140,23 @@ literal oracle as separate files. `lean-plan` derives the propositions,
 and rechecks a certificate. Failed operations need the explicit fault,
 rollback snapshot and an empty trace. A certificate covers its named literal
 cases. Universal model and scheduler obligations retain their separate scope.
+
+## Deriving universal obligations from IR
+
+The timed contract renderer derives each raw firing obligation from the
+actual rule, external event declarations and timer-to-event bindings. It
+groups conflict obligations by source state and event. Lean independently
+enumerates the firings and groups from the lowered model and checks equality
+with the rendered catalogs. The group proposition quantifies over every two
+distinct rule IDs in the group and arbitrary typed input and state values
+satisfying the model invariant. A general theorem combines all group proofs
+into guard disjointness for the actual dispatcher.
+
+The Timed Cell kernel regression discharges the complete typed timer
+contracts and checks the scheduler theorem. It also proves that dropping the
+last timer firing or conflict group produces an unequal catalog. On the
+pinned TCP/IP model, Lean confirms 335 raw firing entries and 18 conflict
+groups. The kernel independently discharges the ARP cache configuration
+group for arbitrary fields and snapshots. Other groups and raw preservation
+still require their own proofs. External coverage remains a separate
+obligation because the TCP/IP profile admits uncovered inputs.

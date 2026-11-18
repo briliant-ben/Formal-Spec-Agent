@@ -3,23 +3,23 @@ import Approved
 open FormalSpecAgent FormalSpecAgent.TypedMachine FormalSpecAgent.TypedIR
 open Approved
 
-theorem initial_valid_checked : timed_initial_valid := by rfl
+theorem initial_valid_checked : TypedContracts.InitialValid model initial := by rfl
 
-theorem initial_declared_checked : timed_initial_declared := by
+theorem initial_declared_checked : TimerDomain.Declared declaredTimers initial := by
   intro entry member
   change entry ∈ ([] : List TimerEntry) at member
   simp at member
 
-theorem rule_ids_checked : timed_rule_ids_unique := by unfold timed_rule_ids_unique; decide
+theorem rule_ids_checked : rule_ids_unique := by unfold rule_ids_unique; decide
 
-theorem arms_declared_checked : timed_arms_declared := by
+theorem arms_declared_checked : arms_declared := by
   intro rule member timer delay arm
   rw [model_rules] at member
   simp only [List.mem_cons, List.mem_nil_iff, or_false] at member
   rcases member with rfl | rfl | rfl | rfl | rfl <;>
-    simp_all [rule_0, rule_1, rule_2, rule_3, rule_4]
+    simp_all [declaredTimers, rule_0, rule_1, rule_2, rule_3, rule_4]
 
-theorem coverage_checked : timed_covers_timers := by
+theorem coverage_checked : timer_coverage := by
   intro s _ valid entry inside known
   have id : entry.timer = 0 := List.mem_singleton.mp known
   have active : 0 ∈ s.timers.map TimerEntry.timer :=
@@ -33,12 +33,12 @@ theorem coverage_checked : timed_covers_timers := by
   · rw [id]; rfl
   · rfl
 
-theorem targets_declared_checked : timed_targets_declared := by
+theorem targets_declared_checked : targets_declared := by
   intro rule member
   rw [model_rules] at member
   simp only [List.mem_cons, List.mem_nil_iff, or_false] at member
   rcases member with rfl | rfl | rfl | rfl | rfl <;>
-    simp [rule_0, rule_1, rule_2, rule_3, rule_4]
+    simp [declaredStates, rule_0, rule_1, rule_2, rule_3, rule_4]
 
 #print axioms initial_valid_checked
 #print axioms initial_declared_checked
@@ -56,7 +56,7 @@ private theorem expiry_removed (s : Snapshot) :
   have rejected := (List.mem_filter.mp member).2
   simp [eq] at rejected
 
-theorem expiry_raw_checked : FiringPreserves model rule_4 (some 0) := by
+theorem expiry_raw_checked : raw_4_timer_0 := by
   intro s fields _ _ _
   refine ⟨_, rfl, ?_⟩
   simp [invariantsHold, model_invariants, rule_4, withoutFiring,
@@ -64,12 +64,12 @@ theorem expiry_raw_checked : FiringPreserves model rule_4 (some 0) := by
     e0, e1, e3, e4, e13, e14, e20, e22, e25, e26, e27, e28, e29, e30,
     e31, e32, e33, e34, e35, e10, expiry_removed]
 
-theorem external_coverage_checked : Covers model [0, 1] := by
+theorem external_coverage_checked : external_coverage := by
   intro s event fields state allowed _
   rw [model_external_events] at allowed
   have eventZero := List.mem_singleton.mp allowed
   subst event
-  simp only [List.mem_cons, List.mem_nil_iff, or_false] at state
+  simp only [declaredStates, List.mem_cons, List.mem_nil_iff, or_false] at state
   cases decision : TypedMachine.eval s fields e12
   · rcases state with cold | hot
     · exact ⟨rule_1, by rw [model_rules]; simp, cold.symm, rfl, by
@@ -113,58 +113,63 @@ private theorem rejected_raw (r : Rule) (actions : r.actions = rule_1.actions �
     refine ⟨_, rfl, ?_⟩
     exact invariant
 
-theorem external_raw_checked : ∀ event ∈ model.externalEvents,
-    ScheduledPreservation.MatchingRaw model event none := by
-  intro event allowed rule member trigger
-  rw [model_external_events] at allowed
-  have eventZero := List.mem_singleton.mp allowed
-  subst event
-  rw [model_rules] at member
-  simp only [List.mem_cons, List.mem_nil_iff, or_false] at member
-  rcases member with rfl | rfl | rfl | rfl | rfl
-  · exact accepted_raw rule_0 rfl rfl rfl
-  · exact rejected_raw rule_1 (Or.inl rfl) rfl
-  · exact accepted_raw rule_2 rfl rfl rfl
-  · exact rejected_raw rule_3 (Or.inr rfl) rfl
-  · contradiction
+open TimedObligations
 
-theorem timer_raw_checked : BatchPreservation.TimerRaw [0] model := by
-  intro timer known rule member trigger
-  have timerZero := List.mem_singleton.mp known
-  subst timer
-  rw [model_rules] at member
-  simp only [List.mem_cons, List.mem_nil_iff, or_false] at member
-  rcases member with rfl | rfl | rfl | rfl | rfl
-  · contradiction
-  · contradiction
-  · contradiction
-  · contradiction
-  · exact expiry_raw_checked
+theorem raw_catalog_checked : raw_catalog_exact := by rfl
 
-#print axioms external_raw_checked
-#print axioms timer_raw_checked
+theorem conflict_catalog_checked : conflict_catalog_exact := by rfl
 
-theorem guards_disjoint_checked : GuardsDisjoint model := by
-  intro s fields _ event left right leftMember rightMember distinct leftSource rightSource
-    leftEvent rightEvent
-  rw [model_rules] at leftMember rightMember
-  simp only [List.mem_cons, List.mem_nil_iff, or_false] at leftMember rightMember
-  rcases leftMember with rfl | rfl | rfl | rfl | rfl <;>
-    rcases rightMember with rfl | rfl | rfl | rfl | rfl <;>
-    simp only [rule_0, rule_1, rule_2, rule_3, rule_4] at distinct leftSource rightSource leftEvent rightEvent ⊢ <;>
-    try omega
-  all_goals
-    have complement : TypedMachine.eval s fields e24 = !(TypedMachine.eval s fields e12) := rfl
-    rw [complement]
-    cases TypedMachine.eval s fields e12 <;> simp
+theorem raw_checks : Each (fun p => FiringPreserves model p.1 p.2)
+    (rawChecks model declaredTimers) := by
+  have exactCatalog : rawChecks model declaredTimers = rawCatalog := raw_catalog_checked
+  rw [exactCatalog]
+  exact ⟨accepted_raw rule_0 rfl rfl rfl, rejected_raw rule_1 (Or.inl rfl) rfl,
+    accepted_raw rule_2 rfl rfl rfl, rejected_raw rule_3 (Or.inr rfl) rfl,
+    expiry_raw_checked, trivial⟩
 
-theorem timed_cell_contracts : Contracts model [0, 1] [0] :=
-  ⟨targets_declared_checked, arms_declared_checked, rule_ids_checked,
-    guards_disjoint_checked, coverage_checked, timer_raw_checked,
-    external_coverage_checked, external_raw_checked⟩
+private theorem complement (s : Snapshot) (fields : Values) :
+    TypedMachine.eval s fields e12 = false ∨ TypedMachine.eval s fields e24 = false := by
+  have opposite : TypedMachine.eval s fields e24 = !(TypedMachine.eval s fields e12) := rfl
+  rw [opposite]
+  cases TypedMachine.eval s fields e12 <;> simp
 
-theorem timed_cell_start : Admitted model [0, 1] [0] initial :=
+theorem conflicts_checked : Each (ConflictFree model) (conflictChecks model) := by
+  have exactCatalog : conflictChecks model = conflictCatalog := conflict_catalog_checked
+  rw [exactCatalog]
+  constructor
+  · intro s fields _ left leftIn right rightIn distinct _
+    simp [conflictGroup_0] at leftIn rightIn
+    rcases leftIn with rfl | rfl <;> rcases rightIn with rfl | rfl
+    · exact (distinct rfl).elim
+    · exact complement s fields
+    · exact Or.symm (complement s fields)
+    · exact (distinct rfl).elim
+  constructor
+  · intro s fields _ left leftIn right rightIn distinct _
+    simp [conflictGroup_1] at leftIn rightIn
+    rcases leftIn with rfl | rfl <;> rcases rightIn with rfl | rfl
+    · exact (distinct rfl).elim
+    · exact complement s fields
+    · exact Or.symm (complement s fields)
+    · exact (distinct rfl).elim
+  constructor
+  · intro _ _ _ left leftIn right rightIn distinct _
+    simp [conflictGroup_2] at leftIn rightIn
+    exact (distinct (congrArg Rule.id (leftIn.trans rightIn.symm))).elim
+  · trivial
+
+theorem timed_cell_contracts : Contracts model declaredStates declaredTimers :=
+  contracts_from_checks model declaredStates declaredTimers targets_declared_checked
+    arms_declared_checked rule_ids_checked coverage_checked external_coverage_checked
+    raw_checks conflicts_checked
+
+theorem timed_cell_start : initial_admitted :=
   ⟨initial_valid_checked, by decide, initial_declared_checked, by rfl⟩
+
+#print axioms raw_catalog_checked
+#print axioms conflict_catalog_checked
+#print axioms raw_checks
+#print axioms conflicts_checked
 
 /-- Concrete use of the generic theorem on the model generated from the IR.
     Fields are arbitrary typed values, with no cap imposed by this theorem. -/
@@ -175,7 +180,6 @@ theorem timed_cell_initial_dispatch (limit : Int) (fields : Values) (bound : 0 �
   dispatch_total model [0, 1] [0] limit timed_cell_contracts initial timed_cell_start bound
     0 fields (by rw [model_external_events]; simp)
 
-#print axioms guards_disjoint_checked
 #print axioms timed_cell_contracts
 #print axioms timed_cell_start
 #print axioms timed_cell_initial_dispatch
