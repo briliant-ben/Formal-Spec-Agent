@@ -156,7 +156,18 @@ The Timed Cell kernel regression discharges the complete typed timer
 contracts and checks the scheduler theorem. It also proves that dropping the
 last timer firing or conflict group produces an unequal catalog. On the
 pinned TCP/IP model, Lean confirms 335 raw firing entries and 18 conflict
-groups. The kernel independently discharges the ARP cache configuration
-group for arbitrary fields and snapshots. Other groups and raw preservation
-still require their own proofs. External coverage remains a separate
-obligation because the TCP/IP profile admits uncovered inputs.
+groups. External coverage remains a separate obligation because the TCP/IP
+profile admits uncovered inputs.
+
+`GuardDiscriminators` proves that guards cannot both hold when their
+conjuncts require different literals in the same typed state variable or
+event field. It passes over other expressions and leaves all pairs it could
+not separate as individual obligations. An assembly theorem combines the
+calculated exclusions with proofs for those remaining pairs.
+
+The kernel discharges 14 TCP/IP groups with the discriminator alone. It
+checks the ARP retry, TCP send and TCP transmit groups by composing that
+reduction with packet lengths, buffer bounds and complementary guards.
+These are universal guard proofs on the stated invariant domain. The
+frame receive group has 7,747 remaining pairs out of 28,441. Raw rule
+preservation and the remaining frame receive pairs still need proofs.

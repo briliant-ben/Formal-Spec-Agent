@@ -15,7 +15,7 @@ LEAN=os.environ.get('FSA_LEAN')or shutil.which('lean')
 MODULES=['Foundation','ValueOps','TypedIR','TypedMachine','TypedContracts',
          'TypedFiringContracts','TimerRank','TimerMinimum','ScheduledPreservation','TimerDomain',
          'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection','BatchTotality',
-         'StoreFacts','MachineObserve','BatchObserve','TimedObligations']
+         'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators']
 TARGETS=['FormalSpecAgent.ScheduledPreservation.'+n for n in [
     'MatchingRaw','fire_success_invariant_from_raw','external_success_invariant_from_raw',
     'timer_success_invariant_from_raw']]+['ScheduledController.raw_obligation_rejects_filtered_timer_loss']
@@ -75,13 +75,22 @@ class ScheduledPreservationTests(unittest.TestCase):
                            'timed_cell_start', 'timed_cell_initial_dispatch'):
                 self.assertLessEqual(set(gate.read_axioms(concrete.stdout, target)), gate.AXIOMS)
             dropped = '''import Approved
-open Approved FormalSpecAgent.TimedObligations
+import GuardDiscriminators
+open Approved FormalSpecAgent.TimedObligations FormalSpecAgent.GuardDiscriminators
+open FormalSpecAgent.TypedIR
 example : rawChecks model declaredTimers ≠ rawCatalog.dropLast := by
   intro wrong
   cases wrong
 example : conflictChecks model ≠ conflictCatalog.dropLast := by
   intro wrong
   cases wrong
+
+def yes : Expr .boolean := .equal .boolean (.variable .boolean 0) (.literal .boolean true)
+def no : Expr .boolean := .equal .boolean (.variable .boolean 0) (.literal .boolean false)
+def fieldNo : Expr .boolean := .equal .boolean (.field .boolean 0) (.literal .boolean false)
+example : separated (facts yes) (facts no) = true := rfl
+example : separated (facts yes) (facts fieldNo) = false := rfl
+example : separated (facts yes) (facts (.boolOr no (.literal .boolean true))) = false := rfl
 '''
             (root/'Dropped.lean').write_text(dropped)
             rejected = compile_module('Dropped')
@@ -94,7 +103,7 @@ example : conflictChecks model ≠ conflictCatalog.dropLast := by
             r=compile_module('ScheduledPreservation')
             self.assertNotEqual(r.returncode,0);self.assertIn('error:',r.stdout)
 
-    def test_pinned_tcpip_catalogs_conflict_group_and_unwired_events(self):
+    def test_pinned_tcpip_catalogs_conflict_groups_and_unwired_events(self):
         model_path = os.environ.get('FSA_TCPIP_MODEL')
         if not model_path:
             if os.environ.get('FSA_TCPIP_REQUIRED') == '1':
@@ -129,7 +138,8 @@ example : conflictChecks model ≠ conflictCatalog.dropLast := by
                     cwd=root, env=env, capture_output=True, text=True, timeout=60)
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
             for name in ('absent_external_exact', 'absent_packet_rolls_back',
-                         'absent_initial_dispatch', 'cacheConfigDisjoint',
+                         'absent_initial_dispatch', 'closed_groups', 'frame_pairs_remaining',
+                         'retry_group', 'send_group', 'transmit_group',
                          'endpoint_raw_exact', 'endpoint_conflicts_exact'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)
