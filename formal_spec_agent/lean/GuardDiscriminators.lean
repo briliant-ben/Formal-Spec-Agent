@@ -7,7 +7,7 @@ open TypedIR
 inductive InputSlot where
   | variable : Nat → InputSlot
   | field : Nat → InputSlot
-  deriving DecidableEq
+  deriving DecidableEq, BEq
 
 def InputSlot.read (slot : InputSlot) (kind : Kind) (ctx : Context) : Value kind :=
   match slot with
@@ -26,7 +26,19 @@ inductive Observation where
   | add : Observation → Observation → Observation
   | sub : Observation → Observation → Observation
   | mul : Observation → Observation → Observation
-  deriving DecidableEq
+  deriving DecidableEq, BEq
+
+private theorem inputSlot_identical {left right : InputSlot} (equal : (left == right) = true) :
+    left = right := by
+  cases left <;> cases right <;> simp_all [BEq.beq, instBEqInputSlot.beq]
+
+private theorem observation_identical {left right : Observation} (equal : (left == right) = true) :
+    left = right := by
+  induction left generalizing right <;> cases right <;>
+    simp_all [BEq.beq, instBEqObservation.beq, Bool.and_eq_true]
+  all_goals
+    repeat' constructor
+    all_goals solve_by_elim [And.left, And.right, inputSlot_identical]
 
 private def asInt : Int ⊕ Bytes → Int
   | .inl n => n
@@ -156,9 +168,136 @@ def Fact.holds (ctx : Context) : Fact → Prop
   | .text slot value => slot.read .text ctx = value
   | .boolean slot value => slot.read .boolean ctx = value
 
+/-- The length premise is needed: a clipped slice must not introduce an
+absolute byte claim from an out-of-bounds zero. -/
+theorem byteAt_slice_present (data : Bytes) (start count : Int) (index : Nat)
+    (present : index < (byteSlice data start count).length) :
+    byteAt data (Int.ofNat (start.toNat + index)) =
+      byteAt (byteSlice data start count) (Int.ofNat index) := by
+  have belowCount : index < count.toNat :=
+    Nat.lt_of_lt_of_le present (List.length_take_le count.toNat (data.drop start.toNat))
+  rw [byteAt, byteAt]
+  simp only [Int.ofNat_eq_natCast]
+  rw [ite_eq_right (Int.not_lt.mpr (Int.natCast_nonneg (start.toNat + index))),
+      ite_eq_right (Int.not_lt.mpr (Int.natCast_nonneg index))]
+  simp only [Int.toNat_natCast, byteSlice, List.getD_eq_getElem?_getD,
+    List.getElem?_take_of_lt belowCount, List.getElem?_drop]
+
+/-- A successful literal match establishes presence in every containing slice.
+Only constant offsets are projected to the underlying input slot. -/
+private def bufferOrigin : Observation → Option (InputSlot × Nat)
+  | .bufferSlot slot => some (slot, 0)
+  | .slice buffer (.literal offset) _ =>
+      (bufferOrigin buffer).map fun (slot, start) => (slot, start + offset.toNat)
+  | _ => none
+
+private theorem bufferOrigin_sound (observation : Observation) (ctx : Context)
+    (loc : InputSlot × Nat) (found : bufferOrigin observation = some loc)
+    (index : Nat) (present : index < (asBytes (observation.read ctx)).length) :
+    byteAt (loc.1.read .octets ctx) (Int.ofNat (loc.2 + index)) =
+      byteAt (asBytes (observation.read ctx)) (Int.ofNat index) := by
+  fun_induction bufferOrigin observation generalizing loc index with
+  | case1 slot =>
+    cases found
+    simp only [Nat.zero_add, Observation.read, asBytes]
+  | case2 buffer offset size ih =>
+    obtain ⟨inner, foundInner, result⟩ := Option.map_eq_some_iff.mp found
+    cases result
+    simp only [Observation.read, asBytes, asInt] at present ⊢
+    have inInner : offset.toNat + index < (asBytes (buffer.read ctx)).length := by
+      apply Nat.lt_sub_iff_add_lt'.mp
+      simpa only [List.length_drop] using
+        Nat.lt_of_lt_of_le present (List.length_take_le' (asInt (size.read ctx)).toNat
+          ((asBytes (buffer.read ctx)).drop offset.toNat))
+    rw [Nat.add_assoc, ih inner foundInner (offset.toNat + index) inInner]
+    exact byteAt_slice_present _ _ _ _ present
+  | _ => contradiction
+
+private def absoluteByte (loc : InputSlot × Nat) (entry : Byte × Nat) : Fact :=
+  .integer (.byteAt (.bufferSlot loc.1) (.literal (Int.ofNat (loc.2 + entry.2))))
+    (.equal (Int.ofNat entry.1.val))
+
+private def literalByteFacts (expr : Expr .octets) (value : Bytes) : List Fact :=
+  match (observation expr).bind bufferOrigin with
+  | none => []
+  | some loc => value.zipIdx.map (absoluteByte loc)
+
+private theorem literalByteFacts_sound (expr : Expr .octets) (value : Bytes) (ctx : Context)
+    (matched : TypedIR.eval expr ctx = value) (fact : Fact)
+    (member : fact ∈ literalByteFacts expr value) : fact.holds ctx := by
+  cases obsFound : observation expr with
+  | none => simp [literalByteFacts, obsFound] at member
+  | some obs =>
+    cases originFound : bufferOrigin obs with
+    | none => simp [literalByteFacts, obsFound, originFound] at member
+    | some loc =>
+      simp [literalByteFacts, obsFound, originFound] at member
+      obtain ⟨octet, index, inValue, rfl⟩ := member
+      have read : obs.read ctx = .inr (TypedIR.eval expr ctx) :=
+        observation_sound expr ctx obs obsFound
+      have view : asBytes (obs.read ctx) = value := by rw [read, matched]; rfl
+      have present : index < (asBytes (obs.read ctx)).length := by
+        rw [view]
+        simpa using List.snd_lt_of_mem_zipIdx inValue
+      have byteRead := bufferOrigin_sound obs ctx loc originFound index present
+      change byteAt (loc.1.read .octets ctx) (Int.ofNat (loc.2 + index)) = Int.ofNat octet.val
+      rw [byteRead, view]
+      unfold byteAt
+      simp only [Int.ofNat_eq_natCast]
+      rw [ite_eq_right (Int.not_lt.mpr (Int.natCast_nonneg index))]
+      simp only [Int.toNat_natCast, List.getD_eq_getElem?_getD,
+        List.mem_zipIdx_iff_getElem?.mp inValue, Option.getD_some]
+
+
+private theorem nonzeroByte_present (data : Bytes) (index : Nat)
+    (nonzero : byteAt data (Int.ofNat index) ≠ 0) : index < data.length := by
+  apply Nat.lt_of_not_ge
+  intro absent
+  apply nonzero
+  unfold byteAt
+  simp only [Int.ofNat_eq_natCast]
+  rw [ite_eq_right (Int.not_lt.mpr (Int.natCast_nonneg index))]
+  simp [List.getD_eq_getElem?_getD, List.getElem?_eq_none absent]
+
+private def projectedReadFacts (obs : Observation) (test : IntegerTest) : List Fact :=
+  match obs, test with
+  | .byteAt (.slice buf start count) (.literal offset), .equal value =>
+    if offset < 0 ∨ value = 0 then [] else
+      match bufferOrigin (.slice buf start count) with
+      | none => []
+      | some loc => [.integer (.byteAt (.bufferSlot loc.1)
+        (.literal (Int.ofNat (loc.2 + offset.toNat)))) (.equal value)]
+  | _, _ => []
+
+private theorem projectedReadFacts_sound (obs : Observation) (test : IntegerTest) (ctx : Context)
+    (valid : test.holds (obs.integer ctx)) (fact : Fact)
+    (member : fact ∈ projectedReadFacts obs test) : fact.holds ctx := by
+  unfold projectedReadFacts at member
+  split at member
+  next buf start count offset value =>
+    split at member
+    next => simp at member
+    next accepted =>
+      split at member
+      next => simp at member
+      next loc origin =>
+        have offsetNonnegative : 0 ≤ offset := Int.le_of_not_gt (fun neg => accepted (Or.inl neg))
+        have nonzero : value ≠ 0 := fun zero => accepted (Or.inr zero)
+        have offsetCast : Int.ofNat offset.toNat = offset := Int.toNat_of_nonneg offsetNonnegative
+        let data := asBytes ((Observation.slice buf start count).read ctx)
+        change byteAt data offset = value at valid
+        rw [← offsetCast] at valid
+        have present : offset.toNat < data.length :=
+          nonzeroByte_present data offset.toNat (fun zero => nonzero (valid.symm.trans zero))
+        have source := bufferOrigin_sound (.slice buf start count) ctx loc origin offset.toNat present
+        obtain rfl := List.mem_singleton.mp member
+        change byteAt (loc.1.read .octets ctx) (Int.ofNat (loc.2 + offset.toNat)) = value
+        exact source.trans valid
+  next => simp at member
+
 private def integerFacts (expr : Expr .integer) (test : IntegerTest) : List Fact :=
   match observation expr with
-  | some observation => [.integer observation test]
+  | some observation => .integer observation test :: projectedReadFacts observation test
   | none => []
 
 private theorem integerFacts_sound (expr : Expr .integer) (test : IntegerTest) (ctx : Context)
@@ -167,11 +306,12 @@ private theorem integerFacts_sound (expr : Expr .integer) (test : IntegerTest) (
   cases found : observation expr with
   | none => simp [integerFacts, found] at member
   | some observation =>
-    simp only [integerFacts, found, List.mem_singleton] at member
-    subst fact
-    change test.holds (observation.integer ctx)
-    rw [integer_observation_sound expr ctx observation found]
-    exact valid
+    simp only [integerFacts, found, List.mem_cons] at member
+    rw [← integer_observation_sound expr ctx observation found] at valid
+    rcases member with rfl | projected
+    · exact valid
+    · exact projectedReadFacts_sound observation test ctx valid fact projected
+
 
 def facts {kind : Kind} (guard : Expr kind) : List Fact :=
   match guard with
@@ -183,6 +323,7 @@ def facts {kind : Kind} (guard : Expr kind) : List Fact :=
   | .boolNot (.equal .integer expr (.literal _ value)) => integerFacts expr (.different value)
   | .boolNot (.intGe expr (.literal _ value)) => integerFacts expr (.upper (value - 1))
   | .boolNot (.intLe expr (.literal _ value)) => integerFacts expr (.lower (value + 1))
+  | .equal .octets expr (.literal _ value) => literalByteFacts expr value
   | .equal .text (.variable _ slot) (.literal _ value) => [.text (.variable slot) value]
   | .equal .text (.field _ slot) (.literal _ value) => [.text (.field slot) value]
   | .equal .boolean (.variable _ slot) (.literal _ value) => [.boolean (.variable slot) value]
@@ -233,12 +374,15 @@ private theorem facts_sound {kind : Kind} (guard : Expr kind) (ctx : Context)
     have bound : ¬ TypedIR.eval expr ctx ≤ value := by simpa using enabled
     change value + 1 ≤ TypedIR.eval expr ctx
     exact Int.add_one_le_of_lt (Int.lt_of_not_ge bound)
+  | case9 expr value =>
+    exact literalByteFacts_sound expr value ctx
+      (show TypedIR.eval expr ctx = value from of_decide_eq_true enabled) fact member
   | _ =>
     simp_all [Enabled, TypedIR.eval, equalValue, Fact.holds, InputSlot.read] <;>
       exact of_decide_eq_true enabled
 
 def Fact.clash : Fact → Fact → Bool
-  | .integer x a, .integer y b => decide (x = y) && a.clash b
+  | .integer x a, .integer y b => (x == y) && a.clash b
   | .text x a, .text y b => decide (x = y ∧ a ≠ b)
   | .boolean x a, .boolean y b => decide (x = y ∧ a ≠ b)
   | _, _ => false
@@ -249,7 +393,8 @@ theorem Fact.clash_sound (left right : Fact) (ctx : Context)
   all_goals
     first
     | contradiction
-    | obtain ⟨rfl, incompatible⟩ := clash
+    | obtain ⟨equal, incompatible⟩ := clash
+      cases observation_identical equal
       exact IntegerTest.clash_sound _ _ _ incompatible a b
     | obtain ⟨rfl, different⟩ := clash
       exact different (a.symm.trans b)

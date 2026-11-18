@@ -107,6 +107,25 @@ example : separated (facts (.equal .integer firstByte (.literal .integer 23)))
 
 example : separated (facts (.boolOr (upper 23) (.literal .boolean true))) (facts (lower 24)) = false := rfl
 
+def constant (n : Int) : Expr .integer := .literal .integer n
+def frame : Expr .octets := .field .octets 0
+def ip : Expr .octets := .slice frame (constant 14) (constant 20)
+def protocol : Expr .octets := .slice ip (constant 9) (constant 1)
+def tcp : Expr .boolean := .equal .integer (.byteAt frame (constant 23)) (constant 6)
+def udp : Expr .boolean := .equal .octets protocol (.literal .octets [⟨17, by decide⟩])
+def icmp : Expr .boolean := .equal .integer (.byteAt ip (constant 9)) (constant 1)
+
+example : separated (facts udp) (facts tcp) = true := rfl
+example : separated (facts tcp) (facts icmp) = true := rfl
+
+-- A zero read from a clipped slice supplies no absolute byte fact.
+def clipped : Expr .octets := .slice ip (constant 9) (constant 0)
+def clippedZero : Expr .boolean := .equal .integer (.byteAt clipped (constant 0)) (constant 0)
+def emptySlice : Expr .boolean := .equal .octets clipped (.literal .octets [])
+example : separated (facts clippedZero) (facts tcp) = false := rfl
+example : separated (facts emptySlice) (facts tcp) = false := rfl
+
+
 '''
             (root/'Dropped.lean').write_text(dropped)
             rejected = compile_module('Dropped')
@@ -139,6 +158,13 @@ example : separated (facts (.boolOr (upper 23) (.literal .boolean true))) (facts
         approved, goals = render(model)
         self.assertEqual(sum(name.startswith('raw_') for name in goals), 336)  # 335 clauses plus equality
         self.assertEqual(sum(name.startswith('conflict_') for name in goals), 19)  # 18 groups plus equality
+        # Match the audit's numeric layer partition to actual IR rule names.
+        frame_rules = [(index, row) for index, row in enumerate(model['transitions'])
+                       if row['event'] == 'L.net.frame']
+        self.assertEqual(len(frame_rules), 239)
+        for index, row in frame_rules:
+            self.assertTrue(row['id'].startswith('L.' if index < 64 else 'T.'), row['id'])
+
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             env = dict(PATH=os.defpath, LEAN_PATH=str(root), LANG='C.UTF-8')
@@ -151,7 +177,8 @@ example : separated (facts (.boolOr (upper 23) (.literal .boolean true))) (facts
             result = None
             for module in [*MODULES, 'Approved', 'TCPIPAudit']:
                 result = subprocess.run([LEAN, '-o', module+'.olean', module+'.lean'],
-                    cwd=root, env=env, capture_output=True, text=True, timeout=60)
+                    cwd=root, env=env, capture_output=True, text=True,
+                    timeout=120 if module == 'TCPIPAudit' else 60)
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
             for name in ('absent_external_exact', 'absent_packet_rolls_back',
                          'absent_initial_dispatch', 'closed_groups', 'frame_pairs_remaining',
