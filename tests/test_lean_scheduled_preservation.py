@@ -30,7 +30,9 @@ BATCH_TARGETS = [
       ('enabled_singleton', 'fire_enabled_from_raw', 'timer_enabled_from_contracts',
        'external_enabled_from_contracts')),
     *('FormalSpecAgent.BatchTotality.' + name for name in
-      ('fire_target', 'advance_total', 'tick_total', 'dispatch_total')),
+      ('fire_target', 'advance_total', 'tick_total', 'dispatch_total',
+       'advance_total_with_timers', 'dispatch_uncovered', 'dispatch_absent',
+       'dispatch_success_or_uncovered')),
     'BatchPreservationAudit.undeclared_arm_rejected',
     'BatchPreservationAudit.missing_due_timer_rule_rejected',
 ]
@@ -102,3 +104,45 @@ end Approved
             self.assertEqual(s.count(old),1);p.write_text(s.replace(old,'True'))
             r=compile_module('ScheduledPreservation')
             self.assertNotEqual(r.returncode,0);self.assertIn('error:',r.stdout)
+
+    def test_pinned_tcpip_declared_but_unwired_events(self):
+        model_path = os.environ.get('FSA_TCPIP_MODEL')
+        if not model_path:
+            if os.environ.get('FSA_TCPIP_REQUIRED') == '1':
+                self.fail('Pinned TCP/IP model required by this CI channel')
+            self.skipTest('Pinned TCP/IP model supplied by dedicated CI')
+        source = Path(model_path)
+        self.assertEqual(gate.sha(source),
+                         '7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5')
+        model = load(source)
+        self.assertEqual(gate.sha(source),
+                         '7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5')
+        view = BatchView(model)
+        # Independently listed event identities are bound to the actual ordered IR.
+        absent = ('T.net.syn', 'T.net.synack', 'T.net.ack', 'T.net.fin',
+                  'T.net.rst', 'T.net.rstack', 'T.net.data', 'T.net.packet')
+        ids = [view.events.index(name) for name in absent]
+        literal = '[' + ', '.join(map(str, ids)) + ']'
+        initial = dict(state=model['initial_state'], now_ms=0,
+                       variables={name: var['initial'] for name, var in model['variables'].items()},
+                       timers={})
+        approved = view.source()
+        approved += '\ndef initial : FormalSpecAgent.TypedMachine.Snapshot := ' + view.snapshot(initial)
+        approved += '\nend Approved\n'
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            env = dict(PATH=os.defpath, LEAN_PATH=str(root), LANG='C.UTF-8')
+            for module in MODULES:
+                shutil.copyfile(ROOT/'formal_spec_agent/lean'/(module+'.lean'), root/(module+'.lean'))
+            (root/'Approved.lean').write_text(approved)
+            audit = (ROOT/'tests/lean/TCPIPAbsentExternalAudit.lean').read_text()
+            self.assertEqual(audit.count('TCPIP_ABSENT_IDS'), 1)
+            (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
+            result = None
+            for module in [*MODULES, 'Approved', 'TCPIPAudit']:
+                result = subprocess.run([LEAN, '-o', module+'.olean', module+'.lean'],
+                    cwd=root, env=env, capture_output=True, text=True, timeout=60)
+                self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
+            for name in ('absent_external_exact', 'absent_packet_rolls_back', 'absent_initial_dispatch'):
+                self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
+                                     gate.AXIOMS)

@@ -15,6 +15,14 @@ structure Admitted (model : Model) (states ids : List Nat) (s : Snapshot) : Prop
   timers : Declared ids s
   timed : WellTimed s
 
+structure TimerContracts (model : Model) (states ids : List Nat) : Prop where
+  targets : TargetsDeclared model states
+  arms : ArmsDeclared ids model
+  unique : (model.rules.map Rule.id).Nodup
+  disjoint : GuardsDisjoint model
+  timerCoverage : CoversTimers model states ids
+  timerRaw : TimerRaw ids model
+
 structure Contracts (model : Model) (states ids : List Nat) : Prop where
   targets : TargetsDeclared model states
   arms : ArmsDeclared ids model
@@ -24,6 +32,11 @@ structure Contracts (model : Model) (states ids : List Nat) : Prop where
   timerRaw : TimerRaw ids model
   externalCoverage : Covers model states
   externalRaw : ∀ event ∈ model.externalEvents, MatchingRaw model event none
+
+theorem Contracts.timerContracts {model : Model} {states ids : List Nat}
+    (contract : Contracts model states ids) : TimerContracts model states ids :=
+  ⟨contract.targets, contract.arms, contract.unique, contract.disjoint,
+    contract.timerCoverage, contract.timerRaw⟩
 
 theorem fire_target (model : Model) (states : List Nat) (s : Snapshot)
     (event : Nat) (fields : Values) (firing : Option Nat) (t : Transition)
@@ -98,8 +111,8 @@ private theorem next_none (s : Snapshot) (next : nextTimer s = none) :
 
 /-- The actual scheduler succeeds for every nondecreasing request time under
     the model contracts. Recursion follows the real scheduler rank. -/
-theorem advance_total (model : Model) (states ids : List Nat) (limit : Int)
-    (contract : Contracts model states ids) (s : Snapshot)
+theorem advance_total_with_timers (model : Model) (states ids : List Nat) (limit : Int)
+    (contract : TimerContracts model states ids) (s : Snapshot)
     (admitted : Admitted model states ids s) (bound : s.now ≤ limit) :
     ∃ batch, advance model s limit = .ok batch ∧
       Drained model states ids limit batch.after ∧ Preserved ids model batch := by
@@ -130,7 +143,7 @@ theorem advance_total (model : Model) (states ids : List Nat) (limit : Int)
           step_declared ids model s entry.due transition admitted.timers contract.arms fired,
           progress.1⟩
       obtain ⟨tail, continued, drained, _⟩ :=
-        advance_total model states ids limit contract transition.after nextAdmitted nextBound
+        advance_total_with_timers model states ids limit contract transition.after nextAdmitted nextBound
       exact ⟨{ after := tail.after, trace := transition :: tail.trace },
         by simp only [ite_eq_left due, fired, continued, prepend], drained⟩
     · exact ⟨{ after := {s with now := limit}, trace := [] },
@@ -138,6 +151,13 @@ theorem advance_total (model : Model) (states ids : List Nat) (limit : Int)
         (fun timer member => Int.lt_of_lt_of_le (Int.lt_of_not_ge due) (info.2 timer member))⟩
 termination_by rank limit s
 decreasing_by exact progress.2.2
+
+theorem advance_total (model : Model) (states ids : List Nat) (limit : Int)
+    (contract : Contracts model states ids) (s : Snapshot)
+    (admitted : Admitted model states ids s) (bound : s.now ≤ limit) :
+    ∃ batch, advance model s limit = .ok batch ∧
+      Drained model states ids limit batch.after ∧ Preserved ids model batch :=
+  advance_total_with_timers model states ids limit contract.timerContracts s admitted bound
 
 theorem tick_total (model : Model) (states ids : List Nat) (limit : Int)
     (contract : Contracts model states ids) (s : Snapshot)
@@ -148,6 +168,138 @@ theorem tick_total (model : Model) (states ids : List Nat) (limit : Int)
     advance_total model states ids limit contract s admitted bound
   exact ⟨batch, by simp [tick, executed, drained.admitted.valid], drained, preserved⟩
 
+theorem Drained.external_eq_fire {model : Model} {states ids : List Nat}
+    {limit : Int} {s : Snapshot} (drained : Drained model states ids limit s)
+    (event : Nat) (fields : Values) (allowed : event ∈ model.externalEvents) :
+    external model s event fields s.now = fire model s event fields none := by
+  cases next : nextTimer s with
+  | none => simp [external, allowed, next]
+  | some entry =>
+    have future := drained.future entry (next_info s entry next).1
+    have late : ¬ entry.due ≤ s.now := by rw [drained.atLimit]; omega
+    simp [external, allowed, next, late]
+
+/-- If the timer prefix has succeeded but the external event has no enabled
+    rule, the entire command fails and rolls back to the original snapshot. -/
+theorem dispatch_uncovered (model : Model) (states ids : List Nat) (limit : Int)
+    (s : Snapshot) (prefixBatch : Batch) (event : Nat) (fields : Values)
+    (allowed : event ∈ model.externalEvents)
+    (advanced : advance model s limit = .ok prefixBatch)
+    (drained : Drained model states ids limit prefixBatch.after)
+    (uncovered : enabled model prefixBatch.after event fields = []) :
+    dispatch model s event fields limit = .error .uncovered ∧
+      rollback s (dispatch model s event fields limit) = s := by
+  have failed : dispatch model s event fields limit = .error .uncovered := by
+    simp [dispatch, allowed, advanced, drained.external_eq_fire event fields allowed,
+      fire, uncovered]
+  exact ⟨failed, by rw [failed]; exact BatchMachine.rollback_error s .uncovered⟩
+
+/-- Some declared events have no transition in any state. This
+    static case can reject without evaluating symbolic event fields. -/
+def AbsentExternal (model : Model) (event : Nat) : Prop :=
+  event ∈ model.externalEvents ∧ event ∉ model.rules.map Rule.event
+
+theorem enabled_absent (model : Model) (s : Snapshot) (event : Nat) (fields : Values)
+    (absent : AbsentExternal model event) :
+    enabled model s event fields = [] := by
+  cases selected : enabled model s event fields with
+  | nil => rfl
+  | cons rule rest =>
+    have member : rule ∈ enabled model s event fields := by simp [selected]
+    have facts := List.mem_filter.mp member
+    simp only [Bool.and_eq_true, beq_iff_eq] at facts
+    exact (absent.2 (List.mem_map.mpr ⟨rule, facts.1, facts.2.1.2⟩)).elim
+
+theorem dispatch_absent (model : Model) (states ids : List Nat) (limit : Int)
+    (contract : TimerContracts model states ids) (s : Snapshot)
+    (admitted : Admitted model states ids s) (bound : s.now ≤ limit)
+    (event : Nat) (fields : Values) (absent : AbsentExternal model event) :
+    dispatch model s event fields limit = .error .uncovered ∧
+      rollback s (dispatch model s event fields limit) = s := by
+  obtain ⟨prefixBatch, advanced, drained, _⟩ :=
+    advance_total_with_timers model states ids limit contract s admitted bound
+  exact dispatch_uncovered model states ids limit s prefixBatch event fields absent.1
+    advanced drained (enabled_absent model prefixBatch.after event fields absent)
+
+/-- Empty-timer snapshots can reject a structurally absent event without
+    assuming the model's universal timer or invariant contracts. -/
+theorem dispatch_absent_without_timers (model : Model) (s : Snapshot) (limit : Int)
+    (emptyTimers : s.timers = []) (bound : s.now ≤ limit)
+    (event : Nat) (fields : Values) (absent : AbsentExternal model event) :
+    dispatch model s event fields limit = .error .uncovered ∧
+      rollback s (dispatch model s event fields limit) = s := by
+  let pre := {s with now := limit}
+  have timed : WellTimed s := by simp [WellTimed, emptyTimers]
+  have advanced : advance model s limit = .ok {after := pre, trace := []} := by
+    rw [advance_equation model s limit timed bound]
+    simp [nextTimer, emptyTimers, pre]
+  have externalFailed : external model pre event fields pre.now = .error .uncovered := by
+    have selected : nextTimer pre = none := by simp [nextTimer, pre, emptyTimers]
+    simp [external, absent.1, selected, fire, enabled_absent _ _ _ _ absent]
+  have failed : dispatch model s event fields limit = .error .uncovered := by
+    simp [dispatch, absent.1, advanced, externalFailed]
+  exact ⟨failed, by rw [failed]; exact BatchMachine.rollback_error s .uncovered⟩
+
+theorem dispatch_enabled (model : Model) (states ids : List Nat) (limit : Int)
+    (contract : TimerContracts model states ids) (s : Snapshot)
+    (admitted : Admitted model states ids s) (bound : s.now ≤ limit)
+    (event : Nat) (fields : Values) (allowed : event ∈ model.externalEvents)
+    (raw : MatchingRaw model event none) (prefixBatch : Batch)
+    (advanced : advance model s limit = .ok prefixBatch)
+    (drained : Drained model states ids limit prefixBatch.after)
+    (covered : ∃ rule, rule ∈ enabled model prefixBatch.after event fields) :
+    ∃ batch, dispatch model s event fields limit = .ok batch ∧
+      Admitted model states ids batch.after ∧ batch.after.now = limit ∧
+      Preserved ids model batch := by
+  let pre := prefixBatch.after
+  have witness : ∃ r ∈ model.rules, r.source = pre.state ∧ r.event = event ∧
+      TypedMachine.eval pre fields r.guard = true := by
+    obtain ⟨rule, member⟩ := covered
+    have facts := List.mem_filter.mp member
+    simp only [Bool.and_eq_true, beq_iff_eq] at facts
+    exact ⟨rule, facts.1, facts.2.1.1, facts.2.1.2, facts.2.2⟩
+  obtain ⟨transition, fired, valid⟩ := fire_enabled_from_raw
+    model pre event fields none contract.unique contract.disjoint
+    drained.admitted.valid raw witness
+  have summary := TimerProgress.fire_summary model pre event fields none transition fired
+  have final : Admitted model states ids transition.after :=
+    ⟨valid, fire_target model states pre event fields none transition contract.targets fired,
+      fire_declared ids model pre event fields none transition drained.admitted.timers contract.arms fired,
+      summary.2.1 drained.admitted.timed⟩
+  let batch : Batch := {after := transition.after, trace := prefixBatch.trace ++ [transition]}
+  have done : dispatch model s event fields limit = .ok batch := by
+    simp [dispatch, allowed, advanced, drained.external_eq_fire event fields allowed, pre, fired, batch]
+  refine ⟨batch, done, final, summary.1.trans drained.atLimit, ?_⟩
+  exact dispatch_from_raw ids model event fields limit contract.arms contract.timerRaw
+    (fun _ => raw) s admitted.timed bound admitted.valid admitted.timers batch done
+
+/-- For a declared external event, success or the uncovered fault is determined
+    by actual guard evaluation after the complete timer prefix. -/
+theorem dispatch_success_or_uncovered (model : Model) (states ids : List Nat) (limit : Int)
+    (contract : TimerContracts model states ids) (s : Snapshot)
+    (admitted : Admitted model states ids s) (bound : s.now ≤ limit)
+    (event : Nat) (fields : Values) (allowed : event ∈ model.externalEvents)
+    (raw : MatchingRaw model event none) :
+    ∃ prefixBatch, advance model s limit = .ok prefixBatch ∧
+      Drained model states ids limit prefixBatch.after ∧
+      (if (enabled model prefixBatch.after event fields).isEmpty then
+        dispatch model s event fields limit = .error .uncovered ∧
+          rollback s (dispatch model s event fields limit) = s
+      else ∃ batch, dispatch model s event fields limit = .ok batch ∧
+        Admitted model states ids batch.after ∧ batch.after.now = limit ∧
+        Preserved ids model batch) := by
+  obtain ⟨prefixBatch, advanced, drained, _⟩ :=
+    advance_total_with_timers model states ids limit contract s admitted bound
+  refine ⟨prefixBatch, advanced, drained, ?_⟩
+  cases selected : enabled model prefixBatch.after event fields with
+  | nil =>
+    simpa [selected] using dispatch_uncovered
+      model states ids limit s prefixBatch event fields allowed advanced drained selected
+  | cons rule rest =>
+    have member : rule ∈ enabled model prefixBatch.after event fields := by simp [selected]
+    simpa [selected] using dispatch_enabled model states ids limit contract s admitted bound
+      event fields allowed raw prefixBatch advanced drained ⟨rule, member⟩
+
 theorem dispatch_total (model : Model) (states ids : List Nat) (limit : Int)
     (contract : Contracts model states ids) (s : Snapshot)
     (admitted : Admitted model states ids s) (bound : s.now ≤ limit)
@@ -157,40 +309,13 @@ theorem dispatch_total (model : Model) (states ids : List Nat) (limit : Int)
       Preserved ids model batch := by
   obtain ⟨prefixBatch, advanced, drained, _⟩ :=
     advance_total model states ids limit contract s admitted bound
-  let pre := prefixBatch.after
-  have noDue : (match nextTimer pre with
-      | some entry => decide (entry.due ≤ pre.now)
-      | none => false) = false := by
-    cases next : nextTimer pre with
-    | none => rfl
-    | some entry =>
-      have future := drained.future entry (next_info pre entry next).1
-      have late : ¬ entry.due ≤ pre.now := by
-        change ¬ entry.due ≤ prefixBatch.after.now
-        rw [drained.atLimit]
-        omega
-      simpa only [decide_eq_false_iff_not] using late
-  obtain ⟨transition, externalDone, valid⟩ := external_enabled_from_contracts
-    model states pre event fields pre.now contract.unique contract.disjoint
-    contract.externalCoverage (contract.externalRaw event allowed) drained.admitted.valid
-    drained.admitted.state allowed (Int.le_refl _) noDue
-  have fired : fire model pre event fields none = .ok transition := by
-    have unchanged : {pre with now := pre.now} = pre := by cases pre; rfl
-    cases next : nextTimer pre with
-    | none => simpa [external, allowed, next, unchanged] using externalDone
-    | some entry =>
-      have late : ¬ entry.due ≤ pre.now := by simpa [next] using noDue
-      simpa [external, allowed, next, late, unchanged] using externalDone
-  have summary := TimerProgress.fire_summary model pre event fields none transition fired
-  have final : Admitted model states ids transition.after :=
-    ⟨valid, fire_target model states pre event fields none transition contract.targets fired,
-      fire_declared ids model pre event fields none transition drained.admitted.timers contract.arms fired,
-      summary.2.1 drained.admitted.timed⟩
-  let batch : Batch := {after := transition.after, trace := prefixBatch.trace ++ [transition]}
-  have done : dispatch model s event fields limit = .ok batch := by
-    simp [dispatch, allowed, advanced, pre, externalDone, batch]
-  refine ⟨batch, done, final, summary.1.trans drained.atLimit, ?_⟩
-  exact dispatch_from_raw ids model event fields limit contract.arms contract.timerRaw
-    (contract.externalRaw event) s admitted.timed bound admitted.valid admitted.timers batch done
+  obtain ⟨rule, member, source, trigger, guard⟩ :=
+    contract.externalCoverage prefixBatch.after event fields
+      drained.admitted.state allowed drained.admitted.valid
+  have enabledMember : rule ∈ enabled model prefixBatch.after event fields :=
+    List.mem_filter.mpr ⟨member, by simp [source, trigger, guard]⟩
+  exact dispatch_enabled model states ids limit contract.timerContracts s admitted bound
+    event fields allowed (contract.externalRaw event allowed) prefixBatch advanced drained
+    ⟨rule, enabledMember⟩
 
 end FormalSpecAgent.BatchTotality

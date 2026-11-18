@@ -55,3 +55,8 @@ end BatchPreservationAudit
 #print axioms FormalSpecAgent.BatchTotality.advance_total
 #print axioms FormalSpecAgent.BatchTotality.tick_total
 #print axioms FormalSpecAgent.BatchTotality.dispatch_total
+
+#print axioms FormalSpecAgent.BatchTotality.advance_total_with_timers
+#print axioms FormalSpecAgent.BatchTotality.dispatch_uncovered
+#print axioms FormalSpecAgent.BatchTotality.dispatch_success_or_uncovered
+#print axioms FormalSpecAgent.BatchTotality.dispatch_absent

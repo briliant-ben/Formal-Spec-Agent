@@ -38,8 +38,21 @@ def expected_values(view,cases):
     for case in cases:
         before=case['initial']
         for step in case['steps']:
-            e=step['expected'];view.expected(e,view.snapshot(before),step)
-            if e['status']=='error':rows.append(dict(status='error',fault=e['fault'],after=shared.canonical_snapshot(view,before),trace=[]));continue
+            e = step['expected']
+            if isinstance(e, dict) and e.get('status') == 'error':
+                if set(e) == {'status', 'fault', 'after', 'trace'}:
+                    if type(e['trace']) is not list or e['trace']:
+                        raise ValueError('A failed atomic batch must declare an empty trace')
+                    view.expected({'status': 'error', 'fault': e['fault']},
+                                  view.snapshot(before), step)
+                    after = e['after']
+                else:
+                    view.expected(e, view.snapshot(before), step)
+                    after = before
+                rows.append(dict(status='error', fault=e['fault'],
+                                 after=shared.canonical_snapshot(view, after), trace=[]))
+                continue
+            view.expected(e, view.snapshot(before), step)
             trace=[]
             for t in e['trace']:
                 event=t['event'];fields=[shared.canonical_value(event['fields'][n],k)for n,k in view.m['events'][event['name']]['fields'].items()]

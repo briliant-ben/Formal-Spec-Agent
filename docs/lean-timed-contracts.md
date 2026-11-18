@@ -101,9 +101,32 @@ for all five rules. It then applies the generic dispatch theorem to the
 generated initial snapshot with arbitrary typed event fields. The public
 timed task certificate and its finite batch replay integration are still open.
 
-The compiled Lean batch interpreter also matched the same ten frozen
-operations. Its existing input format omits the explicit error snapshot and
-trace. Before adapting that case, the check confirmed the frozen snapshot
-equaled the previous successful snapshot with exact types and that the
-frozen error trace was empty. The comparison still checked the reported
-fault, snapshot, trace and clock after execution.
+The compiled Lean batch interpreter matched the ten original frozen
+operations directly. An error expectation can specify the fault, exact
+rollback snapshot including the clock, and an empty trace. The older
+fault-only form still derives the expected snapshot from the preceding
+successful state. These expectations are checked after execution and are
+excluded from the runtime source.
+
+## Declared events without enabled rules
+
+Timer completion has its own set of contracts. A model can satisfy these
+contracts while exposing an external event for which no guard holds. Once the
+actual timer prefix has finished, the dispatcher returns the invariant and
+domain checked success result when a rule is enabled. If the enabled list is
+empty, it returns the uncovered fault and rollback restores the original
+snapshot, discarding the tentative prefix. The proof uses the actual enabled
+list at the post-prefix snapshot.
+
+The kernel checks the exact list of eight declared external events with no
+rule in the pinned 335-rule TCP/IP model against the reified IR. Each event
+returns the uncovered fault from the model's initial snapshot for every
+nonnegative request time and arbitrary typed fields. The proof for arbitrary
+admitted snapshots with timers requires the separate timer contracts, which
+still need to be discharged for TCP/IP. The other thirteen declared external
+events have at least one structural match. Their guards and raw actions have
+separate proof obligations.
+A separate compiled Lean batch replay and the Python reference both rejected
+all eight events with the expected empty trace and rollback from the same
+initial state. This replay used default typed fields and request times 1 to 8.
+The kernel theorem covers arbitrary typed fields and nonnegative times.
