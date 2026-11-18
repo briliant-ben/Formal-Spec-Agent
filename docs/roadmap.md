@@ -89,7 +89,8 @@ validity, guard disjointness and declared-state/event coverage for all five valu
 kinds. Typed Cell's 14 obligations and fresh kernel recheck pass; eight new tests
 also reject wrong-byte execution, incomplete witnesses/oracles and certificate
 mutations. The independent base installation checks this without importing Z3.
-Timer composition, full typed flow and native text-input support remain open.
+Explicit task-v7 now runs the full typed flow and bounded native text input.
+Timer composition, native/compiler refinement and whole TCPIP migration remain open.
 The 64-message-per-literal, 128-case/128-step and 512-total-step limits are
 explicit witness-generation resource limits; they do not restrict the universal
 store/field quantifiers in preservation or coverage.

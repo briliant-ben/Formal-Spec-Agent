@@ -25,10 +25,13 @@ inputs are additional witnesses, not a restriction of the safety domain.
 Fresh rechecking regenerates the statements and proofs from trusted sources.
 
 The Python reference and compiled Lean mathematical interpreter match all six
-operations. The independent standalone C channel currently rejects string event
-fields explicitly. Its extension is under separate review; this checkpoint does
-not claim C execution, a complete ten-stage typed flow, timers, reachability,
-compiler correctness or TCPIP-wide verification. The optional Z3 backend remains
+operations. The independent standalone C channel now matches all six operations, using
+counted UTF-8 transport with explicit native capacity limits. `flow.json` uses
+explicit task-v7 to run all ten stages with no Z3, including generated tests,
+actual C compilation/execution and retained Difference/traceability checks.
+`flow-projection.json` records the seed projection; `cases.json` stays unchanged
+and the Lean contract checks its full snapshots. This does not claim timers,
+reachability, compiler correctness or TCPIP-wide verification. The optional Z3 backend remains
 available until the remaining migration requirements are met.
 
 Run the kernel contract with a separately installed pinned Lean 4.35.0:

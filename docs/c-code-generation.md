@@ -32,3 +32,34 @@ also compare with the reference interpreter. These checks are not a universal
 compiler-correctness proof. Existing C operand evaluation-order limitations,
 4096-byte value buffers, stack use and diagnostic output remain; this change
 does not claim an embedded-memory optimization or change supported protocols.
+
+## Counted native text input (v6)
+
+The current `direct-c99-typed-text-v6` lowering keeps shared expressions and adds
+string event fields through `u:<UTF-8-hex>` transport. The empty string is `u:`.
+A string's meaning is its Unicode scalar content, including embedded NUL; JSON
+spelling, byte count and intern ID are not interchangeable. Input rejects
+malformed hex, overlong/truncated UTF-8, surrogates and values above U+10FFFF.
+
+A model with string event fields owns a text pool inside its native Machine.
+Each entry holds at most 4096 UTF-8 bytes and there are at most 64 distinct entries,
+including all source literals. Lookup precedes the capacity check, so existing
+values still work in a full pool. The pool is append-only during a process, an
+explicit finite native execution domain rather than a restriction on Lean's
+universal strings. Pool exhaustion rejects the command without eviction or
+truncation. Counted JSON emission preserves NUL and control characters.
+
+The whole candidate Machine, including the owned pool, is copied transactionally.
+Parse, invariant and output-capacity failures discard all candidate text/state,
+emissions and trace. There is no heap allocation, global mutable text pool or
+protocol callback. Source-literal IDs and dynamic IDs deduplicate by exact bytes;
+set/eq/ne/ite keep the existing IR meaning. Initial overrides use the same counted
+transport. Models without string event fields retain their closed-literal input
+interface. Legacy wire codecs remain explicitly unsupported.
+
+Generation binds `text_runtime.c` when used and the command encoder source.
+Reports name v6; old evidence still requires its original pinned checker.
+Tests exercise unchanged six-step Typed Cell literals, Unicode/NUL/quotes,
+4096-byte boundaries, malformed input, full-pool dedup, initial overrides,
+source/dynamic equality and state/pool/output rollback. These are concrete native
+checks, not a universal compiler or memory-safety proof.

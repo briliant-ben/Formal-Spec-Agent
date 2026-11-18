@@ -1,0 +1,152 @@
+{
+  "depth": 2,
+  "initials": [
+    {}
+  ],
+  "cases": [
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "app.put",
+      "fields": {
+        "payload": {
+          "bytes": [
+            0,
+            128,
+            255,
+            7
+          ]
+        },
+        "sequence": {
+          "seq": 4294967295
+        },
+        "delta": 1,
+        "label": "开\n\u0000",
+        "allow": true
+      }
+    },
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "app.put",
+      "fields": {
+        "payload": {
+          "bytes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16
+          ]
+        },
+        "sequence": {
+          "seq": 123
+        },
+        "delta": 0,
+        "label": "ignored-over",
+        "allow": true
+      }
+    },
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "app.put",
+      "fields": {
+        "payload": {
+          "bytes": [
+            9
+          ]
+        },
+        "sequence": {
+          "seq": 7
+        },
+        "delta": 0,
+        "label": "ignored-disabled",
+        "allow": false
+      }
+    },
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "app.put",
+      "fields": {
+        "payload": {
+          "bytes": []
+        },
+        "sequence": {
+          "seq": 0
+        },
+        "delta": -1,
+        "label": "empty",
+        "allow": true
+      }
+    },
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "app.put",
+      "fields": {
+        "payload": {
+          "bytes": [
+            0,
+            255,
+            1,
+            254,
+            2,
+            253,
+            3,
+            252,
+            4,
+            251,
+            5,
+            250,
+            6,
+            249,
+            7,
+            248
+          ]
+        },
+        "sequence": {
+          "seq": 1
+        },
+        "delta": -2,
+        "label": "max",
+        "allow": true
+      }
+    },
+    {
+      "states": [
+        "READY"
+      ],
+      "event": "app.put",
+      "fields": {
+        "payload": {
+          "bytes": []
+        },
+        "sequence": {
+          "seq": 0
+        },
+        "delta": 4294967296,
+        "label": "wrap",
+        "allow": true
+      }
+    }
+  ]
+}

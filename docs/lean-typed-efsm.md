@@ -46,8 +46,13 @@ claims are rejected. The eight semantic definitions/theorems have audited axioms
 No new proof tactic or trusted runtime callback is introduced.
 
 The reference and compiled Lean interpreter match the six frozen operations.
-Standalone C still explicitly rejects string input fields; proposed native text
-support is reviewed separately. Full ten-stage typed flow integration, timers,
-native integer/memory/compiler refinement, English specification correctness and
-the complete TCPIP case remain separate work. Existing integer task schemas and
+Standalone C now matches the same six unchanged operations with bounded counted
+UTF-8 input. Explicit task-v7 integrates this contract with all ten flow stages;
+its source snapshot, independent C execution and retained verifier bind the same
+whole IR and frozen cases. V6 retains its integer contract and cannot alias V7.
+The flow seed is only an exact emission/time projection of the independent
+cases; full transition snapshots remain checked by the 14 Lean obligations.
+Finite exploration covers both rules and is distinct from universal contracts.
+Timers, reachability, native integer/memory/compiler refinement, English
+specification correctness and the complete TCPIP case remain separate work. Existing integer task schemas and
 historical Z3 results retain their original meanings. Z3 is not retired here.

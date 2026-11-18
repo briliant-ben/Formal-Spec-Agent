@@ -217,6 +217,11 @@ int parse_integer(const char *s,int64_t *out) {
     if(errno||*end||n<INT64_MIN||n>INT64_MAX)return 0;
     *out=(int64_t)n;return 1;
 }
+#ifdef HAS_TEXT_EVENTS
+int parse_text_field(TextPool *pool, const char *token, int64_t *out) {
+    return parse_text(pool, token, out);
+}
+#endif
 void reply(Machine *m,const char *status,const char *error) {
     Buffer out={{0},0};
     text(&out,"{\"status\":\"");text(&out,status);text(&out,"\"");
@@ -244,6 +249,12 @@ int main(void) {
             int64_t index,value;
             if(begun||count!=3||!parse_integer(tokens[1],&index)||index<0||index>=NV)failure="invalid_initial_override";
             else if(variable_kinds[index]==3)parse_bytes(tokens[2],&candidate.b[variable_byte_index[index]]);
+#ifdef HAS_TEXT_EVENTS
+            else if(variable_kinds[index]==4) {
+                if(!parse_text_field(&candidate.texts, tokens[2], &value)&&!failure) failure="invalid_initial_override";
+                else if(!failure) candidate.v[index]=value;
+            }
+#endif
             else if(!parse_integer(tokens[2],&value)||!valid(value,variable_kinds[index]))failure="invalid_initial_override";
             else candidate.v[index]=value;
             if(!failure&&snapshot_fits(&candidate)){committed=candidate;continue;}
@@ -265,6 +276,11 @@ int main(void) {
                     else if(count!=3+event_fields[event])failure="event_field_mismatch";
                     else for(i=0;i<event_fields[event]&&!failure;i++) {
                         if(event_kinds[event][i]==3)parse_bytes(tokens[3+i],&byte_fields[i]);
+#ifdef HAS_TEXT_EVENTS
+                        else if(event_kinds[event][i]==4) {
+                            if(!parse_text_field(&candidate.texts, tokens[3+i], &fields[i])&&!failure) failure="invalid_event_value";
+                        }
+#endif
                         else if(!parse_integer(tokens[3+i],&fields[i])||!valid(fields[i],event_kinds[event][i]))failure="invalid_event_value";
                     }
                 }
