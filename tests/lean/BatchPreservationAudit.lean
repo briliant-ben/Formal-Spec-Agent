@@ -1,4 +1,4 @@
-import TimedSelection
+import BatchTotality
 
 open FormalSpecAgent.TypedMachine
 open FormalSpecAgent.TimerDomain
@@ -50,3 +50,8 @@ end BatchPreservationAudit
 #print axioms FormalSpecAgent.TimedSelection.timer_enabled_from_contracts
 #print axioms FormalSpecAgent.TimedSelection.external_enabled_from_contracts
 #print axioms BatchPreservationAudit.missing_due_timer_rule_rejected
+
+#print axioms FormalSpecAgent.BatchTotality.fire_target
+#print axioms FormalSpecAgent.BatchTotality.advance_total
+#print axioms FormalSpecAgent.BatchTotality.tick_total
+#print axioms FormalSpecAgent.BatchTotality.dispatch_total

@@ -14,7 +14,7 @@ ROOT=Path(__file__).resolve().parents[1]
 LEAN=os.environ.get('FSA_LEAN')or shutil.which('lean')
 MODULES=['Foundation','ValueOps','TypedIR','TypedMachine','TypedContracts',
          'TypedFiringContracts','TimerRank','TimerMinimum','ScheduledPreservation','TimerDomain',
-         'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection',
+         'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection','BatchTotality',
          'StoreFacts','MachineObserve','BatchObserve']
 TARGETS=['FormalSpecAgent.ScheduledPreservation.'+n for n in [
     'MatchingRaw','fire_success_invariant_from_raw','external_success_invariant_from_raw',
@@ -29,6 +29,8 @@ BATCH_TARGETS = [
     *('FormalSpecAgent.TimedSelection.' + name for name in
       ('enabled_singleton', 'fire_enabled_from_raw', 'timer_enabled_from_contracts',
        'external_enabled_from_contracts')),
+    *('FormalSpecAgent.BatchTotality.' + name for name in
+      ('fire_target', 'advance_total', 'tick_total', 'dispatch_total')),
     'BatchPreservationAudit.undeclared_arm_rejected',
     'BatchPreservationAudit.missing_due_timer_rule_rejected',
 ]
@@ -61,11 +63,13 @@ class ScheduledPreservationTests(unittest.TestCase):
                            variables={name: var['initial'] for name, var in model['variables'].items()},
                            timers={})
             approved = view.source(proof_helpers=True).replace(
-                'import BatchObserve\n', 'import BatchObserve\nimport TimedSelection\n', 1)
+                'import BatchObserve\n', 'import BatchObserve\nimport BatchTotality\n', 1)
             approved += '\ndef initial : FormalSpecAgent.TypedMachine.Snapshot := ' + view.snapshot(initial)
             approved += '''
 
 
+def timed_targets_declared : Prop :=
+  FormalSpecAgent.BatchTotality.TargetsDeclared model [0, 1]
 def timed_initial_valid : Prop :=
   FormalSpecAgent.TypedContracts.InitialValid model initial
 def timed_initial_declared : Prop :=
@@ -86,7 +90,10 @@ end Approved
             concrete = compile_module('CellAudit')
             self.assertEqual(concrete.returncode, 0, concrete.stdout+concrete.stderr)
             for target in ('initial_valid_checked', 'initial_declared_checked', 'rule_ids_checked',
-                           'arms_declared_checked', 'coverage_checked'):
+                           'arms_declared_checked', 'coverage_checked', 'targets_declared_checked',
+                           'expiry_raw_checked', 'external_coverage_checked', 'external_raw_checked',
+                           'timer_raw_checked', 'guards_disjoint_checked', 'timed_cell_contracts',
+                           'timed_cell_start', 'timed_cell_initial_dispatch'):
                 self.assertLessEqual(set(gate.read_axioms(concrete.stdout, target)), gate.AXIOMS)
             # Replacing the raw model obligation by True cannot validate this
             # proof chain or the independent timer-loss rejection.

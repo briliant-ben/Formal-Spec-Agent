@@ -42,8 +42,14 @@ Separate selection theorems derive success of an eligible external step or a
 selected due timer from coverage, disjoint guards, unique rule IDs and raw
 preservation. Active-timer coverage uses the timer's actual event and empty
 typed field environment. Lean rejects a declared active timer with no rule in
-the current state. These selection theorems establish the individual steps
-needed for a separate total batch success proof.
+the current state. The batch totality theorem composes these steps using the actual scheduler's
+well-founded rank. For an admitted snapshot and a nondecreasing requested
+time, advance and tick reach the requested clock with every remaining
+deadline strictly in the future. Dispatch additionally requires a declared
+external event. It consumes the complete due prefix, executes the event and
+returns an admitted snapshot for the next call. The model obligations include
+declared rule targets, initial invariants, well-timed deadlines and the
+contracts for actual rule selection. The theorem has no scheduler fuel cap.
 
 ## Independently frozen Timed Cell
 
@@ -89,7 +95,15 @@ Generation evidence binds the new generic equality helper. No protocol rule,
 input, invariant or frozen expected value changes.
 
 A concrete kernel regression reifies the Timed Cell IR through the existing
-batch view. It checks initial validity, the initial timer domain, unique rule
-IDs, the domain of every arm action and coverage for every active declared
-timer on invariant-valid declared states. Raw rule preservation, external
-coverage and exact batch certificates remain obligations of the timed task.
+batch view. It checks initial validity, declared timer and target IDs, unique
+rule IDs, guard disjointness, timer and external coverage, and raw preservation
+for all five rules. It then applies the generic dispatch theorem to the
+generated initial snapshot with arbitrary typed event fields. The public
+timed task certificate and its finite batch replay integration are still open.
+
+The compiled Lean batch interpreter also matched the same ten frozen
+operations. Its existing input format omits the explicit error snapshot and
+trace. Before adapting that case, the check confirmed the frozen snapshot
+equaled the previous successful snapshot with exact types and that the
+frozen error trace was empty. The comparison still checked the reported
+fault, snapshot, trace and clock after execution.
