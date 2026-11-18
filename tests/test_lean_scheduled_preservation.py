@@ -7,12 +7,15 @@ import tempfile
 import unittest
 
 from formal_spec_agent import lean_backend as gate
+from formal_spec_agent.lean_batch import BatchView
+from protocol_lab.ir import load
 
 ROOT=Path(__file__).resolve().parents[1]
 LEAN=os.environ.get('FSA_LEAN')or shutil.which('lean')
 MODULES=['Foundation','ValueOps','TypedIR','TypedMachine','TypedContracts',
          'TypedFiringContracts','TimerRank','TimerMinimum','ScheduledPreservation','TimerDomain',
-         'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection']
+         'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection',
+         'StoreFacts','MachineObserve','BatchObserve']
 TARGETS=['FormalSpecAgent.ScheduledPreservation.'+n for n in [
     'MatchingRaw','fire_success_invariant_from_raw','external_success_invariant_from_raw',
     'timer_success_invariant_from_raw']]+['ScheduledController.raw_obligation_rejects_filtered_timer_loss']
@@ -52,6 +55,39 @@ class ScheduledPreservationTests(unittest.TestCase):
             self.assertEqual(batch.returncode,0,batch.stdout+batch.stderr)
             for target in BATCH_TARGETS:
                 self.assertLessEqual(set(gate.read_axioms(batch.stdout,target)),gate.AXIOMS)
+            model = load(ROOT/'examples/lean-timed-efsm/model.json')
+            view = BatchView(model)
+            initial = dict(state=model['initial_state'], now_ms=0,
+                           variables={name: var['initial'] for name, var in model['variables'].items()},
+                           timers={})
+            approved = view.source(proof_helpers=True).replace(
+                'import BatchObserve\n', 'import BatchObserve\nimport TimedSelection\n', 1)
+            approved += '\ndef initial : FormalSpecAgent.TypedMachine.Snapshot := ' + view.snapshot(initial)
+            approved += '''
+
+
+def timed_initial_valid : Prop :=
+  FormalSpecAgent.TypedContracts.InitialValid model initial
+def timed_initial_declared : Prop :=
+  FormalSpecAgent.TimerDomain.Declared [0] initial
+def timed_arms_declared : Prop :=
+  FormalSpecAgent.TimerDomain.ArmsDeclared [0] model
+def timed_rule_ids_unique : Prop :=
+  (model.rules.map FormalSpecAgent.TypedMachine.Rule.id).Nodup
+def timed_covers_timers : Prop :=
+  FormalSpecAgent.TimedSelection.CoversTimers model [0, 1] [0]
+
+end Approved
+'''
+            (root/'Approved.lean').write_text(approved)
+            approved_result = compile_module('Approved')
+            self.assertEqual(approved_result.returncode, 0, approved_result.stdout+approved_result.stderr)
+            shutil.copyfile(ROOT/'tests/lean/TimedCellStaticProofs.lean', root/'CellAudit.lean')
+            concrete = compile_module('CellAudit')
+            self.assertEqual(concrete.returncode, 0, concrete.stdout+concrete.stderr)
+            for target in ('initial_valid_checked', 'initial_declared_checked', 'rule_ids_checked',
+                           'arms_declared_checked', 'coverage_checked'):
+                self.assertLessEqual(set(gate.read_axioms(concrete.stdout, target)), gate.AXIOMS)
             # Replacing the raw model obligation by True cannot validate this
             # proof chain or the independent timer-loss rejection.
             p=root/'ScheduledPreservation.lean';s=p.read_text()

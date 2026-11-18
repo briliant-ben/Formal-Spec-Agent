@@ -87,3 +87,9 @@ Boolean/numeric state/message aliases fail. Reference scenario final variable
 expectations must also match the declared IR type; unknown fields are rejected.
 Generation evidence binds the new generic equality helper. No protocol rule,
 input, invariant or frozen expected value changes.
+
+A concrete kernel regression reifies the Timed Cell IR through the existing
+batch view. It checks initial validity, the initial timer domain, unique rule
+IDs, the domain of every arm action and coverage for every active declared
+timer on invariant-valid declared states. Raw rule preservation, external
+coverage and exact batch certificates remain obligations of the timed task.
