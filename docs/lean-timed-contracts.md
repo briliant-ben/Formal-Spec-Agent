@@ -23,11 +23,21 @@ the result with actual fire. External execution uses the real eligibility,
 time and pending-timer tests. Timer execution uses actual earliest selection and
 its membership lemma. Invariant filtering is not substituted for a raw proof.
 
-These are conditional generic theorems. A concrete owner must still prove raw
-preservation, guard disjointness, external and active-timer coverage, declared
-timer-ID well-formedness and the repeated batch composition obligations. Those
-premises are not automatically assumed true by a task flag. The new timed task
-adapter and universal timed-model certificate remain pending.
+The batch proof follows the rank of the actual scheduler. For successful
+advance, tick and dispatch, it proves that every recorded transition and the
+final snapshot satisfy the model invariants and contain only declared timer
+IDs. The premises are a valid initial snapshot, well-timed deadlines, a
+nondecreasing clock, declared IDs in arm actions, and raw preservation for
+each declared trigger. The successful dispatch proof covers both the timer
+prefix and the final external event. The proof places no bound on the number
+of timer firings.
+
+The domain proof follows actual ordered actions, including cancellation,
+replacement of an existing timer and scheduling of a new one. Lean rejects
+the static arm obligation for a model that tries to schedule an undeclared ID.
+The concrete timed task must still discharge raw rule preservation, guard
+disjointness, external and active-timer coverage and its initial timer domain.
+The batch theorem is conditional on successful execution.
 
 ## Independently frozen Timed Cell
 
