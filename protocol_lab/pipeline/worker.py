@@ -9,7 +9,7 @@ import traceback
 from ..ir import load,Machine,ModelError,Uncovered,Conflict
 from ..codegen import generate as generate_native,Unsupported,sha
 from ..codegen.execute import build,commands
-from .task import read,write,resolve
+from .task import read,write,resolve,LEAN_RESULTS
 from .testgen import generate as generate_tests,classification
 
 KEYS=('transition','requirements','time_ms','event','after','emitted')
@@ -42,7 +42,7 @@ def native_class(name):
     if name=='uncovered_event':return 'model_gap'
     if name=='rule_conflict':return 'rule_conflict'
     if name.startswith('invariant:'):return 'invariant_failure'
-    if name in ('integer_overflow','byte_capacity','output_capacity','input_capacity','timer_step_capacity'):return 'backend_domain_exceeded'
+    if name in ('integer_overflow','byte_capacity','text_capacity','output_capacity','input_capacity','timer_step_capacity'):return 'backend_domain_exceeded'
     return 'invalid_input_or_model'
 
 
@@ -81,11 +81,11 @@ def stage(name,t,workspace,job,out):
         return result(data=dict(model_semantic_sha256=model_hash(model),model_scope=model['scope'],
                                 rules=len(model['transitions']),invariants=len(model['invariants'])))
     if name=='formal':
-        if t['schema']=='spec-flow-task-v6':
+        if t['schema']in LEAN_RESULTS:
             from formal_spec_agent.lean_backend import check
             f=t['formal']
             checked=check(resolve(workspace,f['task']),workspace,out/'queries',resolve(workspace,f['proofs']),f['task_sha256'],os.environ.get('FSA_LEAN')or'lean')
-            status='pass'if checked['status']=='checked_efsm_contract'else'blocked'if checked['status']=='blocked'else'unknown'if checked.get('classification')=='resource_unknown'else'fail'
+            status='pass'if checked['status']==LEAN_RESULTS[t['schema']]else'blocked'if checked['status']=='blocked'else'unknown'if checked.get('classification')=='resource_unknown'else'fail'
             return result(status,None if status=='pass'else checked.get('classification',checked['status']),checked)
         if t['schema']=='spec-flow-task-v5':
             from ..initial_step import check, PASS, UNRESOLVED

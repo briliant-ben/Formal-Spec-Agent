@@ -13,8 +13,8 @@ class ExtractionTests(unittest.TestCase):
         evolution=json.loads((ROOT/'provenance/evolution.json').read_text())
         self.assertEqual(evolution['schema'],'framework-source-evolution-v1')
         changes=evolution['files']
-        categories={n:'compact-c-generation-v5' for n in ['protocol_lab/codegen/__init__.py','protocol_lab/codegen/execute.py']}
-        categories.update({n:'lean-efsm-flow-v6' for n in ['protocol_lab/pipeline/task.py','protocol_lab/pipeline/worker.py','protocol_lab/pipeline/runner.py']})
+        categories={n:'native-counted-text-v6' for n in ['protocol_lab/codegen/__init__.py','protocol_lab/codegen/execute.py','protocol_lab/codegen/harness.c']}
+        categories.update({n:'lean-typed-efsm-flow-v7' for n in ['protocol_lab/pipeline/task.py','protocol_lab/pipeline/worker.py','protocol_lab/pipeline/runner.py']})
         self.assertEqual(set(changes),set(categories))
         for row in manifest['files']:
             actual=hashlib.sha256((ROOT/row['target']).read_bytes()).hexdigest()

@@ -1,0 +1,318 @@
+{
+  "ir_version": "0.6",
+  "semantics": "flat-efsm-atomic-ordered-v1",
+  "protocol": "generic-typed-cell",
+  "states": [
+    "READY"
+  ],
+  "initial_state": "READY",
+  "variables": {
+    "buf": {
+      "type": "bytes",
+      "initial": []
+    },
+    "n": {
+      "type": "int",
+      "initial": 0
+    },
+    "cursor": {
+      "type": "seq32",
+      "initial": 0
+    },
+    "label": {
+      "type": "string",
+      "initial": ""
+    },
+    "accepted": {
+      "type": "bool",
+      "initial": false
+    }
+  },
+  "events": {
+    "app.put": {
+      "origin": "application",
+      "fields": {
+        "payload": "bytes",
+        "sequence": "seq32",
+        "delta": "int",
+        "label": "string",
+        "allow": "bool"
+      }
+    }
+  },
+  "messages": {
+    "cell.accept": {
+      "fields": {
+        "buf": "bytes",
+        "n": "int",
+        "cursor": "seq32",
+        "label": "string",
+        "accepted": "bool"
+      }
+    },
+    "cell.reject": {
+      "fields": {
+        "buf": "bytes",
+        "n": "int",
+        "cursor": "seq32",
+        "label": "string",
+        "accepted": "bool"
+      }
+    }
+  },
+  "timers": {},
+  "requirements": {
+    "CELL": {
+      "source": "spec.md#typed-cell-v1",
+      "interpretation": "Faithful ordered typed-cell acceptance/rejection and exact stored content."
+    }
+  },
+  "invariants": [
+    {
+      "id": "NONNEGATIVE",
+      "assert": {
+        "op": "ge",
+        "args": [
+          {
+            "var": "n"
+          },
+          0
+        ]
+      },
+      "requirements": [
+        "CELL"
+      ]
+    },
+    {
+      "id": "MAXLEN",
+      "assert": {
+        "op": "le",
+        "args": [
+          {
+            "var": "n"
+          },
+          16
+        ]
+      },
+      "requirements": [
+        "CELL"
+      ]
+    },
+    {
+      "id": "N_EQ_LEN",
+      "assert": {
+        "op": "eq",
+        "args": [
+          {
+            "var": "n"
+          },
+          {
+            "op": "bytes_len",
+            "args": [
+              {
+                "var": "buf"
+              }
+            ]
+          }
+        ]
+      },
+      "requirements": [
+        "CELL"
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "PUT.ACCEPT",
+      "from": "READY",
+      "to": "READY",
+      "event": "app.put",
+      "guard": {
+        "op": "and",
+        "args": [
+          {
+            "op": "eq",
+            "args": [
+              {
+                "event": "allow"
+              },
+              true
+            ]
+          },
+          {
+            "op": "le",
+            "args": [
+              {
+                "op": "bytes_len",
+                "args": [
+                  {
+                    "event": "payload"
+                  }
+                ]
+              },
+              16
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "buf",
+            "value": {
+              "event": "payload"
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "n",
+            "value": {
+              "op": "bytes_len",
+              "args": [
+                {
+                  "var": "buf"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "cursor",
+            "value": {
+              "op": "seq_add",
+              "args": [
+                {
+                  "event": "sequence"
+                },
+                {
+                  "event": "delta"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "label",
+            "value": {
+              "event": "label"
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "accepted",
+            "value": true
+          }
+        },
+        {
+          "emit": {
+            "message": "cell.accept",
+            "fields": {
+              "buf": {
+                "var": "buf"
+              },
+              "n": {
+                "var": "n"
+              },
+              "cursor": {
+                "var": "cursor"
+              },
+              "label": {
+                "var": "label"
+              },
+              "accepted": {
+                "var": "accepted"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "CELL"
+      ]
+    },
+    {
+      "id": "PUT.REJECT",
+      "from": "READY",
+      "to": "READY",
+      "event": "app.put",
+      "guard": {
+        "op": "not",
+        "args": [
+          {
+            "op": "and",
+            "args": [
+              {
+                "op": "eq",
+                "args": [
+                  {
+                    "event": "allow"
+                  },
+                  true
+                ]
+              },
+              {
+                "op": "le",
+                "args": [
+                  {
+                    "op": "bytes_len",
+                    "args": [
+                      {
+                        "event": "payload"
+                      }
+                    ]
+                  },
+                  16
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "accepted",
+            "value": false
+          }
+        },
+        {
+          "emit": {
+            "message": "cell.reject",
+            "fields": {
+              "buf": {
+                "var": "buf"
+              },
+              "n": {
+                "var": "n"
+              },
+              "cursor": {
+                "var": "cursor"
+              },
+              "label": {
+                "var": "label"
+              },
+              "accepted": {
+                "var": "accepted"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "CELL"
+      ]
+    }
+  ],
+  "scope": {
+    "terminal_states": [],
+    "excluded": [
+      "native",
+      "compiler",
+      "protocol proof"
+    ]
+  }
+}

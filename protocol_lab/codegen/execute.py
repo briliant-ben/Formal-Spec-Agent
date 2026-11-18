@@ -20,7 +20,7 @@ def build(generation,out):
     generation=Path(generation).resolve();out=Path(out).resolve()
     if out.exists():raise ValueError('Fresh build directory required')
     r=json.loads((generation/'generation.json').read_text())
-    if r['stage']!='generate'or r['status']!='pass'or r['backend']!='direct-c99-shared-expressions-v5':raise ValueError('Unsupported generation evidence')
+    if r['stage']!='generate'or r['status']!='pass'or r['backend']!='direct-c99-typed-text-v6':raise ValueError('Unsupported generation evidence')
     for name,digest in r['inputs'].items():
         if sha(name)!=digest:raise ValueError('Generation input changed: '+name)
     if sha(generation/'protocol.c')!=r['outputs']['protocol.c']:raise ValueError('Generated source hash changed')
@@ -48,7 +48,10 @@ def build(generation,out):
     write(out/'compile.json',result);return result
 
 
-def token(value,kind):return 'b:'+bytes(value).hex()if kind=='bytes'else str(int(value))
+def token(value,kind):
+    if kind=='bytes': return 'b:'+bytes(value).hex()
+    elif kind=='string': return 'u:'+value.encode('utf-8').hex()
+    else: return str(int(value))
 
 
 def commands(model,scenario):
@@ -56,8 +59,12 @@ def commands(model,scenario):
     for name,v in scenario.get('initial',{}).items():
         if name not in variables or not value_ok(v,model['variables'][name]['type']):raise ValueError('Invalid initial override')
         if model['variables'][name]['type']=='string':
-            if v not in string_literals(model):raise ValueError('Initial string outside source-literal backend domain')
-            value=str(string_literals(model).index(v))
+            has_string_events = any('string' in spec['fields'].values() for spec in model['events'].values())
+            if has_string_events:
+                value = token(v, 'string')
+            else:
+                if v not in string_literals(model):raise ValueError('Initial string outside source-literal backend domain')
+                value=str(string_literals(model).index(v))
         else:value=token(v,model['variables'][name]['type'])
         rows.append('I '+str(variables.index(name))+' '+value)
     rows.append('B')
@@ -66,7 +73,10 @@ def commands(model,scenario):
         if step.get('tick'):rows.append('T '+str(step['at_ms']));continue
         event=step['event'];schema=model['events'][event]['fields'];fields=step.get('fields',{})
         if set(fields)!=set(schema)or any(not value_ok(fields[n],kind)for n,kind in schema.items()):raise ValueError('Invalid event fields')
-        rows.append('D '+str(step['at_ms'])+' '+event+''.join(' '+token(fields[n],schema[n])for n in schema))
+        row = 'D '+str(step['at_ms'])+' '+event
+        for n in schema:
+            row += ' ' + token(fields[n], schema[n])
+        rows.append(row)
     if 'settle_ms'in scenario:rows.append('T '+str(scenario['settle_ms']))
     return '\n'.join(rows)+'\n'
 

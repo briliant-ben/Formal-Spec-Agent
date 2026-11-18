@@ -5,7 +5,12 @@ import re
 
 TOOL=Path(__file__).resolve().parents[1]
 SCHEMA='spec-flow-task-v2'
-SCHEMAS={'spec-flow-task-v1',SCHEMA,'spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6'}
+SCHEMAS={'spec-flow-task-v1',SCHEMA,'spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6','spec-flow-task-v7'}
+
+
+LEAN_STRATEGIES={'spec-flow-task-v6':'lean-efsm','spec-flow-task-v7':'lean-typed-efsm'}
+LEAN_CONTRACTS={'spec-flow-task-v6':'fsa-lean-efsm-task-v1','spec-flow-task-v7':'fsa-lean-typed-efsm-task-v1'}
+LEAN_RESULTS={'spec-flow-task-v6':'checked_efsm_contract','spec-flow-task-v7':'checked_typed_efsm_contract'}
 
 
 def framework_files():
@@ -53,7 +58,7 @@ def load_task(filename,workspace):
         if not re.fullmatch('[0-9a-f]{64}',s['sha256']):raise ValueError('Invalid source digest')
         if not isinstance(s['uri_aliases'],list)or not s['uri_aliases']or any(not isinstance(u,str)or not u for u in s['uri_aliases']):raise ValueError('Source URI aliases required')
     if len(ids)!=len(set(ids)):raise ValueError('Duplicate source ID')
-    if t['schema']in ('spec-flow-task-v2','spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6'):
+    if t['schema']in ('spec-flow-task-v2','spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6','spec-flow-task-v7'):
         pinned={resolve(workspace,s['path'])for s in t['sources']}
         required={resolve(workspace,t['exploration']),*(resolve(workspace,n)for n in t['seeds'])}
         if 'wire'in t:required|={resolve(workspace,t['wire']['binding']),*(resolve(workspace,n)for n in t['wire']['scenarios'])}
@@ -62,14 +67,14 @@ def load_task(filename,workspace):
     for b in t['requirement_bindings'].values():
         if set(b)!={'source','clause','reference'}or b['source']not in ids or any(not isinstance(b[k],str)or not b[k]for k in b):raise ValueError('Incomplete requirement binding')
     f=t['formal'];limits=t['limits']
-    if t['schema']=='spec-flow-task-v6':
-        if set(f)!={'strategy','task','task_sha256','proofs'}or f['strategy']!='lean-efsm':raise ValueError('Unsupported v6 formal strategy/configuration')
+    if t['schema']in LEAN_STRATEGIES:
+        if set(f)!={'strategy','task','task_sha256','proofs'}or f['strategy']!=LEAN_STRATEGIES[t['schema']]:raise ValueError('Unsupported Lean formal strategy/configuration')
         if any(type(f[n])is not str or Path(f[n]).is_absolute()for n in ('task','proofs')):raise ValueError('Relative Lean inputs required')
         contract=resolve(workspace,f['task']);proofs=resolve(workspace,f['proofs'])
         if not {contract,proofs}<=pinned:raise ValueError('Lean task and proof data must be source-pinned')
         if type(f['task_sha256'])is not str or not re.fullmatch('[0-9a-f]{64}',f['task_sha256'])or sha(contract)!=f['task_sha256']:raise ValueError('Lean task digest mismatch')
         ct=read(contract)
-        if ct.get('schema')!='fsa-lean-efsm-task-v1'or resolve(workspace,ct['model'])!=resolve(workspace,t['model']):raise ValueError('Lean contract must cover the flow model itself')
+        if ct.get('schema')!=LEAN_CONTRACTS[t['schema']]or resolve(workspace,ct['model'])!=resolve(workspace,t['model']):raise ValueError('Lean contract must cover the flow model itself')
         from formal_spec_agent.lean_backend import prepare
         from ..ir import model_files
         contract_inputs=prepare(contract,workspace,f['task_sha256'])[2]
@@ -104,7 +109,7 @@ def inputs(filename,workspace,t):
     result={'workspace/'+p.relative_to(workspace).as_posix():sha(p)for p in paths}
     for p in sorted(TOOL.rglob('*')):
         if p.is_file()and p.suffix in ('.py','.c'):result['tool/'+p.relative_to(TOOL).as_posix()]=sha(p)
-    if t['schema']=='spec-flow-task-v6':
+    if t['schema']in LEAN_STRATEGIES:
         root=TOOL.parent/'formal_spec_agent'
         for p in framework_files():result['framework/'+p.relative_to(root).as_posix()]=sha(p)
     return result

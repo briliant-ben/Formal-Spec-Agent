@@ -1,5 +1,7 @@
 # Framework documentation
 
+- [Typed EFSM flow](lean-typed-efsm.md): all five value kinds, universal raw-rule
+  contracts, finite test generation and independent C execution through task-v7.
 - [IR overview](ir-semantics.md): explicit behavior and backend boundaries.
 - [Proposal-role contract](agent-contract.md): provider isolation, shared ledger,
   input pinning and controller-owned acceptance.

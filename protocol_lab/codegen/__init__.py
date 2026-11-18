@@ -10,6 +10,8 @@ from ..symbolic import model_hash
 HERE=Path(__file__).resolve().parent
 KINDS={'int':0,'bool':1,'seq32':2,'bytes':3,'string':4}
 BYTE_CAP=4096
+TEXT_CAP=4096
+TEXT_POOL_CAP=64
 OPS={'eq','ne','and','or','not','implies','add','sub','mul','le','ge','min','ite',
      'seq_add','seq_distance','seq_lt','seq_le','seq_comparable','bytes_len','bytes_concat','bytes_slice',
      'bytes_pack8_mod','bytes_pack16be_mod','bytes_pack32be_mod','bytes_internet_checksum16','bytes_at_or_zero'}
@@ -49,6 +51,10 @@ def string_literals(m):
     return sorted(values)
 
 
+def dynamic_text(m):
+    return any('string' in e['fields'].values() for e in m['events'].values())
+
+
 def admit(m):
     validate(m)
     names=list(m['states'])+list(m['variables'])+list(m['events'])+list(m['timers'])+list(m['messages'])
@@ -61,13 +67,19 @@ def admit(m):
         raise Unsupported('Unknown model fields')
     if m['ir_version']not in ('0.1','0.2','0.4','0.5','0.6')or m['semantics']!='flat-efsm-atomic-ordered-v1':
         raise Unsupported('Backend requires IR0.1/0.2/0.4/0.5/0.6 atomic ordered v1; clock-v3/rational unsupported')
+    if dynamic_text(m):
+        strings=string_literals(m)
+        if len(strings)>TEXT_POOL_CAP:raise Unsupported('Native text pool literal capacity exceeded')
+        for value in strings:
+            try: raw=value.encode('utf-8')
+            except UnicodeEncodeError as e:raise Unsupported('Native text requires Unicode scalar literals')from e
+            if len(raw)>TEXT_CAP:raise Unsupported('Native text literal capacity exceeded')
     for v in m['variables'].values():
         if set(v)!={'type','initial'}or v['type']not in KINDS:raise Unsupported('Only int/bool/seq32/bytes/closed-string state supported in native-v2')
         if v['type']=='bytes':
             if len(v['initial'])>BYTE_CAP:raise Unsupported('Byte literal exceeds native buffer capacity')
         elif v['type']!='string':integer(v['initial'])
     for spec in m['events'].values():
-        if 'string'in spec['fields'].values():raise Unsupported('String event fields unsupported; state strings use source literals only')
         if set(spec)!={'origin','fields'}or any(t not in KINDS for t in spec['fields'].values())or len(spec['fields'])>64:
             raise Unsupported('Unsupported event schema')
         if spec['origin']=='timer'and spec['fields']:raise Unsupported('Timer event fields unsupported')
@@ -122,7 +134,11 @@ def render(m,wire=None,*,share_expressions=True):
     if len(json.dumps(initial_snapshot,separators=(',',':')).encode())>131072-4096:raise Unsupported('Native initial snapshot capacity exceeded')
     variables=list(m['variables']);events=list(m['events']);timers=list(m['timers']);states=m['states']
     strings=string_literals(m)
+    has_text=dynamic_text(m)
     lines=['#define STRING_COUNT '+str(len(strings)),(HERE/'runtime.c').read_text()]
+    if has_text:
+        lines += ['#define HAS_TEXT_EVENTS 1', '#define TEXT_CAP '+str(TEXT_CAP),
+                  '#define TEXT_POOL_CAP '+str(TEXT_POOL_CAP), (HERE/'text_runtime.c').read_text()]
     if wire is not None:
         from .wire import render_codec
         lines.append(render_codec(m,wire))
@@ -204,12 +220,14 @@ def render(m,wire=None,*,share_expressions=True):
 
     def literal(out,s):emit('text('+out+','+cstr(s)+');')
     def value(out,e,kind,event=None):
-        if kind=='string':emit('text('+out+',source_json('+exp(e,event)+'));')
+        if kind=='string':
+            if has_text:emit('text_json('+out+',&m->texts,'+exp(e,event)+');')
+            else:emit('text('+out+',source_json('+exp(e,event)+'));')
         elif kind=='bytes':emit('byte_json('+out+','+exp(e,event)+');')
         elif kind=='bool':emit('text('+out+','+exp(e,event)+'?"true":"false");')
         else:emit('number('+out+','+exp(e,event)+');')
     emit('enum { NV='+str(len(variables))+', NB='+str(len(byte_vars))+', NT='+str(len(timers))+' };')
-    emit('typedef struct { int state; int64_t now,v[NV?NV:1],due[NT?NT:1]; Bytes b[NB?NB:1]; int active[NT?NT:1]; } Machine;')
+    emit('typedef struct { int state; int64_t now,v[NV?NV:1],due[NT?NT:1]; Bytes b[NB?NB:1]; int active[NT?NT:1]; '+('TextPool texts; 'if has_text else'')+'} Machine;')
     emit('const char *state_names[]={'+','.join(map(cstr,states))+'};')
     emit('const char *event_names[]={'+','.join(map(cstr,events))+'};')
     emit('const char *timer_names[]={'+(','.join(map(cstr,timers))or'""')+'};')
@@ -232,6 +250,9 @@ def render(m,wire=None,*,share_expressions=True):
         body=expand(e,event)
         emit('static inline '+kind+' '+name+'(Machine *m,int64_t *f,Bytes *bf) { (void)m; (void)f; (void)bf; return '+body+'; }')
     emit('void initialize(Machine *m) { memset(m,0,sizeof(*m)); m->state='+str(states.index(m['initial_state']))+';')
+    if has_text:
+        for text_literal in strings:
+            emit('if(text_add(&m->texts,'+cstr(text_literal)+','+str(len(text_literal.encode('utf-8')))+')<0)failure="text_literal_capacity";')
     for i,n in enumerate(variables):
         initial=m['variables'][n]['initial'];expression={'bytes':initial}if n in byte_vars else initial
         slot='m->b['+str(byte_vars.index(n))+']'if n in byte_vars else'm->v['+str(i)+']'
@@ -302,22 +323,23 @@ def generate(model_file,out,wire_binding_file=None):
     if wire_binding_file is not None:raise Unsupported("Legacy TCP wire codec is not a generic framework backend")
     model_file=Path(model_file).resolve();out=Path(out).resolve()
     if out.exists():raise ValueError('Fresh output directory required')
-    paths=model_files(model_file)+[HERE/'__init__.py',HERE/'__main__.py',HERE/'runtime.c',HERE/'harness.c',Path(__file__).parents[1]/'ir.py',Path(__file__).parents[1]/'symbolic.py']
+    paths=model_files(model_file)+[HERE/'__init__.py',HERE/'__main__.py',HERE/'runtime.c',HERE/'harness.c',HERE/'execute.py',Path(__file__).parents[1]/'ir.py',Path(__file__).parents[1]/'symbolic.py']
     wire=None
     if wire_binding_file is not None:
         wire_binding_file=Path(wire_binding_file).resolve();wire=json.loads(wire_binding_file.read_text())
         paths += [wire_binding_file,HERE/'wire.py',HERE/'wire.c']
+    if dynamic_text(load(model_file)):paths.append(HERE/'text_runtime.c')
     inputs={str(p):sha(p)for p in paths}
     m=load(model_file);source=render(m,wire)
     if any(sha(p)!=h for p,h in inputs.items()):raise ValueError('Source changed during generation')
     out.mkdir(parents=True);(out/'protocol.c').write_text(source)
-    result=dict(schema='spec-flow-stage-v1',stage='generate',status='pass',backend='direct-c99-shared-expressions-v5',
+    result=dict(schema='spec-flow-stage-v1',stage='generate',status='pass',backend='direct-c99-typed-text-v6',
                 expression_lowering='shared typed functions at original use sites; no value cache or eager hoisting',
                 model_file=str(model_file),model_semantic_sha256=model_hash(m),inputs=inputs,
                 outputs={'protocol.c':sha(out/'protocol.c')},runtime_python_required=False,
                 external_protocol_stack_used=False,compiler_correctness_proved=False,
-                limits=dict(integer='signed64; checked overflow',command_log_bytes=131072,fields_per_event=64,variables=256,bytes_per_buffer=BYTE_CAP,input_line_bytes=2*BYTE_CAP*64+4096,name_bytes=256,timer_steps_per_command=4096,expression_depth=64,reply_snapshot_reserve_bytes=4096),
-                unsupported=['rational','clock-v3','post-action target cases','string event fields','strings outside source-literal domain'],string_domain=string_literals(m),
+                limits=dict(integer='signed64; checked overflow',command_log_bytes=131072,fields_per_event=64,variables=256,bytes_per_buffer=BYTE_CAP,input_line_bytes=2*BYTE_CAP*64+4096,name_bytes=256,timer_steps_per_command=4096,expression_depth=64,reply_snapshot_reserve_bytes=4096,text_pool_entries=TEXT_POOL_CAP if dynamic_text(m)else None,text_entry_utf8_bytes=TEXT_CAP if dynamic_text(m)else None),
+                unsupported=['rational','clock-v3','post-action target cases']+([]if dynamic_text(m)else['strings outside source-literal domain']),string_domain={'encoding':'Unicode scalar UTF-8, counted bytes','transport':'u:utf8hex','pool':'transactional append-only intern, including source literals'}if dynamic_text(m)else string_literals(m),
                 rules=[dict(id=r['id'],requirements=r['requirements'])for r in m['transitions']],
                 scope=m['scope'])
     if wire is not None:result.update(wire_binding=wire,wire_binding_file=str(wire_binding_file),wire_scope='fixed IPv4/TCP header codec and selected input shape; not full IPv4 behavior')
