@@ -91,6 +91,22 @@ def fieldNo : Expr .boolean := .equal .boolean (.field .boolean 0) (.literal .bo
 example : separated (facts yes) (facts no) = true := rfl
 example : separated (facts yes) (facts fieldNo) = false := rfl
 example : separated (facts yes) (facts (.boolOr no (.literal .boolean true))) = false := rfl
+
+-- Use a clipped byte view. Comparing the same read at an inclusive boundary
+-- is insufficient unless the bounds are strictly separated.
+def firstByte : Expr .integer :=
+  .byteAt (.slice (.field .octets 0) (.literal .integer 5) (.literal .integer 2)) (.literal .integer 0)
+def upper (n : Int) : Expr .boolean := .intLe firstByte (.literal .integer n)
+def lower (n : Int) : Expr .boolean := .intGe firstByte (.literal .integer n)
+example : separated (facts (upper 23)) (facts (lower 24)) = true := rfl
+example : separated (facts (upper 23)) (facts (lower 23)) = false := rfl
+example : separated (facts (lower 24)) (facts (.boolNot (lower 24))) = true := rfl
+example : separated (facts (upper (-1))) (facts (.boolNot (upper (-1)))) = true := rfl
+example : separated (facts (.equal .integer firstByte (.literal .integer 23)))
+    (facts (.notEqual .integer firstByte (.literal .integer 23))) = true := rfl
+
+example : separated (facts (.boolOr (upper 23) (.literal .boolean true))) (facts (lower 24)) = false := rfl
+
 '''
             (root/'Dropped.lean').write_text(dropped)
             rejected = compile_module('Dropped')
@@ -139,7 +155,7 @@ example : separated (facts yes) (facts (.boolOr no (.literal .boolean true))) = 
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
             for name in ('absent_external_exact', 'absent_packet_rolls_back',
                          'absent_initial_dispatch', 'closed_groups', 'frame_pairs_remaining',
-                         'retry_group', 'send_group', 'transmit_group',
+                         'send_group', 'transmit_group',
                          'endpoint_raw_exact', 'endpoint_conflicts_exact'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)

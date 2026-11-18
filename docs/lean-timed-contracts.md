@@ -160,14 +160,19 @@ groups. External coverage remains a separate obligation because the TCP/IP
 profile admits uncovered inputs.
 
 `GuardDiscriminators` proves that guards cannot both hold when their
-conjuncts require different literals in the same typed state variable or
-event field. It passes over other expressions and leaves all pairs it could
-not separate as individual obligations. An assembly theorem combines the
-calculated exclusions with proofs for those remaining pairs.
+conjuncts require incompatible values for the same observation. Lean
+checks the meaning of each observation against the typed expression
+evaluator. Integer comparisons support equality, inequality and inclusive
+bounds, including bounds on byte reads, slice lengths and integer arithmetic.
+Negated bounds use exact integer complements.
+Text and Boolean equalities use typed state or event slots. Expressions
+outside this fragment supply no facts. Pairs the checker cannot separate
+remain individual obligations.
 
-The kernel discharges 14 TCP/IP groups with the discriminator alone. It
-checks the ARP retry, TCP send and TCP transmit groups by composing that
-reduction with packet lengths, buffer bounds and complementary guards.
-These are universal guard proofs on the stated invariant domain. The
-frame receive group has 7,747 remaining pairs out of 28,441. Raw rule
-preservation and the remaining frame receive pairs still need proofs.
+The kernel discharges 15 TCP/IP groups with the discriminator alone,
+including ARP retry. Universal proofs for the TCP send and transmit groups
+combine it with the model's buffer invariant and complementary guards.
+The frame receive group has 6,141 remaining pairs out of 28,441. The kernel
+excludes 22,300 pairs, including 1,606 more than the earlier slot-equality
+check. Raw rule preservation and the remaining frame pairs still need
+proofs.
