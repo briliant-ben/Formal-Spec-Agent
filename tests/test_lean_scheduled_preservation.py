@@ -12,7 +12,7 @@ ROOT=Path(__file__).resolve().parents[1]
 LEAN=os.environ.get('FSA_LEAN')or shutil.which('lean')
 MODULES=['Foundation','ValueOps','TypedIR','TypedMachine','TypedContracts',
          'TypedFiringContracts','TimerRank','TimerMinimum','ScheduledPreservation','TimerDomain',
-         'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation']
+         'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection']
 TARGETS=['FormalSpecAgent.ScheduledPreservation.'+n for n in [
     'MatchingRaw','fire_success_invariant_from_raw','external_success_invariant_from_raw',
     'timer_success_invariant_from_raw']]+['ScheduledController.raw_obligation_rejects_filtered_timer_loss']
@@ -23,7 +23,11 @@ BATCH_TARGETS = [
       ('work_declared', 'fire_declared', 'external_declared', 'step_declared')),
     *('FormalSpecAgent.BatchPreservation.' + name for name in
       ('advance_from_raw', 'tick_from_raw', 'dispatch_from_raw')),
+    *('FormalSpecAgent.TimedSelection.' + name for name in
+      ('enabled_singleton', 'fire_enabled_from_raw', 'timer_enabled_from_contracts',
+       'external_enabled_from_contracts')),
     'BatchPreservationAudit.undeclared_arm_rejected',
+    'BatchPreservationAudit.missing_due_timer_rule_rejected',
 ]
 
 

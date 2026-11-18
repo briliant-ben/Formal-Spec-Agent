@@ -37,7 +37,13 @@ replacement of an existing timer and scheduling of a new one. Lean rejects
 the static arm obligation for a model that tries to schedule an undeclared ID.
 The concrete timed task must still discharge raw rule preservation, guard
 disjointness, external and active-timer coverage and its initial timer domain.
-The batch theorem is conditional on successful execution.
+The batch preservation theorem is conditional on successful execution.
+Separate selection theorems derive success of an eligible external step or a
+selected due timer from coverage, disjoint guards, unique rule IDs and raw
+preservation. Active-timer coverage uses the timer's actual event and empty
+typed field environment. Lean rejects a declared active timer with no rule in
+the current state. These selection theorems establish the individual steps
+needed for a separate total batch success proof.
 
 ## Independently frozen Timed Cell
 

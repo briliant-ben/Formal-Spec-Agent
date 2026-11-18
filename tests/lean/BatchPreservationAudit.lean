@@ -1,4 +1,4 @@
-import BatchPreservation
+import TimedSelection
 
 open FormalSpecAgent.TypedMachine
 open FormalSpecAgent.TimerDomain
@@ -21,6 +21,20 @@ theorem undeclared_arm_rejected : ¬ArmsDeclared [0] model := by
     declared armRule (by simp [model]) 1 (.literal .integer 10) (by simp [armRule])
   simp at member
 
+def timerWithoutRule : Model := { model with rules := [] }
+
+def due : TimerEntry := ⟨0, 0⟩
+
+def before : Snapshot :=
+  { state := 0, now := 0, timers := [due], values := zeroValues }
+
+theorem missing_due_timer_rule_rejected :
+    ¬FormalSpecAgent.TimedSelection.CoversTimers timerWithoutRule [0] [0] := by
+  intro coverage
+  obtain ⟨rule, member, _⟩ :=
+    coverage before (by simp [before]) (by rfl) due (by simp [before]) (by simp [due])
+  simp [timerWithoutRule] at member
+
 end BatchPreservationAudit
 #print axioms FormalSpecAgent.TimerDomain.work_declared
 #print axioms FormalSpecAgent.TimerDomain.fire_declared
@@ -30,3 +44,9 @@ end BatchPreservationAudit
 #print axioms FormalSpecAgent.BatchPreservation.tick_from_raw
 #print axioms FormalSpecAgent.BatchPreservation.dispatch_from_raw
 #print axioms BatchPreservationAudit.undeclared_arm_rejected
+
+#print axioms FormalSpecAgent.TimedSelection.enabled_singleton
+#print axioms FormalSpecAgent.TimedSelection.fire_enabled_from_raw
+#print axioms FormalSpecAgent.TimedSelection.timer_enabled_from_contracts
+#print axioms FormalSpecAgent.TimedSelection.external_enabled_from_contracts
+#print axioms BatchPreservationAudit.missing_due_timer_rule_rejected
