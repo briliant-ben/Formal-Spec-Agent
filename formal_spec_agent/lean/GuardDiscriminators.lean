@@ -366,6 +366,91 @@ private theorem integerFacts_sound (expr : Expr .integer) (test : IntegerTest) (
     · exact projectedReadFacts_sound observation test ctx valid fact projected
 
 
+private def offsetView (expr : Observation) : Observation × Int :=
+  match expr with
+  | .add (.literal value) term | .add term (.literal value) =>
+    let result := offsetView term
+    (result.1, result.2 + value)
+  | .sub term (.literal value) =>
+    let result := offsetView term
+    (result.1, result.2 - value)
+  | expr => (expr, 0)
+
+private theorem offsetView_sound (expr : Observation) (ctx : Context) :
+    (offsetView expr).1.integer ctx + (offsetView expr).2 = expr.integer ctx := by
+  fun_induction offsetView expr with
+  | case1 constant term result ih =>
+    change result.1.integer ctx + result.2 = term.integer ctx at ih
+    simp [Observation.integer, Observation.read, asInt] at ih ⊢
+    omega
+  | case2 term constant _ result ih =>
+    change result.1.integer ctx + result.2 = term.integer ctx at ih
+    simp [Observation.integer, Observation.read, asInt] at ih ⊢
+    omega
+  | case3 term constant result ih =>
+    change result.1.integer ctx + result.2 = term.integer ctx at ih
+    simp [Observation.integer, Observation.read, asInt] at ih ⊢
+    omega
+  | _ => simp
+
+private def orderFact (left right : Observation) (test : IntegerTest) : Fact :=
+  let (a, offsetA) := offsetView left
+  let (b, offsetB) := offsetView right
+  let adjust := offsetB - offsetA
+  let shifted := match test with
+    | .equal v => .equal (v + adjust)
+    | .different v => .different (v + adjust)
+    | .lower v => .lower (v + adjust)
+    | .upper v => .upper (v + adjust)
+  .integer (.sub a b) shifted
+
+private theorem orderFact_sound (left right : Observation) (test : IntegerTest) (ctx : Context)
+    (valid : test.holds (left.integer ctx - right.integer ctx)) :
+    (orderFact left right test).holds ctx := by
+  generalize hleft : offsetView left = a
+  generalize hright : offsetView right = b
+  rcases a with ⟨a, offsetA⟩
+  rcases b with ⟨b, offsetB⟩
+  have evalA := offsetView_sound left ctx
+  have evalB := offsetView_sound right ctx
+  simp only [hleft, hright] at evalA evalB
+  cases test <;>
+    simp only [orderFact, hleft, hright, Fact.holds, IntegerTest.holds,
+      Observation.integer, Observation.read, asInt] at * <;> omega
+
+private def invertTest : IntegerTest → IntegerTest
+  | .equal value => .equal (-value)
+  | .different value => .different (-value)
+  | .lower bound => .upper (-bound)
+  | .upper bound => .lower (-bound)
+
+private theorem invertTest_sound (value : Int) (test : IntegerTest) (valid : test.holds value) :
+    (invertTest test).holds (-value) := by
+  cases test <;> simp only [invertTest, IntegerTest.holds] at * <;> omega
+
+private def orderFacts (left right : Expr .integer) (test : IntegerTest) : List Fact :=
+  match observation left, observation right with
+  | some a, some b => [orderFact a b test, orderFact b a (invertTest test)]
+  | _, _ => []
+
+private theorem orderFacts_sound (left right : Expr .integer) (test : IntegerTest) (ctx : Context)
+    (valid : test.holds (TypedIR.eval left ctx - TypedIR.eval right ctx))
+    (fact : Fact) (member : fact ∈ orderFacts left right test) : fact.holds ctx := by
+  cases leftFound : observation left with
+  | none => simp [orderFacts, leftFound] at member
+  | some a =>
+    cases rightFound : observation right with
+    | none => simp [orderFacts, leftFound, rightFound] at member
+    | some b =>
+      simp [orderFacts, leftFound, rightFound] at member
+      rw [← integer_observation_sound left ctx a leftFound,
+        ← integer_observation_sound right ctx b rightFound] at valid
+      rcases member with rfl | rfl
+      · exact orderFact_sound a b test ctx valid
+      · apply orderFact_sound
+        rw [show b.integer ctx - a.integer ctx = -(a.integer ctx - b.integer ctx) by omega]
+        exact invertTest_sound _ test valid
+
 private def comparisonFacts {kind : Kind} (left right : Expr kind) (expected : Bool) : List Fact :=
   match observation left, observation right with
   | some a, some b => [.comparison a b expected]
@@ -397,6 +482,63 @@ private theorem comparisonFacts_negative {kind : Kind} {left right : Expr kind}
     (fact : Fact) (member : fact ∈ comparisonFacts left right false) : fact.holds ctx :=
   comparisonFacts_sound left right false ctx (by simpa using enabled) fact member
 
+private def paddingFacts (left right : Expr .integer) : List Fact :=
+  match right with
+  | .choose _ (.intLe total (.literal _ limit)) (.literal _ padded)
+        (.add (.literal _ headerSize) other) =>
+    match observation total, observation other with
+    | some x, some y =>
+      if x.same y && decide (limit + headerSize ≤ padded) then
+        orderFacts left total (.lower headerSize)
+      else []
+    | _, _ => []
+  | _ => []
+
+private theorem padded_length_bound (actual length limit padding headerSize : Int)
+    (enough : limit + headerSize ≤ padding)
+    (actualSize : actual = (if length ≤ limit then padding else headerSize + length)) :
+    headerSize ≤ actual - length := by
+  by_cases small : length ≤ limit
+  · simp [small] at actualSize
+    omega
+  · simp [small] at actualSize
+    omega
+
+private theorem paddingFacts_sound (left right : Expr .integer) (ctx : Context)
+    (matchesValue : TypedIR.eval left ctx = TypedIR.eval right ctx)
+    (fact : Fact) (member : fact ∈ paddingFacts left right) : fact.holds ctx := by
+  unfold paddingFacts at member
+  split at member
+  next total limit padded headerSize other =>
+    cases foundTotal : observation total with
+    | none => simp [foundTotal] at member
+    | some x =>
+      cases foundOther : observation other with
+      | none => simp [foundTotal, foundOther] at member
+      | some y =>
+        simp only [foundTotal, foundOther] at member
+        split at member
+        next accepted =>
+          change (x.same y && decide (limit + headerSize ≤ padded)) = true at accepted
+          simp only [Bool.and_eq_true] at accepted
+          obtain ⟨keys, enough⟩ := accepted
+          have same := observation_identical keys
+          have sameTotal : TypedIR.eval total ctx = TypedIR.eval other ctx :=
+            (integer_observation_sound total ctx x foundTotal).symm.trans
+              (same.symm ▸ integer_observation_sound other ctx y foundOther)
+          apply orderFacts_sound left total (.lower headerSize) ctx _ fact member
+          change headerSize ≤ TypedIR.eval left ctx - TypedIR.eval total ctx
+          change TypedIR.eval left ctx =
+            (if decide (TypedIR.eval total ctx ≤ limit) then padded else headerSize + TypedIR.eval other ctx)
+            at matchesValue
+          rw [← sameTotal] at matchesValue
+          have bound : limit + headerSize ≤ padded := of_decide_eq_true enough
+          exact padded_length_bound (TypedIR.eval left ctx) (TypedIR.eval total ctx)
+            limit padded headerSize bound (by simpa using matchesValue)
+        next => simp at member
+  next => simp at member
+
+
 def facts {kind : Kind} (guard : Expr kind) : List Fact :=
   match guard with
   | .boolAnd left right => facts left ++ facts right
@@ -409,12 +551,16 @@ def facts {kind : Kind} (guard : Expr kind) : List Fact :=
   | .boolNot (.intLe expr (.literal _ value)) => integerFacts expr (.lower (value + 1))
   | .equal .octets expr (.literal _ value) =>
       literalByteFacts expr value ++ comparisonFacts expr (.literal .octets value) true
-  | .equal .integer left right => comparisonFacts left right true
+  | .equal .integer left right => comparisonFacts left right true ++ orderFacts left right (.equal 0) ++ paddingFacts left right
   | .equal .octets left right => comparisonFacts left right true
   | .notEqual .integer left right
-  | .boolNot (.equal .integer left right) => comparisonFacts left right false
+  | .boolNot (.equal .integer left right) => comparisonFacts left right false ++ orderFacts left right (.different 0)
   | .notEqual .octets left right
   | .boolNot (.equal .octets left right) => comparisonFacts left right false
+  | .intGe left right => orderFacts left right (.lower 0)
+  | .intLe left right => orderFacts left right (.upper 0)
+  | .boolNot (.intGe left right) => orderFacts left right (.upper (-1))
+  | .boolNot (.intLe left right) => orderFacts left right (.lower 1)
   | .equal .text (.variable _ slot) (.literal _ value) => [.text (.variable slot) value]
   | .equal .text (.field _ slot) (.literal _ value) => [.text (.field slot) value]
   | .equal .boolean (.variable _ slot) (.literal _ value) => [.boolean (.variable slot) value]
@@ -470,17 +616,47 @@ private theorem facts_sound {kind : Kind} (guard : Expr kind) (ctx : Context)
     · exact literalByteFacts_sound expr value ctx (of_decide_eq_true enabled) fact literal
     · exact comparisonFacts_sound expr (.literal .octets value) true ctx enabled fact comparison
   | case10 left right =>
-    exact comparisonFacts_sound left right true ctx enabled fact member
+    have equal : TypedIR.eval left ctx = TypedIR.eval right ctx := of_decide_eq_true enabled
+    rcases List.mem_append.mp member with direct | padded
+    · rcases List.mem_append.mp direct with same | ordered
+      · exact comparisonFacts_sound left right true ctx enabled fact same
+      · apply orderFacts_sound left right (.equal 0) ctx _ fact ordered
+        exact Int.sub_eq_zero.mpr equal
+    · exact paddingFacts_sound left right ctx equal fact padded
   | case11 left right =>
     exact comparisonFacts_sound left right true ctx enabled fact member
   | case12 left right _ =>
-    exact comparisonFacts_negative (left := left) (right := right) ctx enabled fact member
+    rcases List.mem_append.mp member with same | ordered
+    · exact comparisonFacts_negative (left := left) (right := right) ctx enabled fact same
+    · apply orderFacts_sound left right (.different 0) ctx _ fact ordered
+      change (!(decide (TypedIR.eval left ctx = TypedIR.eval right ctx))) = true at enabled
+      exact fun zero => (by simpa using enabled : TypedIR.eval left ctx ≠ TypedIR.eval right ctx)
+        (Int.sub_eq_zero.mp zero)
   | case13 left right _ =>
-    exact comparisonFacts_negative (left := left) (right := right) ctx enabled fact member
+    rcases List.mem_append.mp member with same | ordered
+    · exact comparisonFacts_negative (left := left) (right := right) ctx enabled fact same
+    · apply orderFacts_sound left right (.different 0) ctx _ fact ordered
+      change (!(decide (TypedIR.eval left ctx = TypedIR.eval right ctx))) = true at enabled
+      exact fun zero => (by simpa using enabled : TypedIR.eval left ctx ≠ TypedIR.eval right ctx)
+        (Int.sub_eq_zero.mp zero)
   | case14 left right =>
     exact comparisonFacts_negative (left := left) (right := right) ctx enabled fact member
   | case15 left right =>
     exact comparisonFacts_negative (left := left) (right := right) ctx enabled fact member
+  | case16 left right _ =>
+    apply orderFacts_sound left right (.lower 0) ctx _ fact member
+    exact Int.sub_nonneg.mpr (of_decide_eq_true enabled)
+  | case17 left right _ =>
+    apply orderFacts_sound left right (.upper 0) ctx _ fact member
+    exact Int.sub_nonpos_of_le (of_decide_eq_true enabled)
+  | case18 left right _ =>
+    apply orderFacts_sound left right (.upper (-1)) ctx _ fact member
+    change (!(decide (TypedIR.eval right ctx ≤ TypedIR.eval left ctx))) = true at enabled
+    exact Int.le_sub_one_of_lt (Int.sub_neg_of_lt (Int.lt_of_not_ge (by simpa using enabled)))
+  | case19 left right _ =>
+    apply orderFacts_sound left right (.lower 1) ctx _ fact member
+    change (!(decide (TypedIR.eval left ctx ≤ TypedIR.eval right ctx))) = true at enabled
+    exact Int.add_one_le_of_lt (Int.sub_pos.mpr (Int.lt_of_not_ge (by simpa using enabled)))
   | _ =>
     simp_all [Enabled, TypedIR.eval, equalValue, Fact.holds, InputSlot.read] <;>
       exact of_decide_eq_true enabled
@@ -510,6 +686,49 @@ theorem Fact.clash_sound (left right : Fact) (ctx : Context)
     | obtain ⟨rfl, different⟩ := clash
       exact different (a.symm.trans b)
 
+
+private def disjunctFacts {kind : Kind} (guard : Expr kind) : List (List Fact) :=
+  match guard with
+  | .boolOr left right => disjunctFacts left ++ disjunctFacts right
+  | guard => [facts guard]
+termination_by structural guard
+
+private theorem disjunctFacts_sound {kind : Kind} (guard : Expr kind) (ctx : Context)
+    (enabled : Enabled guard ctx) :
+    ∃ branch ∈ disjunctFacts guard, ∀ fact ∈ branch, fact.holds ctx := by
+  fun_induction disjunctFacts guard with
+  | case1 left right il ir =>
+    simp only [Enabled, TypedIR.eval, Bool.or_eq_true] at enabled
+    rcases enabled with yes | yes
+    · obtain ⟨branch, member, holds⟩ := il yes
+      exact ⟨branch, List.mem_append_left _ member, holds⟩
+    · obtain ⟨branch, member, holds⟩ := ir yes
+      exact ⟨branch, List.mem_append_right _ member, holds⟩
+  | _ =>
+    rename_i expr notOr
+    exact ⟨facts expr, by simp, fun fact member => facts_sound expr ctx enabled fact member⟩
+
+private def requiredChoices {kind : Kind} (guard : Expr kind) : List (List (List Fact)) :=
+  match guard with
+  | .boolAnd left right => requiredChoices left ++ requiredChoices right
+  | .boolOr left right => [disjunctFacts left ++ disjunctFacts right]
+  | _ => []
+termination_by structural guard
+
+private theorem requiredChoices_sound {kind : Kind} (guard : Expr kind) (ctx : Context)
+    (enabled : Enabled guard ctx) (choice : List (List Fact)) (member : choice ∈ requiredChoices guard) :
+    ∃ branch ∈ choice, ∀ fact ∈ branch, fact.holds ctx := by
+  fun_induction requiredChoices guard with
+  | case1 left right il ir =>
+    simp only [Enabled, TypedIR.eval, Bool.and_eq_true] at enabled
+    rcases List.mem_append.mp member with hm | hm
+    · exact il enabled.1 hm
+    · exact ir enabled.2 hm
+  | case2 left right =>
+    obtain rfl := List.mem_singleton.mp member
+    exact disjunctFacts_sound (.boolOr left right) ctx enabled
+  | _ => contradiction
+
 def separated (left right : List Fact) : Bool :=
   left.any fun a => right.any fun b => a.clash b
 
@@ -525,15 +744,92 @@ theorem separated_sound (left right : Expr .boolean) (ctx : Context)
   exact False.elim (Fact.clash_sound a b ctx clash
     (facts_sound left ctx leftValue a ha) (facts_sound right ctx rightValue b hb))
 
+
+private theorem separatedFacts_sound (left right : List Fact) (ctx : Context)
+    (checked : separated left right = true)
+    (validLeft : ∀ fact ∈ left, fact.holds ctx) (validRight : ∀ fact ∈ right, fact.holds ctx) :
+    False := by
+  obtain ⟨a, ha, other⟩ := List.any_eq_true.mp checked
+  obtain ⟨b, hb, clash⟩ := List.any_eq_true.mp other
+  exact Fact.clash_sound a b ctx clash (validLeft a ha) (validRight b hb)
+
+private theorem choicesClash_sound (left right : Expr .boolean) (ctx : Context)
+    (checked : (requiredChoices left).any (fun choice =>
+      choice.all (fun branch => separated branch (facts right))) = true)
+    (validLeft : TypedIR.eval left ctx = true) (validRight : TypedIR.eval right ctx = true) : False := by
+  obtain ⟨choice, inChoices, allClash⟩ := List.any_eq_true.mp checked
+  obtain ⟨branch, inChoice, holds⟩ := requiredChoices_sound left ctx validLeft choice inChoices
+  exact separatedFacts_sound branch (facts right) ctx (List.all_eq_true.mp allClash branch inChoice)
+    holds (fun fact member => facts_sound right ctx validRight fact member)
+
+private structure GuardSummary where
+  necessary : List Fact
+  choices : List (List (List Fact))
+
+private def summarize (guard : Expr .boolean) : GuardSummary :=
+  ⟨facts guard, requiredChoices guard⟩
+
+private def pairedChoicesClash (left right : GuardSummary) : Bool :=
+  left.choices.any fun l => right.choices.any fun r =>
+    l.all fun a => r.all fun b =>
+      separated a right.necessary || separated b left.necessary || separated a b
+
+private theorem pairedChoicesClash_sound (left right : Expr .boolean) (ctx : Context)
+    (checked : pairedChoicesClash (summarize left) (summarize right) = true)
+    (validLeft : TypedIR.eval left ctx = true) (validRight : TypedIR.eval right ctx = true) : False := by
+  obtain ⟨choiceLeft, inLeft, other⟩ := List.any_eq_true.mp checked
+  obtain ⟨choiceRight, inRight, both⟩ := List.any_eq_true.mp other
+  obtain ⟨a, inA, holdsA⟩ := requiredChoices_sound left ctx validLeft choiceLeft inLeft
+  obtain ⟨b, inB, holdsB⟩ := requiredChoices_sound right ctx validRight choiceRight inRight
+  have conflict := List.all_eq_true.mp (List.all_eq_true.mp both a inA) b inB
+  simp only [Bool.or_eq_true] at conflict
+  rcases conflict with (leftOnly | rightOnly) | paired
+  · exact separatedFacts_sound a (facts right) ctx leftOnly holdsA
+      (fun fact member => facts_sound right ctx validRight fact member)
+  · exact separatedFacts_sound b (facts left) ctx rightOnly holdsB
+      (fun fact member => facts_sound left ctx validLeft fact member)
+  · exact separatedFacts_sound a b ctx paired holdsA holdsB
+
+private def summariesClash (left right : GuardSummary) : Bool :=
+  separated left.necessary right.necessary ||
+    left.choices.any (fun choice => choice.all (fun branch => separated branch right.necessary)) ||
+    right.choices.any (fun choice => choice.all (fun branch => separated branch left.necessary)) ||
+    pairedChoicesClash left right
+
+private theorem summariesClash_sound (left right : Expr .boolean) (ctx : Context)
+    (checked : summariesClash (summarize left) (summarize right) = true) :
+    TypedIR.eval left ctx = false ∨ TypedIR.eval right ctx = false := by
+  cases validLeft : TypedIR.eval left ctx
+  · exact Or.inl rfl
+  cases validRight : TypedIR.eval right ctx
+  · exact Or.inr rfl
+  simp only [summariesClash, summarize, Bool.or_eq_true] at checked
+  rcases checked with ((factsOnly | leftChoice) | rightChoice) | paired
+  · exact False.elim (separatedFacts_sound (facts left) (facts right) ctx factsOnly
+      (fun fact member => facts_sound left ctx validLeft fact member)
+      (fun fact member => facts_sound right ctx validRight fact member))
+  · exact False.elim (choicesClash_sound left right ctx leftChoice validLeft validRight)
+  · exact False.elim (choicesClash_sound right left ctx rightChoice validRight validLeft)
+  · exact False.elim (pairedChoicesClash_sound left right ctx paired validLeft validRight)
+
 open TypedMachine TimedObligations
 
 /-- Pairs still requiring semantic proofs. Facts are collected once per rule.
 A pair is omitted only when a sound check proves the guards cannot both hold. -/
+def residualPairsFrom (first rules : List Rule) : List (Rule × Rule) :=
+  let annotated := rules.map fun r => (r, summarize r.guard)
+  first.flatMap fun a =>
+    let left := summarize a.guard
+    (annotated.filter fun b => a.id < b.1.id && !summariesClash left b.2).map
+      fun b => (a, b.1)
+
 def residualPairs (rules : List Rule) : List (Rule × Rule) :=
-  let annotated := rules.map fun r => (r, facts r.guard)
-  annotated.flatMap fun a =>
-    (annotated.filter fun b => a.1.id < b.1.id && !separated a.2 b.2).map
-      fun b => (a.1, b.1)
+  residualPairsFrom rules rules
+
+theorem residualPairsFrom_append (first rest rules : List Rule) :
+    residualPairsFrom (first ++ rest) rules =
+      residualPairsFrom first rules ++ residualPairsFrom rest rules := by
+  simp only [residualPairsFrom, List.flatMap_append]
 
 def PairDisjoint (model : Model) (pair : Rule × Rule) : Prop :=
   ∀ (s : Snapshot) (f : Values), invariantsHold model s = true →
@@ -547,15 +843,15 @@ theorem conflict_from_residual (model : Model) (rules : List Rule)
   have check (a b : Rule) (ha : a ∈ rules) (hb : b ∈ rules) (ordered : a.id < b.id)
       (atSource : a.source = s.state ∨ b.source = s.state) :
       eval s f a.guard = false ∨ eval s f b.guard = false := by
-    cases result : separated (facts a.guard) (facts b.guard)
+    cases result : summariesClash (summarize a.guard) (summarize b.guard)
     · have member : (a, b) ∈ residualPairs rules := by
         apply List.mem_flatMap.mpr
-        refine ⟨(a, facts a.guard), List.mem_map.mpr ⟨a, ha, rfl⟩, ?_⟩
+        refine ⟨a, ha, ?_⟩
         apply List.mem_map.mpr
-        refine ⟨(b, facts b.guard), List.mem_filter.mpr ⟨List.mem_map.mpr ⟨b, hb, rfl⟩, ?_⟩, rfl⟩
+        refine ⟨(b, summarize b.guard), List.mem_filter.mpr ⟨List.mem_map.mpr ⟨b, hb, rfl⟩, ?_⟩, rfl⟩
         simp [ordered, result]
       exact remaining.of_mem member s f valid atSource
-    · exact separated_sound a.guard b.guard (context s f) result
+    · exact summariesClash_sound a.guard b.guard (context s f) result
   rcases Nat.lt_or_gt_of_ne distinct with ordered | ordered
   · exact check left right hl hr ordered (Or.inl source)
   · exact Or.symm (check right left hr hl ordered (Or.inr source))

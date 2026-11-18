@@ -1,5 +1,9 @@
 import Approved
 import GuardDiscriminators
+import FrameBlock0
+import FrameBlock1
+import FrameBlock2
+import FrameBlock3
 
 namespace TCPIPAudit
 open FormalSpecAgent FormalSpecAgent.TypedMachine FormalSpecAgent.TypedIR
@@ -53,16 +57,10 @@ theorem closed_groups :
     conflict_from_empty model _ rfl, conflict_from_empty model _ rfl,
     conflict_from_empty model _ rfl, trivial⟩
 
-private def framePairCounts : Nat × Nat × Nat :=
-  (residualPairs conflictGroup_4).foldl (fun (link, mixed, tcp) (left, right) =>
-    if left.id < 64 then
-      if right.id < 64 then (link + 1, mixed, tcp) else (link, mixed + 1, tcp)
-    else
-      (link, mixed, tcp + 1)) (0, 0, 0)
-
-set_option maxRecDepth 65536 in
-set_option maxHeartbeats 8000000 in
-theorem frame_pairs_remaining : framePairCounts = (39, 0, 437) := by decide +kernel
+theorem frame_pairs_remaining :
+    (residualPairs conflictGroup_4).foldl TCPIPFrameCensus.countPair (0, 0, 0, 0) =
+      (27, 0, 93, 0) := by
+  rw [TCPIPFrameCensus.merge_blocks, frameBlock0, frameBlock1, frameBlock2, frameBlock3]
 
 private theorem false_or_false {a b : Bool} (impossible : a = true → b = true → False) :
     a = false ∨ b = false := by

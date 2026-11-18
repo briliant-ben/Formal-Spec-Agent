@@ -180,10 +180,20 @@ A pair with opposite requirements for the same equality is excluded even
 when both operands depend on the input. The proof uses equality of the
 typed observation keys to bind the two guards to the same computation.
 
+For integer comparisons, moving constant offsets across a relation gives
+a checked bound on the difference of its two observations. When a length
+expression selects between padding and an unpadded length, the checker
+derives a lower bound only if both branches support it. A disjunction is
+excluded only after accounting for every combination of its alternatives
+with those of the other guard.
+
 The kernel discharges 15 TCP/IP groups with the discriminator alone,
 including ARP retry. Universal proofs for the TCP send and transmit groups
 combine it with the model's buffer invariant and complementary guards.
-The frame receive audit leaves 476 of 28,441 rule pairs. It counts 39
-within the link-layer rules and 437 within TCP, with zero pairs crossing
-that partition. Raw rule preservation and the remaining frame pairs still
-need proofs.
+The frame receive audit leaves 120 of 28,441 rule pairs, comprising 27
+within the link-layer rules and 93 within TCP. It leaves zero crossing
+that partition and zero involving the malformed IPv4 length rule. Four
+separate kernel checks cover the full left-hand rule catalog. An equality
+proves that concatenating those blocks recovers the original catalog and
+that their counts compose. Raw rule preservation and the remaining frame
+pairs still need proofs.

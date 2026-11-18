@@ -135,6 +135,28 @@ example : separated (facts validLength)
     (facts (.notEqual .integer (.add (constant 14) (.bytesLength ip)) (constant 60))) = false := rfl
 example : separated (facts udp) (facts (.boolNot udp)) = true := rfl
 
+def ipTotal : Expr .integer := .field .integer 0
+def physicalLength : Expr .integer := .bytesLength frame
+def plainLength : Expr .integer := .add (constant 14) ipTotal
+def paddedLength (size : Int) : Expr .integer :=
+  .choose .integer (.intLe ipTotal (constant 46)) (constant size) plainLength
+
+def accepted (padding : Int) : Expr .boolean :=
+  .boolAnd (.intGe ipTotal (constant 40))
+    (.boolOr (.equal .integer physicalLength (paddedLength padding))
+      (.equal .integer physicalLength plainLength))
+
+def malformed : Expr .boolean :=
+  .boolOr (.intLe ipTotal (constant 39)) (.intGe ipTotal (.sub physicalLength (constant 13)))
+
+def wireRule (id : Nat) (guard : Expr .boolean) : FormalSpecAgent.TypedMachine.Rule :=
+  { id := id, event := 0, source := 0, target := 0, guard := guard, actions := [] }
+
+example : residualPairs [wireRule 0 (accepted 60), wireRule 1 malformed] = [] := rfl
+-- With total length 46, a 59-byte frame could satisfy both guards.
+example : (residualPairs [wireRule 0 (accepted 59), wireRule 1 malformed]).length = 1 := rfl
+
+
 
 
 '''
@@ -173,6 +195,8 @@ example : separated (facts udp) (facts (.boolNot udp)) = true := rfl
         frame_rules = [(index, row) for index, row in enumerate(model['transitions'])
                        if row['event'] == 'L.net.frame']
         self.assertEqual(len(frame_rules), 239)
+        self.assertEqual(model['transitions'][334]['id'], 'T.WIRE-DROP-IP-LENGTH-MALFORMED')
+        self.assertIn(334, {index for index, _ in frame_rules})
         for index, row in frame_rules:
             self.assertTrue(row['id'].startswith('L.' if index < 64 else 'T.'), row['id'])
 
@@ -185,11 +209,23 @@ example : separated (facts udp) (facts (.boolNot udp)) = true := rfl
             audit = (ROOT/'tests/lean/TCPIPTimedAudit.lean').read_text()
             self.assertEqual(audit.count('TCPIP_ABSENT_IDS'), 1)
             (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
+            shutil.copyfile(ROOT/'tests/lean/TCPIPFrameCensus.lean', root/'TCPIPFrameCensus.lean')
+            blocks = []
+            counts = [(0, 0, 0, 0), (27, 0, 9, 0), (27, 0, 27, 0), (27, 0, 93, 0), (27, 0, 93, 0)]
+            for index, (prior, current) in enumerate(zip(counts, counts[1:])):
+                block = f'FrameBlock{index}'
+                (root/f'{block}.lean').write_text(
+                    'import TCPIPFrameCensus\n'
+                    'set_option maxRecDepth 65536 in\n'
+                    'set_option maxHeartbeats 8000000 in\n'
+                    f'theorem frameBlock{index} : TCPIPFrameCensus.fromBlock {index} {prior} = {current}'
+                    ' := by decide +kernel\n')
+                blocks.append(block)
+
             result = None
-            for module in [*MODULES, 'Approved', 'TCPIPAudit']:
+            for module in [*MODULES, 'Approved', 'TCPIPFrameCensus', *blocks, 'TCPIPAudit']:
                 result = subprocess.run([LEAN, '-o', module+'.olean', module+'.lean'],
-                    cwd=root, env=env, capture_output=True, text=True,
-                    timeout=120 if module == 'TCPIPAudit' else 60)
+                    cwd=root, env=env, capture_output=True, text=True, timeout=60)
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
             for name in ('absent_external_exact', 'absent_packet_rolls_back',
                          'absent_initial_dispatch', 'closed_groups', 'frame_pairs_remaining',
