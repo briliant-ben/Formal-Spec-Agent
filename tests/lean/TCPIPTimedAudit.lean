@@ -62,7 +62,7 @@ private def framePairCounts : Nat × Nat × Nat :=
 
 set_option maxRecDepth 65536 in
 set_option maxHeartbeats 8000000 in
-theorem frame_pairs_remaining : framePairCounts = (72, 0, 909) := by decide
+theorem frame_pairs_remaining : framePairCounts = (39, 0, 437) := by decide +kernel
 
 private theorem false_or_false {a b : Bool} (impossible : a = true → b = true → False) :
     a = false ∨ b = false := by

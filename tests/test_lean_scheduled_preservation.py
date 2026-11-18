@@ -125,6 +125,17 @@ def emptySlice : Expr .boolean := .equal .octets clipped (.literal .octets [])
 example : separated (facts clippedZero) (facts tcp) = false := rfl
 example : separated (facts emptySlice) (facts tcp) = false := rfl
 
+def checksum : Expr .integer := .checksum (.concat (.pack16 (constant 20)) ip)
+def validChecksum : Expr .boolean := .equal .integer checksum (constant 0)
+def validLength : Expr .boolean :=
+  .equal .integer (.add (constant 14) (.bytesLength ip)) (.bytesLength frame)
+example : separated (facts validChecksum) (facts (.boolNot validChecksum)) = true := rfl
+example : separated (facts validLength) (facts (.boolNot validLength)) = true := rfl
+example : separated (facts validLength)
+    (facts (.notEqual .integer (.add (constant 14) (.bytesLength ip)) (constant 60))) = false := rfl
+example : separated (facts udp) (facts (.boolNot udp)) = true := rfl
+
+
 
 '''
             (root/'Dropped.lean').write_text(dropped)

@@ -26,16 +26,35 @@ inductive Observation where
   | add : Observation → Observation → Observation
   | sub : Observation → Observation → Observation
   | mul : Observation → Observation → Observation
-  deriving DecidableEq, BEq
+  | literalBytes : Bytes → Observation
+  | concat : Observation → Observation → Observation
+  | pack8 : Observation → Observation
+  | pack16 : Observation → Observation
+  | pack32 : Observation → Observation
+  | checksum : Observation → Observation
 
 private theorem inputSlot_identical {left right : InputSlot} (equal : (left == right) = true) :
     left = right := by
   cases left <;> cases right <;> simp_all [BEq.beq, instBEqInputSlot.beq]
 
-private theorem observation_identical {left right : Observation} (equal : (left == right) = true) :
+private def Observation.same : Observation → Observation → Bool
+  | .literal a, .literal b => a == b
+  | .integerSlot a, .integerSlot b => a == b
+  | .bufferSlot a, .bufferSlot b => a == b
+  | .length a, .length b => a.same b
+  | .byteAt a i, .byteAt b j => a.same b && i.same j
+  | .slice a i n, .slice b j m => a.same b && i.same j && n.same m
+  | .add a i, .add b j | .sub a i, .sub b j | .mul a i, .mul b j |
+    .concat a i, .concat b j => a.same b && i.same j
+  | .literalBytes a, .literalBytes b => a == b
+  | .pack8 a, .pack8 b | .pack16 a, .pack16 b | .pack32 a, .pack32 b |
+    .checksum a, .checksum b => a.same b
+  | _, _ => false
+
+private theorem observation_identical {left right : Observation} (equal : left.same right = true) :
     left = right := by
   induction left generalizing right <;> cases right <;>
-    simp_all [BEq.beq, instBEqObservation.beq, Bool.and_eq_true]
+    simp_all [Observation.same, Bool.and_eq_true]
   all_goals
     repeat' constructor
     all_goals solve_by_elim [And.left, And.right, inputSlot_identical]
@@ -59,6 +78,12 @@ def Observation.read (ctx : Context) : Observation → Int ⊕ Bytes
   | .add l r => .inl (asInt (l.read ctx) + asInt (r.read ctx))
   | .sub l r => .inl (asInt (l.read ctx) - asInt (r.read ctx))
   | .mul l r => .inl (asInt (l.read ctx) * asInt (r.read ctx))
+  | .literalBytes value => .inr value
+  | .concat l r => .inr (asBytes (l.read ctx) ++ asBytes (r.read ctx))
+  | .pack8 value => .inr (ValueOps.pack8 (asInt (value.read ctx)))
+  | .pack16 value => .inr (ValueOps.pack16 (asInt (value.read ctx)))
+  | .pack32 value => .inr (ValueOps.pack32 (asInt (value.read ctx)))
+  | .checksum value => .inl (ValueOps.checksum (asBytes (value.read ctx)))
 
 def Observation.integer (ctx : Context) (observation : Observation) : Int :=
   asInt (observation.read ctx)
@@ -77,6 +102,12 @@ def observation {kind : Kind} (expr : Expr kind) : Option Observation :=
   | .add left right => (observation left).bind fun l => (observation right).map (.add l)
   | .sub left right => (observation left).bind fun l => (observation right).map (.sub l)
   | .mul left right => (observation left).bind fun l => (observation right).map (.mul l)
+  | .literal .octets value => some (.literalBytes value)
+  | .concat left right => (observation left).bind fun l => (observation right).map (.concat l)
+  | .pack8 value => (observation value).map .pack8
+  | .pack16 value => (observation value).map .pack16
+  | .pack32 value => (observation value).map .pack32
+  | .checksum value => (observation value).map .checksum
   | _ => none
 termination_by structural expr
 
@@ -112,8 +143,25 @@ private theorem observation_sound {kind : Kind} (expr : Expr kind) (ctx : Contex
     have readOffset : o.read ctx = .inl (TypedIR.eval offset ctx) := ihOffset o seenOffset
     have readSize : n.read ctx = .inl (TypedIR.eval size ctx) := ihSize n seenSize
     simp only [ObservationSound, Observation.read, TypedIR.eval, readBuf, readOffset, readSize, asBytes, asInt]
+  | case13 left right ihLeft ihRight =>
+    have ⟨l, lSeen, mapped⟩ := Option.bind_eq_some_iff.mp found
+    have ⟨r, rSeen, result⟩ := Option.map_eq_some_iff.mp mapped
+    cases result
+    have readLeft : l.read ctx = .inr (TypedIR.eval left ctx) := ihLeft l lSeen
+    have readRight : r.read ctx = .inr (TypedIR.eval right ctx) := ihRight r rSeen
+    simp only [ObservationSound, Observation.read, TypedIR.eval, readLeft, readRight, asBytes]
+  | case17 value ih =>
+    have ⟨v, seen, result⟩ := Option.map_eq_some_iff.mp found
+    cases result
+    have readValue : v.read ctx = .inr (TypedIR.eval value ctx) := ih v seen
+    simp only [ObservationSound, Observation.read, TypedIR.eval, readValue, asBytes]
   | _ =>
     first
+    | rename_i value ih
+      have ⟨v, seen, result⟩ := Option.map_eq_some_iff.mp found
+      cases result
+      have readValue : v.read ctx = .inl (TypedIR.eval value ctx) := ih v seen
+      simp only [ObservationSound, Observation.read, TypedIR.eval, readValue, asInt]
     | rename_i left right ihLeft ihRight
       have ⟨l, lSeen, mapped⟩ := Option.bind_eq_some_iff.mp found
       have ⟨r, rSeen, result⟩ := Option.map_eq_some_iff.mp mapped
@@ -158,13 +206,18 @@ theorem IntegerTest.clash_sound (left right : IntegerTest) (value : Int)
     simp only [IntegerTest.clash, IntegerTest.holds, decide_eq_true_eq] at * <;>
     first | contradiction | omega
 
+private def SameWhen (expected : Bool) (left right : α) : Prop :=
+  if expected then left = right else left ≠ right
+
 inductive Fact where
   | integer : Observation → IntegerTest → Fact
+  | comparison : Observation → Observation → Bool → Fact
   | text : InputSlot → String → Fact
   | boolean : InputSlot → Bool → Fact
 
 def Fact.holds (ctx : Context) : Fact → Prop
   | .integer observation test => test.holds (observation.integer ctx)
+  | .comparison left right expected => SameWhen expected (left.read ctx) (right.read ctx)
   | .text slot value => slot.read .text ctx = value
   | .boolean slot value => slot.read .boolean ctx = value
 
@@ -313,6 +366,37 @@ private theorem integerFacts_sound (expr : Expr .integer) (test : IntegerTest) (
     · exact projectedReadFacts_sound observation test ctx valid fact projected
 
 
+private def comparisonFacts {kind : Kind} (left right : Expr kind) (expected : Bool) : List Fact :=
+  match observation left, observation right with
+  | some a, some b => [.comparison a b expected]
+  | _, _ => []
+
+private theorem comparisonFacts_sound {kind : Kind} (left right : Expr kind) (expected : Bool)
+    (ctx : Context) (truth : equalValue kind (TypedIR.eval left ctx) (TypedIR.eval right ctx) = expected)
+    (fact : Fact) (member : fact ∈ comparisonFacts left right expected) : fact.holds ctx := by
+  cases leftFound : observation left with
+  | none => simp [comparisonFacts, leftFound] at member
+  | some a =>
+    cases rightFound : observation right with
+    | none => simp [comparisonFacts, leftFound, rightFound] at member
+    | some b =>
+      simp [comparisonFacts, leftFound, rightFound] at member
+      subst fact
+      have observedLeft := observation_sound left ctx a leftFound
+      have observedRight := observation_sound right ctx b rightFound
+      cases kind <;>
+        simp only [ObservationSound] at observedLeft observedRight <;>
+        try contradiction
+      all_goals
+        change SameWhen expected (a.read ctx) (b.read ctx)
+        rw [observedLeft, observedRight]
+        cases expected <;> simpa [SameWhen, equalValue] using truth
+
+private theorem comparisonFacts_negative {kind : Kind} {left right : Expr kind}
+    (ctx : Context) (enabled : (!equalValue kind (TypedIR.eval left ctx) (TypedIR.eval right ctx)) = true)
+    (fact : Fact) (member : fact ∈ comparisonFacts left right false) : fact.holds ctx :=
+  comparisonFacts_sound left right false ctx (by simpa using enabled) fact member
+
 def facts {kind : Kind} (guard : Expr kind) : List Fact :=
   match guard with
   | .boolAnd left right => facts left ++ facts right
@@ -323,7 +407,14 @@ def facts {kind : Kind} (guard : Expr kind) : List Fact :=
   | .boolNot (.equal .integer expr (.literal _ value)) => integerFacts expr (.different value)
   | .boolNot (.intGe expr (.literal _ value)) => integerFacts expr (.upper (value - 1))
   | .boolNot (.intLe expr (.literal _ value)) => integerFacts expr (.lower (value + 1))
-  | .equal .octets expr (.literal _ value) => literalByteFacts expr value
+  | .equal .octets expr (.literal _ value) =>
+      literalByteFacts expr value ++ comparisonFacts expr (.literal .octets value) true
+  | .equal .integer left right => comparisonFacts left right true
+  | .equal .octets left right => comparisonFacts left right true
+  | .notEqual .integer left right
+  | .boolNot (.equal .integer left right) => comparisonFacts left right false
+  | .notEqual .octets left right
+  | .boolNot (.equal .octets left right) => comparisonFacts left right false
   | .equal .text (.variable _ slot) (.literal _ value) => [.text (.variable slot) value]
   | .equal .text (.field _ slot) (.literal _ value) => [.text (.field slot) value]
   | .equal .boolean (.variable _ slot) (.literal _ value) => [.boolean (.variable slot) value]
@@ -375,14 +466,29 @@ private theorem facts_sound {kind : Kind} (guard : Expr kind) (ctx : Context)
     change value + 1 ≤ TypedIR.eval expr ctx
     exact Int.add_one_le_of_lt (Int.lt_of_not_ge bound)
   | case9 expr value =>
-    exact literalByteFacts_sound expr value ctx
-      (show TypedIR.eval expr ctx = value from of_decide_eq_true enabled) fact member
+    rcases List.mem_append.mp member with literal | comparison
+    · exact literalByteFacts_sound expr value ctx (of_decide_eq_true enabled) fact literal
+    · exact comparisonFacts_sound expr (.literal .octets value) true ctx enabled fact comparison
+  | case10 left right =>
+    exact comparisonFacts_sound left right true ctx enabled fact member
+  | case11 left right =>
+    exact comparisonFacts_sound left right true ctx enabled fact member
+  | case12 left right _ =>
+    exact comparisonFacts_negative (left := left) (right := right) ctx enabled fact member
+  | case13 left right _ =>
+    exact comparisonFacts_negative (left := left) (right := right) ctx enabled fact member
+  | case14 left right =>
+    exact comparisonFacts_negative (left := left) (right := right) ctx enabled fact member
+  | case15 left right =>
+    exact comparisonFacts_negative (left := left) (right := right) ctx enabled fact member
   | _ =>
     simp_all [Enabled, TypedIR.eval, equalValue, Fact.holds, InputSlot.read] <;>
       exact of_decide_eq_true enabled
 
 def Fact.clash : Fact → Fact → Bool
-  | .integer x a, .integer y b => (x == y) && a.clash b
+  | .integer x a, .integer y b => x.same y && a.clash b
+  | .comparison l r expected, .comparison a b actual =>
+      (expected != actual) && l.same a && r.same b
   | .text x a, .text y b => decide (x = y ∧ a ≠ b)
   | .boolean x a, .boolean y b => decide (x = y ∧ a ≠ b)
   | _, _ => false
@@ -396,6 +502,11 @@ theorem Fact.clash_sound (left right : Fact) (ctx : Context)
     | obtain ⟨equal, incompatible⟩ := clash
       cases observation_identical equal
       exact IntegerTest.clash_sound _ _ _ incompatible a b
+    | obtain ⟨⟨different, sameLeft⟩, sameRight⟩ := clash
+      cases observation_identical sameLeft
+      cases observation_identical sameRight
+      simp_all [Fact.holds, SameWhen]
+      split at a <;> split at b <;> simp_all
     | obtain ⟨rfl, different⟩ := clash
       exact different (a.symm.trans b)
 

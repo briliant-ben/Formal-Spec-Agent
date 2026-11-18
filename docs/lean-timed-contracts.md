@@ -175,10 +175,15 @@ present in the slice. A nonzero read proves presence because the IR
 returns zero outside the slice. Empty slices and zero reads supply no
 absolute-byte facts through those respective rules.
 
+Observation keys also retain checksum, concatenation and packing semantics.
+A pair with opposite requirements for the same equality is excluded even
+when both operands depend on the input. The proof uses equality of the
+typed observation keys to bind the two guards to the same computation.
+
 The kernel discharges 15 TCP/IP groups with the discriminator alone,
 including ARP retry. Universal proofs for the TCP send and transmit groups
 combine it with the model's buffer invariant and complementary guards.
-The frame receive audit leaves 981 of 28,441 rule pairs. It counts 72
-within the link-layer rules and 909 within TCP, with zero pairs crossing
+The frame receive audit leaves 476 of 28,441 rule pairs. It counts 39
+within the link-layer rules and 437 within TCP, with zero pairs crossing
 that partition. Raw rule preservation and the remaining frame pairs still
 need proofs.
