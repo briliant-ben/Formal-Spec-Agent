@@ -5,6 +5,10 @@ import FrameBlock0
 import FrameBlock1
 import FrameBlock2
 import FrameBlock3
+import FrameBlock4
+import FrameBlock5
+import FrameBlock6
+import FrameBlock7
 
 namespace TCPIPAudit
 open FormalSpecAgent FormalSpecAgent.TypedMachine FormalSpecAgent.TypedIR
@@ -65,10 +69,24 @@ theorem malformed_length_preserves : raw_334_external :=
 
 #print axioms malformed_length_preserves
 
-theorem frame_pairs_remaining :
-    (residualPairs conflictGroup_4).foldl TCPIPFrameCensus.countPair (0, 0, 0, 0) =
-      (0, 0, 25, 0) := by
-  rw [TCPIPFrameCensus.merge_blocks, frameBlock0, frameBlock1, frameBlock2, frameBlock3]
+private theorem each_append {items rest : List α} {property : α → Prop}
+    (left : Each property items) (right : Each property rest) :
+    Each property (items ++ rest) := by
+  induction items with
+  | nil => exact right
+  | cons _ _ ih => exact ⟨left.1, ih left.2⟩
+
+set_option maxRecDepth 16384 in
+theorem frame_group : Approved.conflict_4 := by
+  apply TCPIPFrameCatalog.conflict_of_catalog model conflictGroup_4
+    (TCPIPFramePairs.control ++ TCPIPFramePairs.data)
+  · decide +kernel
+  · rw [TCPIPFrameCatalog.merge_blocks, frameBlock0, frameBlock1, frameBlock2, frameBlock3,
+      frameBlock4, frameBlock5, frameBlock6, frameBlock7]
+    simp only [List.nil_append, List.append_nil, ← List.map_append, List.take_append_drop]
+  · exact fun p member =>
+      (each_append TCPIPFramePairs.controlMembers TCPIPFramePairs.dataMembers).of_mem member
+  · exact each_append TCPIPFramePairs.controlDisjoint TCPIPFramePairs.dataDisjoint
 
 private theorem false_or_false {a b : Bool} (impossible : a = true → b = true → False) :
     a = false ∨ b = false := by
@@ -136,13 +154,22 @@ theorem transmit_group : Approved.conflict_16 := by
 #print axioms transmit_group
 
 #print axioms closed_groups
-#print axioms frame_pairs_remaining
+#print axioms frame_group
 
 set_option maxRecDepth 16384 in
 theorem endpoint_raw_exact : Approved.raw_catalog_exact := by rfl
 set_option maxRecDepth 16384 in
 theorem endpoint_conflicts_exact : Approved.conflict_catalog_exact := by rfl
+set_option maxRecDepth 16384 in
+theorem endpoint_guards_disjoint : TypedContracts.GuardsDisjoint model := by
+  apply disjoint_from_checks
+  rw [endpoint_conflicts_exact]
+  obtain ⟨g0, g1, g2, g3, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14, g17, _⟩ := closed_groups
+  exact ⟨g0, g1, g2, g3, frame_group, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14,
+    send_group, transmit_group, g17, trivial⟩
+
 #print axioms endpoint_raw_exact
 #print axioms endpoint_conflicts_exact
+#print axioms endpoint_guards_disjoint
 
 end TCPIPAudit

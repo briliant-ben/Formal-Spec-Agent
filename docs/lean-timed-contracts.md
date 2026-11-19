@@ -200,15 +200,25 @@ zero and half-space exclusions.
 The kernel discharges 15 TCP/IP groups with the discriminator alone,
 including ARP retry. Universal proofs for the TCP send and transmit groups
 combine it with the model's buffer invariant and complementary guards.
-The frame receive audit leaves 25 of 28,441 rule pairs, all within TCP.
-It leaves zero within the link-layer rules, zero crossing that partition,
-and zero involving the malformed IPv4 length rule. Four
-separate kernel checks cover the full left-hand rule catalog. An equality
-proves that concatenating those blocks recovers the original catalog and
-that their counts compose.
+For the 239 frame receive rules, eight kernel checks enumerate the exact
+residual rule IDs across all 28,441 pairs. The 25 residuals are all TCP.
+Six FIN acknowledgment exclusions follow from the invariant relating
+`SND.NXT` and `SND.UNA` to the outstanding control sequence number.
+Four old acknowledgment exclusions use the modular distance and the
+16-byte buffer bound. Six duplicate-versus-future exclusions use zero
+distance and nonnegative retransmission length. The other nine follow
+from complementary predicates.
+
+The frame catalog proves that concatenating the eight blocks recovers the
+original rule list. Unique rule IDs bind each residual to the original
+guard expressions. The kernel combines the checked frame group with the
+other 17 groups to prove guard disjointness whenever the model invariants
+hold. This statement applies to rules with the same source state and
+event, over arbitrary field values. It does not prove that the invariants
+hold after each rule or that every event is covered.
 
 The malformed IPv4 length rule also has a raw preservation proof. A
 checked dependency analysis shows that its diagnostic assignment touches
 no slot read by the invariants. The proof covers successful execution and
 all post-state invariants for arbitrary admitted pre-states. Remaining
-raw rule and frame overlap obligations stay open.
+raw rule preservation obligations stay open.

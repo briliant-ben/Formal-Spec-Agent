@@ -257,27 +257,33 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
             audit = (ROOT/'tests/lean/TCPIPTimedAudit.lean').read_text()
             self.assertEqual(audit.count('TCPIP_ABSENT_IDS'), 1)
             (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
-            shutil.copyfile(ROOT/'tests/lean/TCPIPFrameCensus.lean', root/'TCPIPFrameCensus.lean')
+            for module in ('TCPIPFrameCatalog', 'TCPIPFramePairs'):
+                shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
             blocks = []
-            counts = [(0, 0, 0, 0), (0, 0, 0, 0), (0, 0, 6, 0), (0, 0, 25, 0), (0, 0, 25, 0)]
-            for index, (prior, current) in enumerate(zip(counts, counts[1:])):
+            expected = (
+                '[]', '[]',
+                '(TCPIPFramePairs.control.take 3).map TCPIPFrameCatalog.pairId',
+                '(TCPIPFramePairs.control.drop 3).map TCPIPFrameCatalog.pairId',
+                '[]', 'TCPIPFramePairs.data.map TCPIPFrameCatalog.pairId', '[]', '[]',
+            )
+            for index, residual in enumerate(expected):
                 block = f'FrameBlock{index}'
                 (root/f'{block}.lean').write_text(
-                    'import TCPIPFrameCensus\n'
+                    'import TCPIPFramePairs\n'
                     'set_option maxRecDepth 65536 in\n'
                     'set_option maxHeartbeats 8000000 in\n'
-                    f'theorem frameBlock{index} : TCPIPFrameCensus.fromBlock {index} {prior} = {current}'
+                    f'theorem frameBlock{index} : TCPIPFrameCatalog.blockIds {index} = {residual}'
                     ' := by decide +kernel\n')
                 blocks.append(block)
 
             result = None
-            for module in [*MODULES, 'Approved', 'TCPIPFrameCensus', *blocks, 'TCPIPAudit']:
+            for module in [*MODULES, 'Approved', 'TCPIPFrameCatalog', 'TCPIPFramePairs', *blocks, 'TCPIPAudit']:
                 result = subprocess.run([LEAN, '-o', module+'.olean', module+'.lean'],
                     cwd=root, env=env, capture_output=True, text=True, timeout=60)
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
             for name in ('absent_external_exact', 'absent_packet_rolls_back',
-                         'absent_initial_dispatch', 'closed_groups', 'frame_pairs_remaining', 'malformed_length_preserves',
+                         'absent_initial_dispatch', 'closed_groups', 'frame_group', 'malformed_length_preserves',
                          'send_group', 'transmit_group',
-                         'endpoint_raw_exact', 'endpoint_conflicts_exact'):
+                         'endpoint_raw_exact', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)
