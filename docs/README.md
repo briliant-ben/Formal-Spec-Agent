@@ -1,5 +1,7 @@
 # Framework documentation
 
+- [Timed contracts](lean-timed-contracts.md): raw firing, actual scheduler bridges
+  and an independently frozen timed benchmark; universal timed model pending.
 - [Typed EFSM flow](lean-typed-efsm.md): all five value kinds, universal raw-rule
   contracts, finite test generation and independent C execution through task-v7.
 - [IR overview](ir-semantics.md): explicit behavior and backend boundaries.

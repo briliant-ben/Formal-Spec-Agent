@@ -10,6 +10,7 @@ from ..ir import load,Machine,ModelError,Uncovered,Conflict
 from ..codegen import generate as generate_native,Unsupported,sha
 from ..codegen.execute import build,commands
 from .task import read,write,resolve,LEAN_RESULTS
+from ..json_values import same_value
 from .testgen import generate as generate_tests,classification
 
 KEYS=('transition','requirements','time_ms','event','after','emitted')
@@ -54,10 +55,10 @@ def compare_case(expected,observed,native_returncode,negative):
     actual=[{k:r[k]for k in KEYS}for r in observed if r['status']=='transition']
     operations=[r['snapshot']for r in observed if r['status']=='ok']
     errors=[r for r in observed if r['status']=='error'];differences=[]
-    if observed[0]['snapshot']!=expected['initial']:differences.append('initial_snapshot')
-    if actual!=expected['trace']:differences.append('transition_trace')
-    if operations!=expected['operations']:differences.append('operation_snapshots')
-    if observed[-1].get('snapshot')!=expected['final']:differences.append('final_snapshot')
+    if not same_value(observed[0]['snapshot'],expected['initial']):differences.append('initial_snapshot')
+    if not same_value(actual,expected['trace']):differences.append('transition_trace')
+    if not same_value(operations,expected['operations']):differences.append('operation_snapshots')
+    if not same_value(observed[-1].get('snapshot'),expected['final']):differences.append('final_snapshot')
     if negative:
         if not expected['error']or len(errors)!=1 or native_returncode!=1 or observed[-1]['status']!='error':differences.append('expected_atomic_rejection')
         elif native_class(errors[0]['failure'])!=expected['error']['classification']:differences.append('rejection_classification')

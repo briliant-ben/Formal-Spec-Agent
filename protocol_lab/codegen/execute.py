@@ -12,6 +12,7 @@ from . import generate,render,sha,string_literals
 from ..ir import load,value_ok,ModelError
 from ..symbolic import model_hash
 from ..flow import run_scenario
+from ..json_values import same_value
 
 
 def write(p,v):Path(p).write_text(json.dumps(v,indent=2)+'\n')
@@ -90,8 +91,8 @@ def compare(model,scenario,observed):
     errors=[r for r in observed if r['status']=='error']
     final=observed[-1].get('snapshot')if observed else None
     differences=[]
-    if expected!=actual:differences.append(dict(kind='transition_trace',expected=expected,observed=actual))
-    if final!=reference.snapshot():differences.append(dict(kind='final_snapshot',expected=reference.snapshot(),observed=final))
+    if not same_value(expected,actual):differences.append(dict(kind='transition_trace',expected=expected,observed=actual))
+    if not same_value(final,reference.snapshot()):differences.append(dict(kind='final_snapshot',expected=reference.snapshot(),observed=final))
     if errors:differences.append(dict(kind='native_rejection',observed=errors))
     return dict(status='match'if not differences else'different',differences=differences,
                 transitions_compared=len(expected),reference_trace=expected,reference_snapshot=reference.snapshot(),

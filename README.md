@@ -151,6 +151,12 @@ effects, conflicts and rollback; compiled Lean matches18 benchmark operations an
 nine unchanged TCPIP transitions. Batch dispatch and all-rule typed preservation
 remain migration gates, so these scoped results do not retire Z3.
 
+The [timed replay certificate](examples/lean-timed-efsm/README.md) uses the
+public Lean checker to prove exact finite dispatch and tick results, including
+timer order, emitted data and an explicit rollback snapshot on failure.
+The [timed contracts](docs/lean-timed-contracts.md) track the separate
+universal scheduler and model obligations.
+
 ## Optional independent proposal roles
 
 `formal-spec-agent propose` executes one to four independent JSON roles with
