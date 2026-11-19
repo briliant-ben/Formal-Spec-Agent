@@ -60,7 +60,21 @@ theorem malformed_length_preserves : raw_334_external :=
   FormalSpecAgent.InvariantFootprint.external_rule_keeps_invariants model rule_334 rfl
     (by decide +kernel)
 
+def endpoint_guarded_checks : List (Rule × Option Nat) :=
+  FormalSpecAgent.InvariantFootprint.guardedRawChecks model declaredTimers
+
+set_option maxRecDepth 65536 in
+set_option maxHeartbeats 8000000 in
+theorem endpoint_guarded_count : endpoint_guarded_checks.length = 83 := by decide +kernel
+
+theorem endpoint_guarded_preservation :
+    Each (fun pairing => TypedFiringContracts.FiringPreserves model pairing.1 pairing.2)
+      endpoint_guarded_checks :=
+  FormalSpecAgent.InvariantFootprint.guardedRawChecks_sound model declaredTimers
+
 #print axioms malformed_length_preserves
+#print axioms endpoint_guarded_count
+#print axioms endpoint_guarded_preservation
 
 private theorem each_append {items rest : List α} {property : α → Prop}
     (left : Each property items) (right : Each property rest) :
@@ -150,6 +164,10 @@ theorem transmit_group : Approved.conflict_16 := by
 set_option maxRecDepth 16384 in
 theorem endpoint_raw_exact : Approved.raw_catalog_exact := by rfl
 set_option maxRecDepth 16384 in
+theorem endpoint_raw_count : (rawChecks model declaredTimers).length = 335 := by
+  rw [endpoint_raw_exact] <;> rfl
+
+set_option maxRecDepth 16384 in
 theorem endpoint_conflicts_exact : Approved.conflict_catalog_exact := by rfl
 set_option maxRecDepth 16384 in
 theorem endpoint_guards_disjoint : TypedContracts.GuardsDisjoint model := by
@@ -160,6 +178,7 @@ theorem endpoint_guards_disjoint : TypedContracts.GuardsDisjoint model := by
     send_group, transmit_group, g17, trivial⟩
 
 #print axioms endpoint_raw_exact
+#print axioms endpoint_raw_count
 #print axioms endpoint_conflicts_exact
 #print axioms endpoint_guards_disjoint
 

@@ -217,8 +217,16 @@ hold. This statement applies to rules with the same source state and
 event, over arbitrary field values. It does not prove that the invariants
 hold after each rule or that every event is covered.
 
-The malformed IPv4 length rule also has a raw preservation proof. A
-checked dependency analysis shows that its diagnostic assignment touches
-no slot read by the invariants. The proof covers successful execution and
-all post-state invariants for arbitrary admitted pre-states. Remaining
-raw rule preservation obligations stay open.
+The raw preservation checker also accepts an unconditional guard equality
+that forces a literal text assignment to write its slot's existing value.
+For a sequence of actions, the proof carries equality of invariant inputs
+forward from the guard's snapshot. Unrelated assignments and message
+emissions may occur between these writes. A disjunction or a field
+equality supplies no store fact, and an arm or cancel is outside this
+checker.
+
+The kernel checks that 83 of the original model's 335 raw firing obligations
+are selected and proves successful execution and invariant preservation
+for all 83. They are external firings and include the malformed IPv4
+length rule. Remaining raw obligations need separate proofs of effects
+that change invariant inputs, including timer effects.

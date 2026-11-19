@@ -188,6 +188,27 @@ example : separated (facts (.seqLe serialBase serialAck))
 example : separated (facts (.equal .sequence serialAck serialBase))
     (facts (.notEqual .sequence serialBase serialAck)) = true := rfl
 
+-- Rewriting a watched store slot to its current value requires an unconditional
+-- fact about the store. A disjunction or the event field cannot supply it.
+def exampleState : Expr .text := .variable .text 0
+def exampleText : Expr .text := .literal .text "READY"
+def exampleGuard : Expr .boolean := .equal .text exampleState exampleText
+def exampleModel : FormalSpecAgent.TypedMachine.Model :=
+  { rules := [], invariants := [exampleGuard], externalEvents := [], timerEvents := id }
+def writeCurrent : FormalSpecAgent.TypedMachine.Action := .assign .text 0 exampleText
+open FormalSpecAgent.InvariantFootprint in
+example : guardedEffect exampleModel (.boolAnd (.literal .boolean true) exampleGuard) writeCurrent
+    = true := by decide +kernel
+open FormalSpecAgent.InvariantFootprint in
+example : guardedEffect exampleModel (.boolOr (.literal .boolean true) exampleGuard) writeCurrent
+    = false := by decide +kernel
+open FormalSpecAgent.InvariantFootprint in
+example : guardedEffect exampleModel (.equal .text (.field .text 0) exampleText) writeCurrent
+    = false := by decide +kernel
+open FormalSpecAgent.InvariantFootprint in
+example : guardedEffect exampleModel exampleGuard (.assign .text 0 (.literal .text "OTHER"))
+    = false := by decide +kernel
+
 def maxSerial : Expr .sequence := .literal .sequence ⟨4294967295, by decide⟩
 def zeroSerial : Expr .sequence := .literal .sequence 0
 example (ctx : Context) : eval (.seqLt maxSerial zeroSerial) ctx = true := rfl
@@ -291,7 +312,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
             for name in ('absent_external_exact', 'absent_packet_rolls_back',
                          'absent_initial_dispatch', 'closed_groups', 'frame_group', 'malformed_length_preserves',
-                         'send_group', 'transmit_group',
-                         'endpoint_raw_exact', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
+                         'send_group', 'transmit_group', 'endpoint_guarded_count', 'endpoint_guarded_preservation',
+                         'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)
