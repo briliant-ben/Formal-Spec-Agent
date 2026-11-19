@@ -200,7 +200,7 @@ zero and half-space exclusions.
 The kernel discharges 15 TCP/IP groups with the discriminator alone,
 including ARP retry. Universal proofs for the TCP send and transmit groups
 combine it with the model's buffer invariant and complementary guards.
-For the 239 frame receive rules, eight kernel checks enumerate the exact
+For the 239 frame receive rules, sixteen kernel checks enumerate the exact
 residual rule IDs across all 28,441 pairs. The 25 residuals are all TCP.
 Six FIN acknowledgment exclusions follow from the invariant relating
 `SND.NXT` and `SND.UNA` to the outstanding control sequence number.
@@ -209,7 +209,7 @@ Four old acknowledgment exclusions use the modular distance and the
 distance and nonnegative retransmission length. The other nine follow
 from complementary predicates.
 
-The frame catalog proves that concatenating the eight blocks recovers the
+The frame catalog proves that concatenating the sixteen blocks recovers the
 original rule list. Unique rule IDs bind each residual to the original
 guard expressions. The kernel combines the checked frame group with the
 other 17 groups to prove guard disjointness whenever the model invariants

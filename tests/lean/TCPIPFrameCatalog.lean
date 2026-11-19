@@ -6,7 +6,7 @@ open Approved FormalSpecAgent.TypedMachine
 open FormalSpecAgent.GuardDiscriminators FormalSpecAgent.TimedObligations
 
 def block (index : Nat) : List Rule :=
-  (conflictGroup_4.drop (index * 30)).take 30
+  (conflictGroup_4.drop (index * 15)).take 15
 
 def pairId (pair : Rule × Rule) : Nat × Nat := (pair.1.id, pair.2.id)
 
@@ -14,14 +14,17 @@ def blockIds (index : Nat) : List (Nat × Nat) :=
   (residualPairsFrom (block index) conflictGroup_4).map pairId
 
 set_option maxRecDepth 16384 in
-theorem exact_partition : block 0 ++ block 1 ++ block 2 ++ block 3 ++ block 4 ++ block 5 ++ block 6 ++ block 7 =
+theorem exact_partition :
+    block 0 ++ block 1 ++ block 2 ++ block 3 ++ block 4 ++ block 5 ++ block 6 ++ block 7 ++
+      block 8 ++ block 9 ++ block 10 ++ block 11 ++ block 12 ++ block 13 ++ block 14 ++ block 15 =
     conflictGroup_4 := by
   rfl
 
 set_option maxRecDepth 16384 in
 theorem merge_blocks : (residualPairs conflictGroup_4).map pairId =
-    blockIds 0 ++ blockIds 1 ++ blockIds 2 ++ blockIds 3 ++
-      blockIds 4 ++ blockIds 5 ++ blockIds 6 ++ blockIds 7 := by
+    blockIds 0 ++ blockIds 1 ++ blockIds 2 ++ blockIds 3 ++ blockIds 4 ++ blockIds 5 ++ blockIds 6 ++
+      blockIds 7 ++ blockIds 8 ++ blockIds 9 ++ blockIds 10 ++ blockIds 11 ++ blockIds 12 ++
+      blockIds 13 ++ blockIds 14 ++ blockIds 15 := by
   unfold residualPairs
   have partition := congrArg
     (fun rules : List Rule => (residualPairsFrom rules conflictGroup_4).map pairId)

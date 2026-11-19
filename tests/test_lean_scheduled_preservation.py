@@ -259,25 +259,33 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
             (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
             for module in ('TCPIPFrameCatalog', 'TCPIPFramePairs'):
                 shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
-            blocks = []
-            expected = (
-                '[]', '[]',
-                '(TCPIPFramePairs.control.take 3).map TCPIPFrameCatalog.pairId',
-                '(TCPIPFramePairs.control.drop 3).map TCPIPFrameCatalog.pairId',
-                '[]', 'TCPIPFramePairs.data.map TCPIPFrameCatalog.pairId', '[]', '[]',
-            )
-            for index, residual in enumerate(expected):
-                block = f'FrameBlock{index}'
+            blocks = [f'FrameBlock{index}' for index in range(16)]
+            expected = {
+                5: '(TCPIPFramePairs.control.take 3).map TCPIPFrameCatalog.pairId',
+                6: '(TCPIPFramePairs.control.drop 3).map TCPIPFrameCatalog.pairId',
+                10: '(TCPIPFramePairs.data.take 13).map TCPIPFrameCatalog.pairId',
+                11: '(TCPIPFramePairs.data.drop 13).map TCPIPFrameCatalog.pairId',
+            }
+            for index, block in enumerate(blocks):
                 (root/f'{block}.lean').write_text(
                     'import TCPIPFramePairs\n'
                     'set_option maxRecDepth 65536 in\n'
                     'set_option maxHeartbeats 8000000 in\n'
-                    f'theorem frameBlock{index} : TCPIPFrameCatalog.blockIds {index} = {residual}'
-                    ' := by decide +kernel\n')
-                blocks.append(block)
+                    f'theorem frameBlock{index} : TCPIPFrameCatalog.blockIds {index} = '
+                    f'{expected.get(index, "[]")} := by decide +kernel\n')
+            (root/'FrameCatalogExact.lean').write_text(
+                ''.join(f'import {block}\n' for block in blocks)
+                + 'open FormalSpecAgent.GuardDiscriminators Approved TCPIPFrameCatalog\n'
+                + 'set_option maxRecDepth 16384 in\n'
+                + 'theorem frameCatalogExact : (residualPairs conflictGroup_4).map pairId = '
+                + '(TCPIPFramePairs.control ++ TCPIPFramePairs.data).map pairId := by\n'
+                + '  rw [TCPIPFrameCatalog.merge_blocks, '
+                + ', '.join(f'frameBlock{index}' for index in range(len(blocks))) + ']\n'
+                + '  simp only [List.nil_append, List.append_nil, ← List.map_append, '
+                + 'List.append_assoc, List.take_append_drop]\n')
 
             result = None
-            for module in [*MODULES, 'Approved', 'TCPIPFrameCatalog', 'TCPIPFramePairs', *blocks, 'TCPIPAudit']:
+            for module in [*MODULES, 'Approved', 'TCPIPFrameCatalog', 'TCPIPFramePairs', *blocks, 'FrameCatalogExact', 'TCPIPAudit']:
                 result = subprocess.run([LEAN, '-o', module+'.olean', module+'.lean'],
                     cwd=root, env=env, capture_output=True, text=True, timeout=60)
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)

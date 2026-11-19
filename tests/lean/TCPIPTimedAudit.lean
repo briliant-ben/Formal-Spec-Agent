@@ -1,14 +1,7 @@
 import Approved
 import GuardDiscriminators
 import InvariantFootprint
-import FrameBlock0
-import FrameBlock1
-import FrameBlock2
-import FrameBlock3
-import FrameBlock4
-import FrameBlock5
-import FrameBlock6
-import FrameBlock7
+import FrameCatalogExact
 
 namespace TCPIPAudit
 open FormalSpecAgent FormalSpecAgent.TypedMachine FormalSpecAgent.TypedIR
@@ -81,9 +74,7 @@ theorem frame_group : Approved.conflict_4 := by
   apply TCPIPFrameCatalog.conflict_of_catalog model conflictGroup_4
     (TCPIPFramePairs.control ++ TCPIPFramePairs.data)
   · decide +kernel
-  · rw [TCPIPFrameCatalog.merge_blocks, frameBlock0, frameBlock1, frameBlock2, frameBlock3,
-      frameBlock4, frameBlock5, frameBlock6, frameBlock7]
-    simp only [List.nil_append, List.append_nil, ← List.map_append, List.take_append_drop]
+  · exact frameCatalogExact
   · exact fun p member =>
       (each_append TCPIPFramePairs.controlMembers TCPIPFramePairs.dataMembers).of_mem member
   · exact each_append TCPIPFramePairs.controlDisjoint TCPIPFramePairs.dataDisjoint
