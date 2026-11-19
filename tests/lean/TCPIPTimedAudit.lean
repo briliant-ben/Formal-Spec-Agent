@@ -1,5 +1,6 @@
 import Approved
 import GuardDiscriminators
+import InvariantFootprint
 import FrameBlock0
 import FrameBlock1
 import FrameBlock2
@@ -57,9 +58,16 @@ theorem closed_groups :
     conflict_from_empty model _ rfl, conflict_from_empty model _ rfl,
     conflict_from_empty model _ rfl, trivial⟩
 
+set_option maxRecDepth 16384 in
+theorem malformed_length_preserves : raw_334_external :=
+  FormalSpecAgent.InvariantFootprint.external_rule_keeps_invariants model rule_334 rfl
+    (by decide +kernel)
+
+#print axioms malformed_length_preserves
+
 theorem frame_pairs_remaining :
     (residualPairs conflictGroup_4).foldl TCPIPFrameCensus.countPair (0, 0, 0, 0) =
-      (27, 0, 93, 0) := by
+      (27, 0, 25, 0) := by
   rw [TCPIPFrameCensus.merge_blocks, frameBlock0, frameBlock1, frameBlock2, frameBlock3]
 
 private theorem false_or_false {a b : Bool} (impossible : a = true → b = true → False) :

@@ -15,7 +15,7 @@ LEAN=os.environ.get('FSA_LEAN')or shutil.which('lean')
 MODULES=['Foundation','ValueOps','TypedIR','TypedMachine','TypedContracts',
          'TypedFiringContracts','TimerRank','TimerMinimum','ScheduledPreservation','TimerDomain',
          'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection','BatchTotality',
-         'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators']
+         'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators','InvariantFootprint']
 TARGETS=['FormalSpecAgent.ScheduledPreservation.'+n for n in [
     'MatchingRaw','fire_success_invariant_from_raw','external_success_invariant_from_raw',
     'timer_success_invariant_from_raw']]+['ScheduledController.raw_obligation_rejects_filtered_timer_loss']
@@ -76,6 +76,7 @@ class ScheduledPreservationTests(unittest.TestCase):
                 self.assertLessEqual(set(gate.read_axioms(concrete.stdout, target)), gate.AXIOMS)
             dropped = '''import Approved
 import GuardDiscriminators
+import InvariantFootprint
 open Approved FormalSpecAgent.TimedObligations FormalSpecAgent.GuardDiscriminators
 open FormalSpecAgent.TypedIR
 example : rawChecks model declaredTimers ≠ rawCatalog.dropLast := by
@@ -156,6 +157,37 @@ example : residualPairs [wireRule 0 (accepted 60), wireRule 1 malformed] = [] :=
 -- With total length 46, a 59-byte frame could satisfy both guards.
 example : (residualPairs [wireRule 0 (accepted 59), wireRule 1 malformed]).length = 1 := rfl
 
+def serialBase : Expr .sequence := .variable .sequence 0
+def serialAck : Expr .sequence := .field .sequence 0
+def halfSpace : Expr .boolean :=
+  .equal .integer (.seqDistance serialBase serialAck) (constant 2147483648)
+
+example : FormalSpecAgent.InvariantFootprint.ignoresSlot 0 (.variable .integer 0) = false := rfl
+example : FormalSpecAgent.InvariantFootprint.ignoresSlot 0 (.field .integer 0) = true := rfl
+
+example : separated (facts (.seqLt serialBase serialAck)) (facts (.seqLt serialAck serialBase)) = true := rfl
+example : separated (facts (.seqComparable serialBase serialAck)) (facts halfSpace) = true := rfl
+example : separated (facts (.seqLe serialBase serialAck))
+    (facts (.equal .sequence serialAck serialBase)) = false := rfl
+example : separated (facts (.equal .sequence serialAck serialBase))
+    (facts (.notEqual .sequence serialBase serialAck)) = true := rfl
+
+def maxSerial : Expr .sequence := .literal .sequence ⟨4294967295, by decide⟩
+def zeroSerial : Expr .sequence := .literal .sequence 0
+example (ctx : Context) : eval (.seqLt maxSerial zeroSerial) ctx = true := rfl
+example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
+  open FormalSpecAgent.ValueOps in
+  change seqLt 0 ⟨4294967295, by decide⟩ = false
+  unfold FormalSpecAgent.ValueOps.seqLt
+  apply decide_eq_false
+  intro ordered
+  have distance : FormalSpecAgent.ValueOps.seqDistance 0 ⟨4294967295, by decide⟩ = 4294967295 := by
+    change (4294967295 : Int) % 4294967296 = 4294967295
+    exact Int.emod_eq_of_lt (by omega) (by omega)
+  rw [distance] at ordered
+  omega
+
+
 
 
 
@@ -211,7 +243,7 @@ example : (residualPairs [wireRule 0 (accepted 59), wireRule 1 malformed]).lengt
             (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
             shutil.copyfile(ROOT/'tests/lean/TCPIPFrameCensus.lean', root/'TCPIPFrameCensus.lean')
             blocks = []
-            counts = [(0, 0, 0, 0), (27, 0, 9, 0), (27, 0, 27, 0), (27, 0, 93, 0), (27, 0, 93, 0)]
+            counts = [(0, 0, 0, 0), (27, 0, 0, 0), (27, 0, 6, 0), (27, 0, 25, 0), (27, 0, 25, 0)]
             for index, (prior, current) in enumerate(zip(counts, counts[1:])):
                 block = f'FrameBlock{index}'
                 (root/f'{block}.lean').write_text(
@@ -228,7 +260,7 @@ example : (residualPairs [wireRule 0 (accepted 59), wireRule 1 malformed]).lengt
                     cwd=root, env=env, capture_output=True, text=True, timeout=60)
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
             for name in ('absent_external_exact', 'absent_packet_rolls_back',
-                         'absent_initial_dispatch', 'closed_groups', 'frame_pairs_remaining',
+                         'absent_initial_dispatch', 'closed_groups', 'frame_pairs_remaining', 'malformed_length_preserves',
                          'send_group', 'transmit_group',
                          'endpoint_raw_exact', 'endpoint_conflicts_exact'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),

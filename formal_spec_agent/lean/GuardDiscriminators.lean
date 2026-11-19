@@ -32,6 +32,10 @@ inductive Observation where
   | pack16 : Observation → Observation
   | pack32 : Observation → Observation
   | checksum : Observation → Observation
+  | sequenceLiteral : ValueOps.Seq32 → Observation
+  | sequenceSlot : InputSlot → Observation
+  | seqAdd : Observation → Observation → Observation
+  | seqDistance : Observation → Observation → Observation
 
 private theorem inputSlot_identical {left right : InputSlot} (equal : (left == right) = true) :
     left = right := by
@@ -47,6 +51,9 @@ private def Observation.same : Observation → Observation → Bool
   | .add a i, .add b j | .sub a i, .sub b j | .mul a i, .mul b j |
     .concat a i, .concat b j => a.same b && i.same j
   | .literalBytes a, .literalBytes b => a == b
+  | .sequenceLiteral a, .sequenceLiteral b => a == b
+  | .sequenceSlot a, .sequenceSlot b => a == b
+  | .seqAdd a i, .seqAdd b j | .seqDistance a i, .seqDistance b j => a.same b && i.same j
   | .pack8 a, .pack8 b | .pack16 a, .pack16 b | .pack32 a, .pack32 b |
     .checksum a, .checksum b => a.same b
   | _, _ => false
@@ -59,31 +66,45 @@ private theorem observation_identical {left right : Observation} (equal : left.s
     repeat' constructor
     all_goals solve_by_elim [And.left, And.right, inputSlot_identical]
 
-private def asInt : Int ⊕ Bytes → Int
-  | .inl n => n
-  | .inr _ => 0
+inductive Observed where
+  | integer : Int → Observed
+  | octets : Bytes → Observed
+  | sequence : ValueOps.Seq32 → Observed
 
-private def asBytes : Int ⊕ Bytes → Bytes
-  | .inl _ => []
-  | .inr buffer => buffer
+private def asInt : Observed → Int
+  | .integer n => n
+  | _ => 0
 
-def Observation.read (ctx : Context) : Observation → Int ⊕ Bytes
-  | .literal value => .inl value
-  | .integerSlot loc => .inl (loc.read .integer ctx)
-  | .bufferSlot loc => .inr (loc.read .octets ctx)
-  | .length buf => .inl (Int.ofNat (asBytes (buf.read ctx)).length)
-  | .byteAt buf offset => .inl (FormalSpecAgent.byteAt (asBytes (buf.read ctx)) (asInt (offset.read ctx)))
+private def asBytes : Observed → Bytes
+  | .octets buffer => buffer
+  | _ => []
+
+private def asSequence : Observed → ValueOps.Seq32
+  | .sequence value => value
+  | _ => 0
+
+def Observation.read (ctx : Context) : Observation → Observed
+  | .literal value => .integer value
+  | .integerSlot loc => .integer (loc.read .integer ctx)
+  | .bufferSlot loc => .octets (loc.read .octets ctx)
+  | .length buf => .integer (Int.ofNat (asBytes (buf.read ctx)).length)
+  | .byteAt buf offset => .integer (FormalSpecAgent.byteAt (asBytes (buf.read ctx)) (asInt (offset.read ctx)))
   | .slice buf offset size =>
-    .inr (byteSlice (asBytes (buf.read ctx)) (asInt (offset.read ctx)) (asInt (size.read ctx)))
-  | .add l r => .inl (asInt (l.read ctx) + asInt (r.read ctx))
-  | .sub l r => .inl (asInt (l.read ctx) - asInt (r.read ctx))
-  | .mul l r => .inl (asInt (l.read ctx) * asInt (r.read ctx))
-  | .literalBytes value => .inr value
-  | .concat l r => .inr (asBytes (l.read ctx) ++ asBytes (r.read ctx))
-  | .pack8 value => .inr (ValueOps.pack8 (asInt (value.read ctx)))
-  | .pack16 value => .inr (ValueOps.pack16 (asInt (value.read ctx)))
-  | .pack32 value => .inr (ValueOps.pack32 (asInt (value.read ctx)))
-  | .checksum value => .inl (ValueOps.checksum (asBytes (value.read ctx)))
+    .octets (byteSlice (asBytes (buf.read ctx)) (asInt (offset.read ctx)) (asInt (size.read ctx)))
+  | .add l r => .integer (asInt (l.read ctx) + asInt (r.read ctx))
+  | .sub l r => .integer (asInt (l.read ctx) - asInt (r.read ctx))
+  | .mul l r => .integer (asInt (l.read ctx) * asInt (r.read ctx))
+  | .literalBytes value => .octets value
+  | .concat l r => .octets (asBytes (l.read ctx) ++ asBytes (r.read ctx))
+  | .pack8 value => .octets (ValueOps.pack8 (asInt (value.read ctx)))
+  | .pack16 value => .octets (ValueOps.pack16 (asInt (value.read ctx)))
+  | .pack32 value => .octets (ValueOps.pack32 (asInt (value.read ctx)))
+  | .checksum value => .integer (ValueOps.checksum (asBytes (value.read ctx)))
+  | .sequenceLiteral value => .sequence value
+  | .sequenceSlot slot => .sequence (slot.read .sequence ctx)
+  | .seqAdd left right => .sequence (ValueOps.seqAdd (asSequence (left.read ctx)) (asInt (right.read ctx)))
+  | .seqDistance left right =>
+      .integer (ValueOps.seqDistance (asSequence (left.read ctx)) (asSequence (right.read ctx)))
 
 def Observation.integer (ctx : Context) (observation : Observation) : Int :=
   asInt (observation.read ctx)
@@ -108,14 +129,20 @@ def observation {kind : Kind} (expr : Expr kind) : Option Observation :=
   | .pack16 value => (observation value).map .pack16
   | .pack32 value => (observation value).map .pack32
   | .checksum value => (observation value).map .checksum
+  | .literal .sequence value => some (.sequenceLiteral value)
+  | .variable .sequence index => some (.sequenceSlot (.variable index))
+  | .field .sequence index => some (.sequenceSlot (.field index))
+  | .seqAdd left right => (observation left).bind fun l => (observation right).map (.seqAdd l)
+  | .seqDistance left right => (observation left).bind fun l => (observation right).map (.seqDistance l)
   | _ => none
 termination_by structural expr
 
 private def ObservationSound {kind : Kind} (expr : Expr kind) (ctx : Context)
     (obs : Observation) : Prop :=
   match kind, expr with
-  | .integer, expr => obs.read ctx = .inl (TypedIR.eval expr ctx)
-  | .octets, expr => obs.read ctx = .inr (TypedIR.eval expr ctx)
+  | .integer, expr => obs.read ctx = .integer (TypedIR.eval expr ctx)
+  | .octets, expr => obs.read ctx = .octets (TypedIR.eval expr ctx)
+  | .sequence, expr => obs.read ctx = .sequence (TypedIR.eval expr ctx)
   | _, _ => False
 
 private theorem observation_sound {kind : Kind} (expr : Expr kind) (ctx : Context)
@@ -125,56 +152,70 @@ private theorem observation_sound {kind : Kind} (expr : Expr kind) (ctx : Contex
   | case6 buf ih =>
     have ⟨b, seen, result⟩ := Option.map_eq_some_iff.mp found
     cases result
-    have readBuf : b.read ctx = .inr (TypedIR.eval buf ctx) := ih b seen
+    have readBuf : b.read ctx = .octets (TypedIR.eval buf ctx) := ih b seen
     simp only [ObservationSound, Observation.read, TypedIR.eval, readBuf, asBytes]
   | case7 buf offset ihBuf ihOffset =>
     have ⟨b, seenBuf, mapped⟩ := Option.bind_eq_some_iff.mp found
     have ⟨o, seenOffset, result⟩ := Option.map_eq_some_iff.mp mapped
     cases result
-    have readBuf : b.read ctx = .inr (TypedIR.eval buf ctx) := ihBuf b seenBuf
-    have readOffset : o.read ctx = .inl (TypedIR.eval offset ctx) := ihOffset o seenOffset
+    have readBuf : b.read ctx = .octets (TypedIR.eval buf ctx) := ihBuf b seenBuf
+    have readOffset : o.read ctx = .integer (TypedIR.eval offset ctx) := ihOffset o seenOffset
     simp only [ObservationSound, Observation.read, TypedIR.eval, readBuf, readOffset, asBytes, asInt]
   | case8 buf offset size ihBuf ihOffset ihSize =>
     have ⟨b, seenBuf, second⟩ := Option.bind_eq_some_iff.mp found
     have ⟨o, seenOffset, mapped⟩ := Option.bind_eq_some_iff.mp second
     have ⟨n, seenSize, result⟩ := Option.map_eq_some_iff.mp mapped
     cases result
-    have readBuf : b.read ctx = .inr (TypedIR.eval buf ctx) := ihBuf b seenBuf
-    have readOffset : o.read ctx = .inl (TypedIR.eval offset ctx) := ihOffset o seenOffset
-    have readSize : n.read ctx = .inl (TypedIR.eval size ctx) := ihSize n seenSize
+    have readBuf : b.read ctx = .octets (TypedIR.eval buf ctx) := ihBuf b seenBuf
+    have readOffset : o.read ctx = .integer (TypedIR.eval offset ctx) := ihOffset o seenOffset
+    have readSize : n.read ctx = .integer (TypedIR.eval size ctx) := ihSize n seenSize
     simp only [ObservationSound, Observation.read, TypedIR.eval, readBuf, readOffset, readSize, asBytes, asInt]
   | case13 left right ihLeft ihRight =>
     have ⟨l, lSeen, mapped⟩ := Option.bind_eq_some_iff.mp found
     have ⟨r, rSeen, result⟩ := Option.map_eq_some_iff.mp mapped
     cases result
-    have readLeft : l.read ctx = .inr (TypedIR.eval left ctx) := ihLeft l lSeen
-    have readRight : r.read ctx = .inr (TypedIR.eval right ctx) := ihRight r rSeen
+    have readLeft : l.read ctx = .octets (TypedIR.eval left ctx) := ihLeft l lSeen
+    have readRight : r.read ctx = .octets (TypedIR.eval right ctx) := ihRight r rSeen
     simp only [ObservationSound, Observation.read, TypedIR.eval, readLeft, readRight, asBytes]
   | case17 value ih =>
     have ⟨v, seen, result⟩ := Option.map_eq_some_iff.mp found
     cases result
-    have readValue : v.read ctx = .inr (TypedIR.eval value ctx) := ih v seen
+    have readValue : v.read ctx = .octets (TypedIR.eval value ctx) := ih v seen
     simp only [ObservationSound, Observation.read, TypedIR.eval, readValue, asBytes]
+  | case21 left right ihLeft ihRight =>
+    have ⟨l, lSeen, mapped⟩ := Option.bind_eq_some_iff.mp found
+    have ⟨r, rSeen, result⟩ := Option.map_eq_some_iff.mp mapped
+    cases result
+    have readLeft : l.read ctx = .sequence (TypedIR.eval left ctx) := ihLeft l lSeen
+    have readRight : r.read ctx = .integer (TypedIR.eval right ctx) := ihRight r rSeen
+    simp only [ObservationSound, Observation.read, TypedIR.eval, readLeft, readRight, asSequence, asInt]
+  | case22 left right ihLeft ihRight =>
+    have ⟨l, lSeen, mapped⟩ := Option.bind_eq_some_iff.mp found
+    have ⟨r, rSeen, result⟩ := Option.map_eq_some_iff.mp mapped
+    cases result
+    have readLeft : l.read ctx = .sequence (TypedIR.eval left ctx) := ihLeft l lSeen
+    have readRight : r.read ctx = .sequence (TypedIR.eval right ctx) := ihRight r rSeen
+    simp only [ObservationSound, Observation.read, TypedIR.eval, readLeft, readRight, asSequence]
   | _ =>
     first
     | rename_i value ih
       have ⟨v, seen, result⟩ := Option.map_eq_some_iff.mp found
       cases result
-      have readValue : v.read ctx = .inl (TypedIR.eval value ctx) := ih v seen
+      have readValue : v.read ctx = .integer (TypedIR.eval value ctx) := ih v seen
       simp only [ObservationSound, Observation.read, TypedIR.eval, readValue, asInt]
     | rename_i left right ihLeft ihRight
       have ⟨l, lSeen, mapped⟩ := Option.bind_eq_some_iff.mp found
       have ⟨r, rSeen, result⟩ := Option.map_eq_some_iff.mp mapped
       cases result
-      have readLeft : l.read ctx = .inl (TypedIR.eval left ctx) := ihLeft l lSeen
-      have readRight : r.read ctx = .inl (TypedIR.eval right ctx) := ihRight r rSeen
+      have readLeft : l.read ctx = .integer (TypedIR.eval left ctx) := ihLeft l lSeen
+      have readRight : r.read ctx = .integer (TypedIR.eval right ctx) := ihRight r rSeen
       simp only [ObservationSound, Observation.read, TypedIR.eval, readLeft, readRight, asInt]
     | simp_all [ObservationSound, TypedIR.eval] <;> cases found <;> rfl
 
 private theorem integer_observation_sound (expr : Expr .integer) (ctx : Context)
     (obs : Observation) (found : observation expr = some obs) :
     obs.integer ctx = TypedIR.eval expr ctx :=
-  congrArg asInt (show obs.read ctx = .inl (TypedIR.eval expr ctx) from observation_sound expr ctx obs found)
+  congrArg asInt (show obs.read ctx = .integer (TypedIR.eval expr ctx) from observation_sound expr ctx obs found)
 
 inductive IntegerTest where
   | equal : Int → IntegerTest
@@ -286,7 +327,7 @@ private theorem literalByteFacts_sound (expr : Expr .octets) (value : Bytes) (ct
     | some loc =>
       simp [literalByteFacts, obsFound, originFound] at member
       obtain ⟨octet, index, inValue, rfl⟩ := member
-      have read : obs.read ctx = .inr (TypedIR.eval expr ctx) :=
+      have read : obs.read ctx = .octets (TypedIR.eval expr ctx) :=
         observation_sound expr ctx obs obsFound
       have view : asBytes (obs.read ctx) = value := by rw [read, matched]; rfl
       have present : index < (asBytes (obs.read ctx)).length := by
@@ -539,6 +580,65 @@ private theorem paddingFacts_sound (left right : Expr .integer) (ctx : Context)
   next => simp at member
 
 
+private theorem reverse_distance (a b : ValueOps.Seq32) (positive : 0 < ValueOps.seqDistance a b) :
+    ValueOps.seqDistance b a = 4294967296 - ValueOps.seqDistance a b := by
+  unfold ValueOps.seqDistance at *
+  rw [show (a.val : Int) - (b.val : Int) = -((b.val : Int) - (a.val : Int)) by omega,
+    Int.neg_emod]
+  have notMultiple : ¬ (4294967296 : Int) ∣ (b.val : Int) - (a.val : Int) := by
+    intro divides
+    have zero := Int.emod_eq_zero_of_dvd divides
+    omega
+  simp [notMultiple]
+
+private theorem distance_zero_implies_equal (a b : ValueOps.Seq32)
+    (zero : ValueOps.seqDistance a b = 0) : a = b := by
+  have boundedA := a.isLt
+  have boundedB := b.isLt
+  unfold ValueOps.seqDistance at zero
+  apply Fin.ext
+  omega
+
+private def distanceFacts (a b : Expr .sequence) (forward reverse : List IntegerTest) : List Fact :=
+  match observation a, observation b with
+  | some left, some right =>
+    forward.map (Fact.integer (.seqDistance left right)) ++
+      reverse.map (Fact.integer (.seqDistance right left))
+  | _, _ => []
+
+private theorem distanceFacts_sound (a b : Expr .sequence) (forward reverse : List IntegerTest)
+    (ctx : Context) (forwardValid : ∀ t ∈ forward, t.holds (ValueOps.seqDistance (TypedIR.eval a ctx) (TypedIR.eval b ctx)))
+    (reverseValid : ∀ t ∈ reverse, t.holds (ValueOps.seqDistance (TypedIR.eval b ctx) (TypedIR.eval a ctx)))
+    (fact : Fact) (member : fact ∈ distanceFacts a b forward reverse) : fact.holds ctx := by
+  cases sourceA : observation a with
+  | none => simp [distanceFacts, sourceA] at member
+  | some left =>
+    cases sourceB : observation b with
+    | none => simp [distanceFacts, sourceA, sourceB] at member
+    | some right =>
+      simp only [distanceFacts, sourceA, sourceB, List.mem_append, List.mem_map] at member
+      have readA : left.read ctx = .sequence (TypedIR.eval a ctx) :=
+        observation_sound a ctx left sourceA
+      have readB : right.read ctx = .sequence (TypedIR.eval b ctx) :=
+        observation_sound b ctx right sourceB
+      rcases member with ⟨test, ht, rfl⟩ | ⟨test, ht, rfl⟩
+      · simpa only [Fact.holds, Observation.integer, Observation.read, readA, readB, asSequence, asInt]
+          using forwardValid test ht
+      · simpa only [Fact.holds, Observation.integer, Observation.read, readA, readB, asSequence, asInt]
+          using reverseValid test ht
+
+
+private theorem distance_of_unequal (a b : Expr .sequence) (ctx : Context)
+    (different : TypedIR.eval a ctx ≠ TypedIR.eval b ctx) (fact : Fact)
+    (member : fact ∈ distanceFacts a b [.different 0] [.different 0]) : fact.holds ctx := by
+  apply distanceFacts_sound a b [.different 0] [.different 0] ctx _ _ fact member
+  · intro test ht
+    obtain rfl := List.mem_singleton.mp ht
+    exact fun zero => different (distance_zero_implies_equal _ _ zero)
+  · intro test ht
+    obtain rfl := List.mem_singleton.mp ht
+    exact fun zero => different (distance_zero_implies_equal _ _ zero).symm
+
 def facts {kind : Kind} (guard : Expr kind) : List Fact :=
   match guard with
   | .boolAnd left right => facts left ++ facts right
@@ -561,6 +661,12 @@ def facts {kind : Kind} (guard : Expr kind) : List Fact :=
   | .intLe left right => orderFacts left right (.upper 0)
   | .boolNot (.intGe left right) => orderFacts left right (.upper (-1))
   | .boolNot (.intLe left right) => orderFacts left right (.lower 1)
+  | .equal .sequence a b => distanceFacts a b [.equal 0] [.equal 0]
+  | .seqLt a b => distanceFacts a b [.lower 1, .upper 2147483647] [.lower 2147483649]
+  | .seqLe a b => distanceFacts a b [.upper 2147483647] []
+  | .seqComparable a b => distanceFacts a b [.different 2147483648] []
+  | .notEqual .sequence a b
+  | .boolNot (.equal .sequence a b) => distanceFacts a b [.different 0] [.different 0]
   | .equal .text (.variable _ slot) (.literal _ value) => [.text (.variable slot) value]
   | .equal .text (.field _ slot) (.literal _ value) => [.text (.field slot) value]
   | .equal .boolean (.variable _ slot) (.literal _ value) => [.boolean (.variable slot) value]
@@ -657,6 +763,49 @@ private theorem facts_sound {kind : Kind} (guard : Expr kind) (ctx : Context)
     apply orderFacts_sound left right (.lower 1) ctx _ fact member
     change (!(decide (TypedIR.eval left ctx ≤ TypedIR.eval right ctx))) = true at enabled
     exact Int.add_one_le_of_lt (Int.sub_pos.mpr (Int.lt_of_not_ge (by simpa using enabled)))
+  | case20 a b =>
+    have same : TypedIR.eval a ctx = TypedIR.eval b ctx := of_decide_eq_true enabled
+    apply distanceFacts_sound a b [.equal 0] [.equal 0] ctx _ _ fact member <;>
+      intro t ht <;> obtain rfl := List.mem_singleton.mp ht <;>
+      simp [IntegerTest.holds, same, ValueOps.seqDistance]
+  | case21 a b =>
+    have ordered : 0 < ValueOps.seqDistance (TypedIR.eval a ctx) (TypedIR.eval b ctx) ∧
+        ValueOps.seqDistance (TypedIR.eval a ctx) (TypedIR.eval b ctx) < 2147483648 :=
+      of_decide_eq_true enabled
+    apply distanceFacts_sound a b [.lower 1, .upper 2147483647] [.lower 2147483649] ctx _ _ fact member
+    · intro test ht
+      simp at ht
+      rcases ht with rfl | rfl
+      · exact Int.add_one_le_of_lt ordered.1
+      · exact Int.le_sub_one_of_lt ordered.2
+    · intro test ht
+      obtain rfl := List.mem_singleton.mp ht
+      change 2147483649 ≤ ValueOps.seqDistance (TypedIR.eval b ctx) (TypedIR.eval a ctx)
+      rw [reverse_distance _ _ ordered.1]
+      have bound := ordered.2
+      omega
+  | case22 a b =>
+    have ordered : ValueOps.seqDistance (TypedIR.eval a ctx) (TypedIR.eval b ctx) < 2147483648 :=
+      of_decide_eq_true enabled
+    apply distanceFacts_sound a b [.upper 2147483647] [] ctx _ _ fact member
+    · intro test ht
+      obtain rfl := List.mem_singleton.mp ht
+      exact Int.le_sub_one_of_lt ordered
+    · simp
+  | case23 a b =>
+    have comparable : ValueOps.seqDistance (TypedIR.eval a ctx) (TypedIR.eval b ctx) ≠ 2147483648 :=
+      of_decide_eq_true enabled
+    apply distanceFacts_sound a b [.different 2147483648] [] ctx _ _ fact member
+    · intro test ht
+      obtain rfl := List.mem_singleton.mp ht
+      exact comparable
+    · simp
+  | case24 a b =>
+    change (!(decide (TypedIR.eval a ctx = TypedIR.eval b ctx))) = true at enabled
+    exact distance_of_unequal a b ctx (by simpa using enabled) fact member
+  | case25 a b =>
+    change (!(decide (TypedIR.eval a ctx = TypedIR.eval b ctx))) = true at enabled
+    exact distance_of_unequal a b ctx (by simpa using enabled) fact member
   | _ =>
     simp_all [Enabled, TypedIR.eval, equalValue, Fact.holds, InputSlot.read] <;>
       exact of_decide_eq_true enabled
@@ -685,6 +834,7 @@ theorem Fact.clash_sound (left right : Fact) (ctx : Context)
       split at a <;> split at b <;> simp_all
     | obtain ⟨rfl, different⟩ := clash
       exact different (a.symm.trans b)
+
 
 
 private def disjunctFacts {kind : Kind} (guard : Expr kind) : List (List Fact) :=

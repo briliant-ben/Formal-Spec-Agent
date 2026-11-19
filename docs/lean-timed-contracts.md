@@ -187,13 +187,24 @@ derives a lower bound only if both branches support it. A disjunction is
 excluded only after accounting for every combination of its alternatives
 with those of the other guard.
 
+Sequence operations use the typed 32-bit modular evaluator. Equality
+requires zero distance in both directions. Strict ordering gives a
+distance in the forward half-space and a distance above the half-space
+boundary in reverse. The kernel checks these implications, including the
+zero and half-space exclusions.
+
 The kernel discharges 15 TCP/IP groups with the discriminator alone,
 including ARP retry. Universal proofs for the TCP send and transmit groups
 combine it with the model's buffer invariant and complementary guards.
-The frame receive audit leaves 120 of 28,441 rule pairs, comprising 27
-within the link-layer rules and 93 within TCP. It leaves zero crossing
+The frame receive audit leaves 52 of 28,441 rule pairs, comprising 27
+within the link-layer rules and 25 within TCP. It leaves zero crossing
 that partition and zero involving the malformed IPv4 length rule. Four
 separate kernel checks cover the full left-hand rule catalog. An equality
 proves that concatenating those blocks recovers the original catalog and
-that their counts compose. Raw rule preservation and the remaining frame
-pairs still need proofs.
+that their counts compose.
+
+The malformed IPv4 length rule also has a raw preservation proof. A
+checked dependency analysis shows that its diagnostic assignment touches
+no slot read by the invariants. The proof covers successful execution and
+all post-state invariants for arbitrary admitted pre-states. Remaining
+raw rule and frame overlap obligations stay open.
