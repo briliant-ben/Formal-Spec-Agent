@@ -251,8 +251,11 @@ emitted messages. Unchanged invariant clauses can reuse the input
 invariant evidence. The checker can certify clauses separately because
 they refer to the same deterministic transition.
 
-Four ARP expiry proofs use this checker. They cover cache expiration and
-query expiration with an empty queue, a queued UDP packet, or a queued TCP
-packet. The combined catalog now covers 112 distinct raw firings out of
-335. The proofs apply to arbitrary admitted pre-states and retain the
-original firing IDs and guards.
+The ARP proofs use this checker for query start, cache expiration, and
+query expiration with an empty queue, queued UDP, or queued TCP. Three
+cache configuration proofs cover empty, pending, and resolved phases.
+For the resolved phase, the proof carries the configured TTL through the
+preceding assignment and checks the exact delay used by the timer arm.
+The combined catalog covers 116 distinct raw firings out of 335. The proofs
+apply to arbitrary admitted pre-states and retain the original firing IDs
+and guards.

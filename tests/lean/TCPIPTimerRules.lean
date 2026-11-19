@@ -97,10 +97,8 @@ theorem query_retry : Approved.raw_3_timer_1 := by
     rearmed_invariants model s (nextQuery s) 1 1000 (queryActive s valid pending) (by simp [armTimer, nextQuery, cancelTimer, List.filter_filter]) valid
   exact ⟨transition, executed, after ▸ setRetry_preserves (nextQuery s) 1 (by decide) ready⟩
 
-theorem query_retry_obligation : (rule_3, some 1) ∈ rawChecks model declaredTimers := by
-  apply List.mem_flatMap.mpr
-  refine ⟨rule_3, List.mem_iff_getElem?.mpr ⟨3, rfl⟩, List.mem_append.mpr (Or.inr ?_)⟩
-  exact List.mem_filterMap.mpr ⟨1, by decide, rfl⟩
+theorem query_retry_obligation : (rule_3, some 1) ∈ rawChecks model declaredTimers :=
+  raw_timer_member model declaredTimers rule_3 1 (List.mem_iff_getElem?.mpr ⟨3, rfl⟩) (by decide) rfl
 
 #print axioms query_retry
 #print axioms query_retry_obligation

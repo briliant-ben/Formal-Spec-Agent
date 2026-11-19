@@ -1,7 +1,7 @@
 import Approved
 import EffectConditions
 
-namespace TCPIPExpiry
+namespace TCPIPQueries
 open Approved FormalSpecAgent FormalSpecAgent.TypedIR FormalSpecAgent.TypedMachine
 open EffectConditions TypedFiringContracts TimedObligations
 
@@ -21,10 +21,19 @@ private theorem unaffected :
 
 private def ordinaryTouched := [e1594,e1597,e1601,e1604,e1614,e1628]
 
+private theorem unchanged_condition (s : Snapshot) (f : Values) (state : s.state = 0)
+    (valid : invariantsHold model s = true) (rule : Rule) (firing : Option Nat)
+    (same : ∀ inv ∈ earlier ++ middle ++ later, obligationsFor rule firing [inv] = atTarget 0 [inv]) :
+    ∀ inv ∈ earlier ++ middle ++ later, inv ∈ model.invariants →
+      holds (obligationsFor rule firing [inv]) s f = true := by
+  intro inv found member
+  rw [same inv found, ← state, holds_atCurrent]
+  simpa [holds] using List.all_eq_true.mp valid inv member
+
 private theorem ordinary_conditions (s : Snapshot) (f : Values)
-    (valid : invariantsHold model s = true) (state : s.state = 0)
     (rule : Rule) (firing : Option Nat)
-    (unchanged : ∀ inv ∈ earlier ++ middle ++ later, obligationsFor rule firing [inv] = atTarget 0 [inv])
+    (unchanged : ∀ inv ∈ earlier ++ middle ++ later, inv ∈ model.invariants →
+      holds (obligationsFor rule firing [inv]) s f = true)
     (changed : Each (fun inv => holds (obligationsFor rule firing [inv]) s f = true) ordinaryTouched) :
     ∀ inv ∈ model.invariants, holds (obligationsFor rule firing [inv]) s f = true := by
   intro inv member
@@ -33,8 +42,7 @@ private theorem ordinary_conditions (s : Snapshot) (f : Values)
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at cases
   have untouched (found : inv ∈ earlier ++ middle ++ later) :
       holds (obligationsFor rule firing [inv]) s f = true := by
-    rw [unchanged inv found, ← state, holds_atCurrent]
-    simpa [holds] using List.all_eq_true.mp valid inv member
+    exact unchanged inv found member
   rcases cases with (((((firstTouched | first) | queue) | second) | domain) | third)
   · apply changed.of_mem
     simp only [ordinaryTouched, List.mem_cons, List.not_mem_nil, or_false]
@@ -77,7 +85,7 @@ theorem cache_expiry : Approved.raw_4_timer_0 := by
   change (TypedMachine.eval s f e38 && true) = true at enabled
   simp only [Bool.and_true] at enabled
   obtain ⟨queryInactive, unqueued⟩ := before_cache_expiry s f valid enabled
-  refine ⟨rfl, ordinary_conditions s f valid state _ _ unaffected ?_⟩
+  refine ⟨rfl, ordinary_conditions s f _ _ (unchanged_condition s f state valid _ _ unaffected) ?_⟩
   refine ⟨?_, rfl, rfl, rfl, ?_, rfl, trivial⟩
   · change ((TypedMachine.eval s f e1589 && true) && true) = true
     simp [queryInactive]
@@ -114,7 +122,7 @@ theorem query_expiry_unqueued : Approved.raw_26_timer_1 := by
     change decide (1 ≤ TypedMachine.eval s f e200) = false
     rw [left]
     rfl
-  refine ⟨rfl, ordinary_conditions s f valid state _ _ unaffectedUnqueued ?_⟩
+  refine ⟨rfl, ordinary_conditions s f _ _ (unchanged_condition s f state valid _ _ unaffectedUnqueued) ?_⟩
   refine ⟨?_, rfl, rfl, rfl, ?_, rfl, trivial⟩
   · change (TypedMachine.eval s f e1592 && true) = true
     simp [cacheInactive]
@@ -184,28 +192,66 @@ theorem query_expiry_tcp : Approved.raw_25_timer_1 := by
   simp only [Bool.and_eq_true] at enabled
   exact queued_conditions s f valid source enabled.1.1
 
+private def queryDelay : Expr .boolean := .intGe e10 e44
+
+set_option maxRecDepth 16384 in
+private theorem unaffectedStart :
+    ∀ inv ∈ earlier ++ middle ++ later, obligationsFor rule_0 none [inv] = queryDelay :: atTarget 0 [inv] := by
+  apply List.map_inj_left.mp
+  rfl
+
+theorem query_start : Approved.raw_0_external := by
+  apply preserves_clauses
+  intro s f valid source enabled
+  have state : s.state = 0 := source
+  change (TypedMachine.eval s f e16 && TypedMachine.eval s f e19) = true at enabled
+  simp only [Bool.and_eq_true] at enabled
+  have empty : TypedMachine.eval s zeroValues e16 = true := enabled.1
+  have phase := List.all_eq_true.mp valid e1594 (by rw [model_invariants]; simp)
+  change (!TypedMachine.eval s zeroValues e16 || TypedMachine.eval s zeroValues e1593) = true at phase
+  simp only [empty, Bool.not_true, Bool.false_or] at phase
+  change ((TypedMachine.eval s zeroValues e1587 && TypedMachine.eval s zeroValues e1589) &&
+    TypedMachine.eval s zeroValues e1592) = true at phase
+  simp only [Bool.and_eq_true] at phase
+  have mac : TypedMachine.eval s f e1587 = true := phase.1.1
+  have cache : TypedMachine.eval s f e1592 = true := phase.2
+  have untouched (inv : Expr .boolean) (found : inv ∈ earlier ++ middle ++ later)
+      (member : inv ∈ model.invariants) : holds (obligationsFor rule_0 none [inv]) s f = true := by
+    rw [unaffectedStart inv found]
+    change holds (atTarget 0 [inv]) s f = true
+    rw [← state, holds_atCurrent]
+    simpa [holds] using List.all_eq_true.mp valid inv member
+  refine ⟨rfl, ordinary_conditions s f _ _ untouched ?_⟩
+  refine ⟨rfl, ?_, rfl, rfl, ?_, rfl, trivial⟩
+  · change (((TypedMachine.eval s f e1587 && true) && TypedMachine.eval s f e1592) && true) = true
+    simp [mac, cache]
+  · change (((!TypedMachine.eval s f e1613) || true) && true) = true
+    simp
+
 def firings : List (Rule × Option Nat) :=
-  [(rule_4, some 0), (rule_24, some 1), (rule_25, some 1), (rule_26, some 1)]
+  [(rule_0, none), (rule_4, some 0), (rule_24, some 1), (rule_25, some 1), (rule_26, some 1)]
 
 theorem checked : Each (fun p => FiringPreserves model p.1 p.2) firings :=
-  ⟨cache_expiry, query_expiry_udp, query_expiry_tcp, query_expiry_unqueued, trivial⟩
+  ⟨query_start, cache_expiry, query_expiry_udp, query_expiry_tcp, query_expiry_unqueued, trivial⟩
 
 private theorem timerMember (index : Nat) (rule : Rule) (owner : Nat)
     (selected : model.rules[index]? = some rule)
     (declared : owner ∈ declaredTimers) (eventMatches : rule.event = model.timerEvents owner) :
-    (rule, some owner) ∈ rawChecks model declaredTimers := by
-  apply List.mem_flatMap.mpr
-  refine ⟨rule, List.mem_iff_getElem?.mpr ⟨index, selected⟩, List.mem_append.mpr (Or.inr ?_)⟩
-  exact List.mem_filterMap.mpr ⟨owner, declared, by simp [eventMatches]⟩
+    (rule, some owner) ∈ rawChecks model declaredTimers :=
+  raw_timer_member model declaredTimers rule owner (List.mem_iff_getElem?.mpr ⟨index, selected⟩)
+    declared eventMatches
 
 theorem members : Each (fun p => p ∈ rawChecks model declaredTimers) firings :=
-  ⟨timerMember 4 rule_4 0 rfl (by decide) rfl,
+  ⟨raw_external_member model declaredTimers rule_0 (List.mem_iff_getElem?.mpr ⟨0, rfl⟩)
+      (by decide),
+    timerMember 4 rule_4 0 rfl (by decide) rfl,
     timerMember 24 rule_24 1 rfl (by decide) rfl,
     timerMember 25 rule_25 1 rfl (by decide) rfl,
     timerMember 26 rule_26 1 rfl (by decide) rfl, trivial⟩
 
+#print axioms query_start
 #print axioms cache_expiry
 #print axioms query_expiry_unqueued
 #print axioms query_expiry_udp
 #print axioms query_expiry_tcp
-end TCPIPExpiry
+end TCPIPQueries

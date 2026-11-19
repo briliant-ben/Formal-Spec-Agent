@@ -11,6 +11,20 @@ def rawChecks (model : Model) (ids : List Nat) : List (Rule × Option Nat) :=
     ids.filterMap fun id =>
       if rule.event = model.timerEvents id then some (rule, some id) else none
 
+theorem raw_external_member (model : Model) (ids : List Nat) (rule : Rule)
+    (member : rule ∈ model.rules) (external : rule.event ∈ model.externalEvents) :
+    (rule, none) ∈ rawChecks model ids := by
+  apply List.mem_flatMap.mpr
+  exact ⟨rule, member, List.mem_append.mpr (Or.inl (by simp [external]))⟩
+
+theorem raw_timer_member (model : Model) (ids : List Nat) (rule : Rule) (timer : Nat)
+    (member : rule ∈ model.rules) (declared : timer ∈ ids)
+    (trigger : rule.event = model.timerEvents timer) :
+    (rule, some timer) ∈ rawChecks model ids := by
+  apply List.mem_flatMap.mpr
+  refine ⟨rule, member, List.mem_append.mpr (Or.inr ?_)⟩
+  exact List.mem_filterMap.mpr ⟨timer, declared, by simp [trigger]⟩
+
 def ruleKey (r : Rule) : Nat × Nat := (r.source, r.event)
 
 /-- Only distinct IDs sharing a source and an event can conflict. Each such
@@ -47,19 +61,14 @@ theorem external_raw_from_checks (model : Model) (ids : List Nat)
     ∀ event ∈ model.externalEvents, ScheduledPreservation.MatchingRaw model event none := by
   intro event allowed rule member trigger
   apply checked.of_mem (item := (rule, none))
-  apply List.mem_flatMap.mpr
-  refine ⟨rule, member, ?_⟩
-  rw [trigger]
-  simp [allowed]
+  exact raw_external_member model ids rule member (trigger.symm ▸ allowed)
 
 theorem timer_raw_from_checks (model : Model) (ids : List Nat)
     (checked : Each (fun p => FiringPreserves model p.1 p.2) (rawChecks model ids)) :
     BatchPreservation.TimerRaw ids model := by
   intro timer known rule member trigger
   apply checked.of_mem (item := (rule, some timer))
-  apply List.mem_flatMap.mpr
-  refine ⟨rule, member, List.mem_append.mpr (Or.inr ?_)⟩
-  exact List.mem_filterMap.mpr ⟨timer, known, by simp [trigger]⟩
+  exact raw_timer_member model ids rule timer member known trigger
 
 theorem disjoint_from_checks (model : Model)
     (checked : Each (ConflictFree model) (conflictChecks model)) :
