@@ -12,7 +12,7 @@ from protocol_lab.ir import load
 
 ROOT=Path(__file__).resolve().parents[1]
 LEAN=os.environ.get('FSA_LEAN')or shutil.which('lean')
-MODULES=['Foundation','ValueOps','SequenceFacts','TypedIR','TypedMachine','TypedContracts',
+MODULES=['Foundation','ValueOps','SequenceFacts','TypedIR','OctetBounds','TypedMachine','TypedContracts',
          'TypedFiringContracts','TimerRank','TimerMinimum','ScheduledPreservation','TimerDomain',
          'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection','BatchTotality',
          'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators','InvariantFootprint','ResetPreservation','TimerInvariantFacts',
@@ -63,7 +63,9 @@ class ScheduledPreservationTests(unittest.TestCase):
             shutil.copyfile(ROOT/'tests/lean/EffectConditionsAudit.lean', root/'EffectsAudit.lean')
             effects = compile_module('EffectsAudit')
             self.assertEqual(effects.returncode, 0, effects.stdout + effects.stderr)
-            for theorem in ('ordered_firing', 'wrong_order_rejected', 'footprint_separates_reads'):
+            for theorem in ('ordered_firing', 'wrong_order_rejected', 'footprint_separates_reads',
+                            'octet_bound_sound', 'octet_lower_bound',
+                            'octet_bound_rejects_insufficient_information'):
                 self.assertLessEqual(set(gate.read_axioms(effects.stdout, 'EffectConditionsAudit.' + theorem)),
                                      gate.AXIOMS)
             model = load(ROOT/'examples/lean-timed-efsm/model.json')
@@ -335,7 +337,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                 'TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', 'TCPIPQueries',
                 'TCPIPCacheConfig', 'TCPIPUDPDeliver', 'TCPIPSendQueue', 'TCPIPEmptyResponses',
                 'TCPIPApplicationRead', 'TCPIPApplicationReadEmpty', 'TCPIPAcknowledgments',
-                'TCPIPReceiveData',
+                'TCPIPReceiveData', 'TCPIPRetransmit',
             )
             for module in tcpip_modules:
                 shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
@@ -373,7 +375,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                          'absent_initial_dispatch', 'closed_groups', 'frame_group', 'malformed_length_preserves',
                          'send_group', 'transmit_group', 'endpoint_guarded_count', 'endpoint_guarded_preservation',
                          'endpoint_reset_count', 'endpoint_preservation_count', 'endpoint_preservation_unique',
-                         'endpoint_preservation_checked', 'endpoint_query_retry_obligation', 'endpoint_arp_members', 'endpoint_udp_members', 'endpoint_send_member', 'endpoint_tcp_response_members', 'endpoint_tcp_read_members', 'endpoint_ack_members', 'endpoint_receive_members',
+                         'endpoint_preservation_checked', 'endpoint_query_retry_obligation', 'endpoint_arp_members', 'endpoint_udp_members', 'endpoint_send_member', 'endpoint_tcp_response_members', 'endpoint_tcp_read_members', 'endpoint_ack_members', 'endpoint_receive_members', 'endpoint_retransmit_members',
                          'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)

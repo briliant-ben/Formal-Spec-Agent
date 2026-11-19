@@ -214,6 +214,28 @@ def obligationsFor (rule : Rule) (firing : Option Nat)
     | some owner => timer owner false
   compileFrom pre rule.actions (atTarget rule.target invariants)
 
+private theorem compileFrom_split (mapping : Rewrite) (actions : List Action)
+    (checks : List (Expr .boolean)) :
+    compileFrom mapping actions checks = compileFrom mapping actions [] ++
+      (compileFrom mapping actions checks).drop (compileFrom mapping actions []).length := by
+  induction actions generalizing mapping with
+  | nil => rfl
+  | cons action rest ih =>
+    cases action with
+    | «assign» kind slot value => exact ih _
+    | emit msg fields => exact ih _
+    | cancel owner => exact ih _
+    | arm owner delay =>
+      simp only [compileFrom, List.length_cons, List.drop_succ_cons, List.cons_append]
+      congr 1
+      exact ih _
+
+/-- The delay checks are a fixed prefix independent of the chosen postconditions. -/
+theorem obligationsFor_split (rule : Rule) (firing : Option Nat) (checks : List (Expr .boolean)) :
+    obligationsFor rule firing checks = obligationsFor rule firing [] ++
+      (obligationsFor rule firing checks).drop (obligationsFor rule firing []).length := by
+  exact compileFrom_split _ _ _
+
 private theorem obligations_exact (rule : Rule) (firing : Option Nat)
     (invariants : List (Expr .boolean)) :
     obligationsFor rule firing invariants =

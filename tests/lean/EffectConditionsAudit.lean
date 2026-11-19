@@ -1,4 +1,5 @@
 import EffectConditions
+import OctetBounds
 namespace EffectConditionsAudit
 
 open FormalSpecAgent FormalSpecAgent.TypedMachine FormalSpecAgent.TypedIR
@@ -58,6 +59,27 @@ theorem footprint_separates_reads :
     ignoresFiring (.stateIs 7) ordered (some 1) = false := by
   decide +kernel
 
+private def fourOctets : Expr .octets :=
+  .slice (.variable .octets 0) (.field .integer 0) (.literal .integer 4)
+
+theorem octet_bound_sound (ctx : Context) :
+    TypedIR.eval (.intLe (.bytesLength fourOctets) (.literal .integer 4)) ctx = true :=
+  OctetBounds.certifies_sound _ ctx (by decide +kernel)
+
+theorem octet_lower_bound (ctx : Context) :
+    let framed := Expr.concat (.pack16 (.field .integer 0)) fourOctets
+    2 ≤ (TypedIR.eval framed ctx).length :=
+  OctetBounds.lower_sound (.concat (.pack16 (.field .integer 0)) fourOctets) ctx
+
+theorem octet_bound_rejects_insufficient_information :
+    OctetBounds.certifies (.intLe (.bytesLength fourOctets) (.literal .integer 3)) = false ∧
+    OctetBounds.certifies (.intLe (.bytesLength (.variable .octets 0)) (.literal .integer 1500)) = false ∧
+    OctetBounds.certifies (.intGe (.literal .integer 0) (.literal .integer 1)) = false := by
+  decide +kernel
+
+#print axioms octet_bound_sound
+#print axioms octet_lower_bound
+#print axioms octet_bound_rejects_insufficient_information
 #print axioms footprint_separates_reads
 #print axioms ordered_firing
 #print axioms wrong_order_rejected

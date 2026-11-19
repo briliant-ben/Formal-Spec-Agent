@@ -313,7 +313,18 @@ appending it keeps the receive buffer within 16 bytes. The window
 advertisement uses the updated buffer length. The proofs also check the
 packet bound and the queue, cache, and timer invariants for each phase.
 
-The combined preservation catalog covers 146 distinct raw firings out of
+The three TCP data retransmit firings cover empty, pending and resolved
+ARP phases. Lean checks that consuming and rearming the retransmit timer
+keeps the required timer active, that doubling the timeout and
+incrementing the retry count preserve their bounds, and that the queued
+or transmitted packet satisfies the length and ownership constraints.
+The effect compiler proves that the ordered positive-delay checks are
+independent of the selected postconditions. The octet bound checker
+derives length bounds from actual packet expressions using concatenation,
+slicing and fixed-width packing. These proofs quantify over all byte
+values, including inputs to checksum expressions.
+
+The combined preservation catalog covers 149 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 189 firings still need preservation
+the full model separately. The other 186 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.
