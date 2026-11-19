@@ -2,6 +2,7 @@ import Approved
 import GuardDiscriminators
 import ResetPreservation
 import TCPIPTimerRules
+import TCPIPExpiry
 import FrameCatalogExact
 
 namespace TCPIPAudit
@@ -92,9 +93,9 @@ set_option maxHeartbeats 8000000 in
 theorem endpoint_reset_count : endpoint_reset_checks.length = 24 := by decide +kernel
 
 def endpoint_preservation_checks :=
-  endpoint_guarded_checks ++ endpoint_reset_checks ++ [(rule_3, some 1)]
+  endpoint_guarded_checks ++ endpoint_reset_checks ++ [(rule_3, some 1)] ++ TCPIPExpiry.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 108 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 112 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -105,8 +106,15 @@ theorem endpoint_preservation_unique :
 
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks :=
-  each_append (each_append endpoint_guarded_preservation
-    (ResetPreservation.resetChecks_sound model declaredTimers)) ⟨TCPIPTimerRules.query_retry, trivial⟩
+  each_append (each_append (each_append endpoint_guarded_preservation
+    (ResetPreservation.resetChecks_sound model declaredTimers)) ⟨TCPIPTimerRules.query_retry, trivial⟩)
+    TCPIPExpiry.checked
+
+theorem endpoint_expiry_members :
+    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPExpiry.firings :=
+  TCPIPExpiry.members
+
+#print axioms endpoint_expiry_members
 
 theorem endpoint_query_retry_obligation : (rule_3, some 1) ∈ rawChecks model declaredTimers :=
   TCPIPTimerRules.query_retry_obligation

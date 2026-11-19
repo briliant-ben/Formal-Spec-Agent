@@ -241,7 +241,18 @@ deadline, the set of active timer IDs is unchanged. The proof then checks
 the updated retry count and the unchanged link state, including the
 exact transition and its emitted message.
 
-The catalogs cover 108 distinct raw firings out of 335, including the
-malformed IPv4 length rule and the UDP and ICMP receive drop paths that
-clear their result buffers. The remaining obligations include firings
-that change timer activity rather than rearming the same active timer.
+For firings that change timer activity, the effect checker substitutes each
+original action into the required postconditions in reverse order. It
+accounts for removing the firing before the first action, requires each
+timer arm's delay to be positive at its actual position, and evaluates
+invariants at the rule's target with zero event fields. Its soundness
+theorem recovers the exact original candidate execution, including its
+emitted messages. Unchanged invariant clauses can reuse the input
+invariant evidence. The checker can certify clauses separately because
+they refer to the same deterministic transition.
+
+Four ARP expiry proofs use this checker. They cover cache expiration and
+query expiration with an empty queue, a queued UDP packet, or a queued TCP
+packet. The combined catalog now covers 112 distinct raw firings out of
+335. The proofs apply to arbitrary admitted pre-states and retain the
+original firing IDs and guards.

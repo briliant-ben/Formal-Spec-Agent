@@ -15,7 +15,8 @@ LEAN=os.environ.get('FSA_LEAN')or shutil.which('lean')
 MODULES=['Foundation','ValueOps','TypedIR','TypedMachine','TypedContracts',
          'TypedFiringContracts','TimerRank','TimerMinimum','ScheduledPreservation','TimerDomain',
          'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection','BatchTotality',
-         'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators','InvariantFootprint','ResetPreservation','TimerInvariantFacts']
+         'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators','InvariantFootprint','ResetPreservation','TimerInvariantFacts',
+         'ExprRewrite','EffectConditions']
 TARGETS=['FormalSpecAgent.ScheduledPreservation.'+n for n in [
     'MatchingRaw','fire_success_invariant_from_raw','external_success_invariant_from_raw',
     'timer_success_invariant_from_raw']]+['ScheduledController.raw_obligation_rejects_filtered_timer_loss']
@@ -59,6 +60,12 @@ class ScheduledPreservationTests(unittest.TestCase):
             self.assertEqual(batch.returncode,0,batch.stdout+batch.stderr)
             for target in BATCH_TARGETS:
                 self.assertLessEqual(set(gate.read_axioms(batch.stdout,target)),gate.AXIOMS)
+            shutil.copyfile(ROOT/'tests/lean/EffectConditionsAudit.lean', root/'EffectsAudit.lean')
+            effects = compile_module('EffectsAudit')
+            self.assertEqual(effects.returncode, 0, effects.stdout + effects.stderr)
+            for theorem in ('ordered_firing', 'wrong_order_rejected'):
+                self.assertLessEqual(set(gate.read_axioms(effects.stdout, 'EffectConditionsAudit.' + theorem)),
+                                     gate.AXIOMS)
             model = load(ROOT/'examples/lean-timed-efsm/model.json')
             approved, goals = render(model)
             self.assertEqual(len(goals), 16)
@@ -324,7 +331,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
             audit = (ROOT/'tests/lean/TCPIPTimedAudit.lean').read_text()
             self.assertEqual(audit.count('TCPIP_ABSENT_IDS'), 1)
             (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
-            for module in ('TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules'):
+            for module in ('TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', 'TCPIPExpiry'):
                 shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
             blocks = [f'FrameBlock{index}' for index in range(16)]
             expected = {
@@ -352,7 +359,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                 + 'List.append_assoc, List.take_append_drop]\n')
 
             result = None
-            for module in [*MODULES, 'Approved', 'TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', *blocks, 'FrameCatalogExact', 'TCPIPAudit']:
+            for module in [*MODULES, 'Approved', 'TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', 'TCPIPExpiry', *blocks, 'FrameCatalogExact', 'TCPIPAudit']:
                 result = subprocess.run([LEAN, '-o', module+'.olean', module+'.lean'],
                     cwd=root, env=env, capture_output=True, text=True, timeout=60)
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
@@ -360,7 +367,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                          'absent_initial_dispatch', 'closed_groups', 'frame_group', 'malformed_length_preserves',
                          'send_group', 'transmit_group', 'endpoint_guarded_count', 'endpoint_guarded_preservation',
                          'endpoint_reset_count', 'endpoint_preservation_count', 'endpoint_preservation_unique',
-                         'endpoint_preservation_checked', 'endpoint_query_retry_obligation',
+                         'endpoint_preservation_checked', 'endpoint_query_retry_obligation', 'endpoint_expiry_members',
                          'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)
