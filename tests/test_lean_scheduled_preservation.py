@@ -15,7 +15,7 @@ LEAN=os.environ.get('FSA_LEAN')or shutil.which('lean')
 MODULES=['Foundation','ValueOps','TypedIR','TypedMachine','TypedContracts',
          'TypedFiringContracts','TimerRank','TimerMinimum','ScheduledPreservation','TimerDomain',
          'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection','BatchTotality',
-         'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators','InvariantFootprint']
+         'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators','InvariantFootprint','ResetPreservation']
 TARGETS=['FormalSpecAgent.ScheduledPreservation.'+n for n in [
     'MatchingRaw','fire_success_invariant_from_raw','external_success_invariant_from_raw',
     'timer_success_invariant_from_raw']]+['ScheduledController.raw_obligation_rejects_filtered_timer_loss']
@@ -77,6 +77,7 @@ class ScheduledPreservationTests(unittest.TestCase):
             dropped = '''import Approved
 import GuardDiscriminators
 import InvariantFootprint
+import ResetPreservation
 open Approved FormalSpecAgent.TimedObligations FormalSpecAgent.GuardDiscriminators
 open FormalSpecAgent.TypedIR
 example : rawChecks model declaredTimers ≠ rawCatalog.dropLast := by
@@ -209,6 +210,33 @@ open FormalSpecAgent.InvariantFootprint in
 example : guardedEffect exampleModel exampleGuard (.assign .text 0 (.literal .text "OTHER"))
     = false := by decide +kernel
 
+-- Recognize an empty buffer reset only when its guard is unaffected and
+-- later effects preserve the empty buffer. A timer firing has different semantics.
+open FormalSpecAgent.TypedMachine FormalSpecAgent.ResetPreservation in
+def resetExample (bound : Int) (guard : Expr .boolean) (tail : List Action) (external : Bool) : Model :=
+  { rules := [{ id := 0, event := 0, source := 0, target := 0, guard := guard,
+                actions := .assign .octets 0 (.literal .octets []) :: tail }],
+    invariants := [.intLe (.bytesLength (.variable .octets 0)) (constant bound)],
+    externalEvents := if external then [0] else [],
+    timerEvents := id }
+
+open FormalSpecAgent.ResetPreservation in
+example : (resetChecks (resetExample 2 (.literal .boolean true) [] true) []).length = 1 := by
+  decide +kernel
+open FormalSpecAgent.ResetPreservation in
+example : (resetChecks (resetExample (-1) (.literal .boolean true) [] true) []).length = 0 := by
+  decide +kernel
+open FormalSpecAgent.ResetPreservation in
+example : (resetChecks (resetExample 2 (.equal .octets (.variable .octets 0) (.literal .octets []))
+    [] true) []).length = 0 := by decide +kernel
+open FormalSpecAgent.ResetPreservation in
+example : (resetChecks (resetExample 2 (.literal .boolean true)
+    [.assign .octets 0 (.literal .octets [⟨1, by decide⟩])] true) []).length = 0 := by
+  decide +kernel
+open FormalSpecAgent.ResetPreservation in
+example : (resetChecks (resetExample 2 (.literal .boolean true) [] false) [0]).length = 0 := by
+  decide +kernel
+
 def maxSerial : Expr .sequence := .literal .sequence ⟨4294967295, by decide⟩
 def zeroSerial : Expr .sequence := .literal .sequence 0
 example (ctx : Context) : eval (.seqLt maxSerial zeroSerial) ctx = true := rfl
@@ -313,6 +341,8 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
             for name in ('absent_external_exact', 'absent_packet_rolls_back',
                          'absent_initial_dispatch', 'closed_groups', 'frame_group', 'malformed_length_preserves',
                          'send_group', 'transmit_group', 'endpoint_guarded_count', 'endpoint_guarded_preservation',
+                         'endpoint_reset_count', 'endpoint_preservation_count', 'endpoint_preservation_unique',
+                         'endpoint_preservation_checked',
                          'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)

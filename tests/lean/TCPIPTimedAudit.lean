@@ -1,6 +1,6 @@
 import Approved
 import GuardDiscriminators
-import InvariantFootprint
+import ResetPreservation
 import FrameCatalogExact
 
 namespace TCPIPAudit
@@ -82,6 +82,33 @@ private theorem each_append {items rest : List α} {property : α → Prop}
   induction items with
   | nil => exact right
   | cons _ _ ih => exact ⟨left.1, ih left.2⟩
+
+def endpoint_reset_checks : List (Rule × Option Nat) :=
+  ResetPreservation.resetChecks model declaredTimers
+
+set_option maxRecDepth 65536 in
+set_option maxHeartbeats 8000000 in
+theorem endpoint_reset_count : endpoint_reset_checks.length = 24 := by decide +kernel
+
+def endpoint_preservation_checks := endpoint_guarded_checks ++ endpoint_reset_checks
+
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 107 := by
+  unfold endpoint_preservation_checks
+  rw [List.length_append, endpoint_guarded_count, endpoint_reset_count]
+
+set_option maxRecDepth 65536 in
+set_option maxHeartbeats 8000000 in
+theorem endpoint_preservation_unique :
+    (endpoint_preservation_checks.map (fun p => (p.1.id, p.2))).Nodup := by decide +kernel
+
+theorem endpoint_preservation_checked :
+    Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks :=
+  each_append endpoint_guarded_preservation (ResetPreservation.resetChecks_sound model declaredTimers)
+
+#print axioms endpoint_reset_count
+#print axioms endpoint_preservation_count
+#print axioms endpoint_preservation_unique
+#print axioms endpoint_preservation_checked
 
 set_option maxRecDepth 16384 in
 theorem frame_group : Approved.conflict_4 := by

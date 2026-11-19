@@ -225,8 +225,16 @@ emissions may occur between these writes. A disjunction or a field
 equality supplies no store fact, and an arm or cancel is outside this
 checker.
 
-The kernel checks that 83 of the original model's 335 raw firing obligations
-are selected and proves successful execution and invariant preservation
-for all 83. They are external firings and include the malformed IPv4
-length rule. Remaining raw obligations need separate proofs of effects
-that change invariant inputs, including timer effects.
+The kernel checks 83 guarded-write obligations and 24 buffer-reset
+obligations against the original model. For a leading empty-buffer
+assignment, the proof keeps unaffected invariants and tracks the empty
+buffer through the remaining actions. It then proves the original
+post-state length bound and conditional empty-buffer invariant. It checks
+that the original guard is unaffected by the assignment and requires the
+remaining actions to preserve the temporary invariant. A timer firing is
+outside both checks.
+
+The two catalogs cover 107 distinct raw firings out of 335, including the
+malformed IPv4 length rule and the UDP and ICMP receive drop paths that
+clear their result buffers. Remaining obligations need separate proofs for
+other changes to invariant inputs, including timer effects.
