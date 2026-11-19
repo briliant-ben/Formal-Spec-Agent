@@ -140,13 +140,95 @@ theorem holds_atCurrent (checks : List (Expr .boolean)) (s : Snapshot) (f : Valu
     holds (atTarget s.state checks) s f = holds checks s zeroValues := by
   rw [holds_atTarget]
 
-/-- Derive scoped obligations from the exact original rule and firing. -/
+private def compose (before after : Rewrite) : Rewrite :=
+  { varRead := fun kind slot => run before (after.varRead kind slot)
+    field := fun kind slot => run before (after.field kind slot)
+    stateIs := fun state => run before (after.stateIs state)
+    timerActive := fun owner => run before (after.timerActive owner) }
+
+private theorem compose_run (before after : Rewrite) {kind : Kind} (expr : Expr kind) :
+    run (compose before after) expr = run before (run after expr) := by
+  induction expr <;> simp_all [run, compose]
+
+private theorem identity_run {kind : Kind} (expr : Expr kind) : run identity expr = expr := by
+  induction expr <;> simp_all [run, identity]
+
+private def extendStore (mapping : Rewrite) (kind : Kind) (slot : Nat) (value : Expr kind) : Rewrite :=
+  let assigned := run mapping value
+  { mapping with varRead := fun k n =>
+      if same : k = kind then
+        if n = slot then same.symm ▸ assigned else mapping.varRead k n
+      else mapping.varRead k n }
+
+private theorem extendStore_compose (mapping : Rewrite) (kind : Kind) (slot : Nat) (value : Expr kind) :
+    extendStore mapping kind slot value = compose mapping (assign kind slot value) := by
+  have readEq : (extendStore mapping kind slot value).varRead =
+      (compose mapping (assign kind slot value)).varRead := by
+    funext k n
+    by_cases same : k = kind
+    · subst k
+      by_cases targetSlot : n = slot <;> simp [extendStore, compose, assign, targetSlot, identity, run]
+    · simp [extendStore, compose, assign, same, identity, run]
+  cases mapping
+  simp only [extendStore, compose, assign, identity, run, Rewrite.mk.injEq] at *
+  simp [readEq]
+
+private def extendTimer (mapping : Rewrite) (owner : Nat) (active : Bool) : Rewrite :=
+  { mapping with timerActive := fun id =>
+      if id = owner then .literal .boolean active else mapping.timerActive id }
+
+private theorem extendTimer_compose (mapping : Rewrite) (owner : Nat) (active : Bool) :
+    extendTimer mapping owner active = compose mapping (timer owner active) := by
+  have timerEq : (extendTimer mapping owner active).timerActive =
+      (compose mapping (timer owner active)).timerActive := by
+    funext id
+    by_cases ownerId : id = owner <;> simp [extendTimer, compose, timer, ownerId, identity, run]
+  cases mapping
+  simp only [extendTimer, compose, timer, identity, run, Rewrite.mk.injEq] at *
+  simp [timerEq]
+
+private def compileFrom (mapping : Rewrite) : List Action → List (Expr .boolean) → List (Expr .boolean)
+  | [], checks => checks.map (run mapping)
+  | .assign kind slot value :: rest, checks =>
+    compileFrom (extendStore mapping kind slot value) rest checks
+  | .emit .. :: rest, checks => compileFrom mapping rest checks
+  | .cancel owner :: rest, checks =>
+    compileFrom (extendTimer mapping owner false) rest checks
+  | .arm owner delay :: rest, checks =>
+    .intGe (run mapping delay) (.literal .integer 1) ::
+      compileFrom (extendTimer mapping owner true) rest checks
+
+private theorem compileFrom_exact (mapping : Rewrite) (actions : List Action)
+    (checks : List (Expr .boolean)) :
+    compileFrom mapping actions checks = (beforeActions actions checks).map (run mapping) := by
+  induction actions generalizing mapping with
+  | nil => rfl
+  | cons head rest ih =>
+    cases head <;> simp [beforeActions, compileFrom, ih, List.map_map, Function.comp_def, run, extendStore_compose, extendTimer_compose, compose_run]
+
+/-- Compute the same ordered obligations using a forward substitution environment. -/
 def obligationsFor (rule : Rule) (firing : Option Nat)
     (invariants : List (Expr .boolean)) : List (Expr .boolean) :=
-  let before := beforeActions rule.actions (atTarget rule.target invariants)
-  match firing with
-  | none => before
-  | some owner => before.map (run (timer owner false))
+  let pre := match firing with
+    | none => identity
+    | some owner => timer owner false
+  compileFrom pre rule.actions (atTarget rule.target invariants)
+
+private theorem obligations_exact (rule : Rule) (firing : Option Nat)
+    (invariants : List (Expr .boolean)) :
+    obligationsFor rule firing invariants =
+      let before := beforeActions rule.actions (atTarget rule.target invariants)
+      match firing with
+      | none => before
+      | some owner => before.map (run (timer owner false)) := by
+  cases firing with
+  | none =>
+    have unchanged (checks : List (Expr .boolean)) : checks.map (run identity) = checks := by
+      induction checks with
+      | nil => rfl
+      | cons head tail ih => simp [identity_run, ih]
+    simp only [obligationsFor, compileFrom_exact, unchanged]
+  | some owner => simp [obligationsFor, compileFrom_exact]
 
 def obligations (model : Model) (rule : Rule) (firing : Option Nat) : List (Expr .boolean) :=
   obligationsFor rule firing model.invariants
@@ -156,12 +238,13 @@ private theorem interpret (model : Model) (rule : Rule) (firing : Option Nat)
     (ok : holds (obligationsFor rule firing invariants) s f = true) :
     ∃ t, candidate s rule f rule.event firing = .ok t ∧
       invariantsHold {model with invariants := invariants} t.after = true := by
+  rw [obligations_exact] at ok
   have pre : holds (beforeActions rule.actions (atTarget rule.target invariants))
       (withoutFiring s firing) f = true := by
     cases firing with
     | none => exact ok
     | some owner =>
-      unfold obligationsFor at ok
+      dsimp only at ok
       rw [holds_rewrite _ _ _ _ _ (cancel_sound s f owner)] at ok
       exact ok
   obtain ⟨after, sent, ran, holdsAfter⟩ := beforeActions_sound rule.actions _ _ f [] pre

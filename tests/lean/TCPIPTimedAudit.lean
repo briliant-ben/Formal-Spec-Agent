@@ -7,6 +7,7 @@ import TCPIPCacheConfig
 import TCPIPUDPDeliver
 import TCPIPSendQueue
 import TCPIPEmptyResponses
+import TCPIPApplicationReadEmpty
 import FrameCatalogExact
 
 namespace TCPIPAudit
@@ -99,9 +100,9 @@ theorem endpoint_reset_count : endpoint_reset_checks.length = 24 := by decide +k
 def endpoint_preservation_checks :=
   endpoint_guarded_checks ++ endpoint_reset_checks ++ [(rule_3, some 1)] ++
     TCPIPQueries.firings ++ TCPIPCacheConfig.firings ++ TCPIPUDPDeliver.firings ++ [(rule_238, none)] ++
-    TCPIPEmptyResponses.firings
+    TCPIPEmptyResponses.firings ++ TCPIPApplicationReadEmpty.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 132 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 135 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -112,10 +113,17 @@ theorem endpoint_preservation_unique :
 
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks :=
-  each_append (each_append (each_append (each_append (each_append (each_append
+  each_append (each_append (each_append (each_append (each_append (each_append (each_append
     (each_append endpoint_guarded_preservation (ResetPreservation.resetChecks_sound model declaredTimers))
     ⟨TCPIPTimerRules.query_retry, trivial⟩) TCPIPQueries.checked) TCPIPCacheConfig.checked)
-    TCPIPUDPDeliver.checked) ⟨TCPIPSendQueue.send_queue, trivial⟩) TCPIPEmptyResponses.checked
+    TCPIPUDPDeliver.checked) ⟨TCPIPSendQueue.send_queue, trivial⟩) TCPIPEmptyResponses.checked)
+    TCPIPApplicationReadEmpty.checked
+
+theorem endpoint_tcp_read_members :
+    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPApplicationReadEmpty.firings :=
+  TCPIPApplicationReadEmpty.members
+
+#print axioms endpoint_tcp_read_members
 
 theorem endpoint_tcp_response_members :
     Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPEmptyResponses.firings :=

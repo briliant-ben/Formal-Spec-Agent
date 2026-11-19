@@ -285,5 +285,17 @@ its owner. The empty phase checks the new positive-delay timer arm and
 the transition to pending. All twelve cases retain their original
 guards and messages.
 
-The combined catalog covers 132 distinct raw firings out of 335. The
+The TCP application-read proofs cover all three ARP phases. They prove
+that dropping and clipping a byte slice cannot grow the receive buffer,
+that the advertised window uses its updated length, and that the ACK
+response satisfies the packet and queue invariants for each phase.
+
+The effect checker computes the same action preconditions with a
+forward environment for store and timer substitutions. Lean proves
+equality with the backward construction for every rule, firing and
+invariant list, including the exact order of positive-delay checks.
+Unchanged reads reuse the environment directly, which avoids traversing
+all output formulas after every action.
+
+The combined catalog covers 135 distinct raw firings out of 335. The
 proofs quantify over all admitted pre-states.
