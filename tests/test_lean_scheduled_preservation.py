@@ -335,6 +335,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                 'TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', 'TCPIPQueries',
                 'TCPIPCacheConfig', 'TCPIPUDPDeliver', 'TCPIPSendQueue', 'TCPIPEmptyResponses',
                 'TCPIPApplicationRead', 'TCPIPApplicationReadEmpty', 'TCPIPAcknowledgments',
+                'TCPIPReceiveData',
             )
             for module in tcpip_modules:
                 shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
@@ -372,7 +373,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                          'absent_initial_dispatch', 'closed_groups', 'frame_group', 'malformed_length_preserves',
                          'send_group', 'transmit_group', 'endpoint_guarded_count', 'endpoint_guarded_preservation',
                          'endpoint_reset_count', 'endpoint_preservation_count', 'endpoint_preservation_unique',
-                         'endpoint_preservation_checked', 'endpoint_query_retry_obligation', 'endpoint_arp_members', 'endpoint_udp_members', 'endpoint_send_member', 'endpoint_tcp_response_members', 'endpoint_tcp_read_members', 'endpoint_ack_members',
+                         'endpoint_preservation_checked', 'endpoint_query_retry_obligation', 'endpoint_arp_members', 'endpoint_udp_members', 'endpoint_send_member', 'endpoint_tcp_response_members', 'endpoint_tcp_read_members', 'endpoint_ack_members', 'endpoint_receive_members',
                          'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)

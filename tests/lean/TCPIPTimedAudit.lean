@@ -9,6 +9,7 @@ import TCPIPSendQueue
 import TCPIPEmptyResponses
 import TCPIPApplicationReadEmpty
 import TCPIPAcknowledgments
+import TCPIPReceiveData
 import FrameCatalogExact
 
 namespace TCPIPAudit
@@ -101,9 +102,10 @@ theorem endpoint_reset_count : endpoint_reset_checks.length = 24 := by decide +k
 def endpoint_preservation_checks :=
   endpoint_guarded_checks ++ endpoint_reset_checks ++ [(rule_3, some 1)] ++
     TCPIPQueries.firings ++ TCPIPCacheConfig.firings ++ TCPIPUDPDeliver.firings ++ [(rule_238, none)] ++
-    TCPIPEmptyResponses.firings ++ TCPIPApplicationReadEmpty.firings ++ TCPIPAcknowledgments.firings
+    TCPIPEmptyResponses.firings ++ TCPIPApplicationReadEmpty.firings ++ TCPIPAcknowledgments.firings ++
+    TCPIPReceiveData.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 140 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 146 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -113,12 +115,19 @@ theorem endpoint_preservation_unique :
     (endpoint_preservation_checks.map (fun p => (p.1.id, p.2))).Nodup := by decide +kernel
 
 theorem endpoint_preservation_checked :
-    Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks :=
-  each_append (each_append (each_append (each_append (each_append (each_append (each_append
+    Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks := by
+  refine each_append ?_ TCPIPReceiveData.checked
+  exact each_append (each_append (each_append (each_append (each_append (each_append (each_append
     (each_append (each_append endpoint_guarded_preservation (ResetPreservation.resetChecks_sound model declaredTimers))
     ⟨TCPIPTimerRules.query_retry, trivial⟩) TCPIPQueries.checked) TCPIPCacheConfig.checked)
     TCPIPUDPDeliver.checked) ⟨TCPIPSendQueue.send_queue, trivial⟩) TCPIPEmptyResponses.checked)
     TCPIPApplicationReadEmpty.checked) TCPIPAcknowledgments.checked
+
+theorem endpoint_receive_members :
+    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPReceiveData.firings :=
+  TCPIPReceiveData.members
+
+#print axioms endpoint_receive_members
 
 theorem endpoint_ack_members :
     Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPAcknowledgments.firings :=

@@ -306,7 +306,14 @@ combined buffer capacity and the relation between remaining bytes and
 the applicable receive window. Lean checks that each rule's original
 guard and generated conditions match the shared proof.
 
-The combined preservation catalog covers 140 distinct raw firings out of
+The data receive proofs cover in-order and overlapping segments across
+all three ARP phases. The original guards supply the available window.
+The original slice clips the accepted suffix to that window, so
+appending it keeps the receive buffer within 16 bytes. The window
+advertisement uses the updated buffer length. The proofs also check the
+packet bound and the queue, cache, and timer invariants for each phase.
+
+The combined preservation catalog covers 146 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 195 firings still need preservation
+the full model separately. The other 189 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.
