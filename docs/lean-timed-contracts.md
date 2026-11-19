@@ -297,5 +297,16 @@ invariant list, including the exact order of positive-delay checks.
 Unchanged reads reuse the environment directly, which avoids traversing
 all output formulas after every action.
 
-The combined catalog covers 135 distinct raw firings out of 335. The
-proofs quantify over all admitted pre-states.
+The acknowledgment proofs cover full and partial acknowledgments with
+both accepted and stale window updates, and duplicate acknowledgments
+with an accepted update. Trimming the acknowledged prefix preserves
+the relation between the next send sequence and the remaining bytes,
+including wraparound. The proofs also check the retransmit timer,
+combined buffer capacity and the relation between remaining bytes and
+the applicable receive window. Lean checks that each rule's original
+guard and generated conditions match the shared proof.
+
+The combined preservation catalog covers 140 distinct raw firings out of
+335 and quantifies over all admitted pre-states. Guard disjointness covers
+the full model separately. The other 195 firings still need preservation
+proofs before the full TCP/IP case can use the Lean-only formal gate.
