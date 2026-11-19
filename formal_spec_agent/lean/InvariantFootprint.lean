@@ -91,7 +91,7 @@ private theorem requiresText_sound {kind : Kind} (guard : Expr kind) (ctx : Cont
     exact of_decide_eq_true enabled
   | _ => contradiction
 
-private theorem set_current_value (kind : Kind) (slot : Nat) (s : Values) :
+theorem set_current_value (kind : Kind) (slot : Nat) (s : Values) :
     setValue kind slot (getValue kind s slot) s = s := by
   cases s
   cases kind <;> simp only [setValue, getValue, Values.mk.injEq]

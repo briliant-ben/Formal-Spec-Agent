@@ -15,7 +15,7 @@ LEAN=os.environ.get('FSA_LEAN')or shutil.which('lean')
 MODULES=['Foundation','ValueOps','TypedIR','TypedMachine','TypedContracts',
          'TypedFiringContracts','TimerRank','TimerMinimum','ScheduledPreservation','TimerDomain',
          'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection','BatchTotality',
-         'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators','InvariantFootprint','ResetPreservation']
+         'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators','InvariantFootprint','ResetPreservation','TimerInvariantFacts']
 TARGETS=['FormalSpecAgent.ScheduledPreservation.'+n for n in [
     'MatchingRaw','fire_success_invariant_from_raw','external_success_invariant_from_raw',
     'timer_success_invariant_from_raw']]+['ScheduledController.raw_obligation_rejects_filtered_timer_loss']
@@ -78,6 +78,7 @@ class ScheduledPreservationTests(unittest.TestCase):
 import GuardDiscriminators
 import InvariantFootprint
 import ResetPreservation
+import TimerInvariantFacts
 open Approved FormalSpecAgent.TimedObligations FormalSpecAgent.GuardDiscriminators
 open FormalSpecAgent.TypedIR
 example : rawChecks model declaredTimers ≠ rawCatalog.dropLast := by
@@ -237,6 +238,23 @@ open FormalSpecAgent.ResetPreservation in
 example : (resetChecks (resetExample 2 (.literal .boolean true) [] false) [0]).length = 0 := by
   decide +kernel
 
+-- Rearming the current owner replaces all of its old entries, retains a
+-- different owner at the same deadline, and preserves activity for both.
+open FormalSpecAgent.TypedMachine in
+def rearmBefore : Snapshot :=
+  { values := zeroValues, state := 0, now := 100, timers := [⟨1, 100⟩, ⟨2, 100⟩, ⟨1, 101⟩] }
+open FormalSpecAgent.TypedMachine in
+def rearmAfter : Snapshot := { rearmBefore with timers := [⟨2, 100⟩, ⟨1, 1100⟩] }
+open FormalSpecAgent.TypedMachine in
+def activeModel : Model :=
+  { rules := [], invariants := [.timerActive 1, .timerActive 2], externalEvents := [], timerEvents := id }
+open FormalSpecAgent.TypedMachine FormalSpecAgent.TimerInvariantFacts in
+example : invariantsHold activeModel rearmAfter = true :=
+  rearmed_invariants activeModel rearmBefore rearmAfter 1 1000 (by decide +kernel)
+    rfl (by decide +kernel)
+open FormalSpecAgent.TypedMachine in
+example : invariantsHold activeModel (cancelTimer rearmBefore 1) = false := by decide +kernel
+
 def maxSerial : Expr .sequence := .literal .sequence ⟨4294967295, by decide⟩
 def zeroSerial : Expr .sequence := .literal .sequence 0
 example (ctx : Context) : eval (.seqLt maxSerial zeroSerial) ctx = true := rfl
@@ -306,7 +324,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
             audit = (ROOT/'tests/lean/TCPIPTimedAudit.lean').read_text()
             self.assertEqual(audit.count('TCPIP_ABSENT_IDS'), 1)
             (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
-            for module in ('TCPIPFrameCatalog', 'TCPIPFramePairs'):
+            for module in ('TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules'):
                 shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
             blocks = [f'FrameBlock{index}' for index in range(16)]
             expected = {
@@ -334,7 +352,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                 + 'List.append_assoc, List.take_append_drop]\n')
 
             result = None
-            for module in [*MODULES, 'Approved', 'TCPIPFrameCatalog', 'TCPIPFramePairs', *blocks, 'FrameCatalogExact', 'TCPIPAudit']:
+            for module in [*MODULES, 'Approved', 'TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', *blocks, 'FrameCatalogExact', 'TCPIPAudit']:
                 result = subprocess.run([LEAN, '-o', module+'.olean', module+'.lean'],
                     cwd=root, env=env, capture_output=True, text=True, timeout=60)
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
@@ -342,7 +360,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                          'absent_initial_dispatch', 'closed_groups', 'frame_group', 'malformed_length_preserves',
                          'send_group', 'transmit_group', 'endpoint_guarded_count', 'endpoint_guarded_preservation',
                          'endpoint_reset_count', 'endpoint_preservation_count', 'endpoint_preservation_unique',
-                         'endpoint_preservation_checked',
+                         'endpoint_preservation_checked', 'endpoint_query_retry_obligation',
                          'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)

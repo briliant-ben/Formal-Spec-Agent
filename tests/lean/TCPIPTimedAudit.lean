@@ -1,6 +1,7 @@
 import Approved
 import GuardDiscriminators
 import ResetPreservation
+import TCPIPTimerRules
 import FrameCatalogExact
 
 namespace TCPIPAudit
@@ -90,11 +91,12 @@ set_option maxRecDepth 65536 in
 set_option maxHeartbeats 8000000 in
 theorem endpoint_reset_count : endpoint_reset_checks.length = 24 := by decide +kernel
 
-def endpoint_preservation_checks := endpoint_guarded_checks ++ endpoint_reset_checks
+def endpoint_preservation_checks :=
+  endpoint_guarded_checks ++ endpoint_reset_checks ++ [(rule_3, some 1)]
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 107 := by
-  unfold endpoint_preservation_checks
-  rw [List.length_append, endpoint_guarded_count, endpoint_reset_count]
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 108 := by
+  simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
+    endpoint_reset_count] <;> rfl
 
 set_option maxRecDepth 65536 in
 set_option maxHeartbeats 8000000 in
@@ -103,8 +105,13 @@ theorem endpoint_preservation_unique :
 
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks :=
-  each_append endpoint_guarded_preservation (ResetPreservation.resetChecks_sound model declaredTimers)
+  each_append (each_append endpoint_guarded_preservation
+    (ResetPreservation.resetChecks_sound model declaredTimers)) ⟨TCPIPTimerRules.query_retry, trivial⟩
 
+theorem endpoint_query_retry_obligation : (rule_3, some 1) ∈ rawChecks model declaredTimers :=
+  TCPIPTimerRules.query_retry_obligation
+
+#print axioms endpoint_query_retry_obligation
 #print axioms endpoint_reset_count
 #print axioms endpoint_preservation_count
 #print axioms endpoint_preservation_unique

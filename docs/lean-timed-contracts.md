@@ -234,7 +234,14 @@ that the original guard is unaffected by the assignment and requires the
 remaining actions to preserve the temporary invariant. A timer firing is
 outside both checks.
 
-The two catalogs cover 107 distinct raw firings out of 335, including the
+The kernel also proves preservation for the ARP query retry firing. The
+pending invariant establishes that the query timer is active beforehand.
+After removing the firing and rearming the same timer at its new
+deadline, the set of active timer IDs is unchanged. The proof then checks
+the updated retry count and the unchanged link state, including the
+exact transition and its emitted message.
+
+The catalogs cover 108 distinct raw firings out of 335, including the
 malformed IPv4 length rule and the UDP and ICMP receive drop paths that
-clear their result buffers. Remaining obligations need separate proofs for
-other changes to invariant inputs, including timer effects.
+clear their result buffers. The remaining obligations include firings
+that change timer activity rather than rearming the same active timer.
