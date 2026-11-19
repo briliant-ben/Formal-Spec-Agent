@@ -5,6 +5,7 @@ import TCPIPTimerRules
 import TCPIPQueries
 import TCPIPCacheConfig
 import TCPIPUDPDeliver
+import TCPIPSendQueue
 import FrameCatalogExact
 
 namespace TCPIPAudit
@@ -96,9 +97,9 @@ theorem endpoint_reset_count : endpoint_reset_checks.length = 24 := by decide +k
 
 def endpoint_preservation_checks :=
   endpoint_guarded_checks ++ endpoint_reset_checks ++ [(rule_3, some 1)] ++
-    TCPIPQueries.firings ++ TCPIPCacheConfig.firings ++ TCPIPUDPDeliver.firings
+    TCPIPQueries.firings ++ TCPIPCacheConfig.firings ++ TCPIPUDPDeliver.firings ++ [(rule_238, none)]
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 119 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 120 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -109,9 +110,9 @@ theorem endpoint_preservation_unique :
 
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks :=
-  each_append (each_append (each_append (each_append (each_append endpoint_guarded_preservation
+  each_append (each_append (each_append (each_append (each_append (each_append endpoint_guarded_preservation
     (ResetPreservation.resetChecks_sound model declaredTimers)) ⟨TCPIPTimerRules.query_retry, trivial⟩)
-    TCPIPQueries.checked) TCPIPCacheConfig.checked) TCPIPUDPDeliver.checked
+    TCPIPQueries.checked) TCPIPCacheConfig.checked) TCPIPUDPDeliver.checked) ⟨TCPIPSendQueue.send_queue, trivial⟩
 
 theorem endpoint_arp_members :
     Each (fun p => p ∈ rawChecks model declaredTimers) (TCPIPQueries.firings ++ TCPIPCacheConfig.firings) :=
@@ -121,6 +122,10 @@ theorem endpoint_udp_members :
     Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPUDPDeliver.firings :=
   TCPIPUDPDeliver.members
 
+theorem endpoint_send_member : (rule_238, none) ∈ rawChecks model declaredTimers :=
+  TCPIPSendQueue.member
+
+#print axioms endpoint_send_member
 #print axioms endpoint_udp_members
 #print axioms endpoint_arp_members
 

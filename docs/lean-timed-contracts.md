@@ -265,6 +265,14 @@ requires evidence that the full firing succeeds.
 The UDP delivery rules use this checker for all three ARP phases. Their
 proofs derive the 1,472-byte payload bound from the original IPv4 packet
 bound and UDP length equality, including the buffer slice's clipping
-semantics. The combined catalog covers 119 distinct raw firings out of
-335. The proofs quantify over all admitted pre-states and use the
+semantics.
+
+The TCP application send-queue proof checks that its final literal
+control-state write repeats the value established by the guard. Erasing
+that write in the proof preserves the exact candidate, including its
+message, because preceding actions leave that slot intact. For the
+remaining effects, the input send-capacity guard bounds the sum of the
+new send buffer and the retransmit buffer. Only two invariant clauses
+need direct proofs. The combined catalog covers 120 distinct raw firings
+out of 335. The proofs quantify over all admitted pre-states and use the
 original firing IDs and guards.

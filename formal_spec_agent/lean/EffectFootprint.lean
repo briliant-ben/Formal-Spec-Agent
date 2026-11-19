@@ -42,12 +42,12 @@ private theorem eval_arm {kind : Kind} (expr : Expr kind) (s after : Snapshot) (
   rw [unchanged]
   exact eval_timer_change expr _ owner _ same unobserved
 
-private def ignoresAction (expr : Expr kind) : Action → Bool
+def ignoresAction (expr : Expr kind) : Action → Bool
   | .assign _ slot _ => ignoresSlot slot expr
   | .cancel owner | .arm owner _ => ignoresTimer owner expr
   | .emit .. => true
 
-private theorem work_same_eval (expr : Expr kind) (actions : List Action)
+theorem work_same_eval (expr : Expr kind) (actions : List Action)
     (s after : Snapshot) (f g : Values) (before out : List Message)
     (unobserved : actions.all (ignoresAction expr) = true)
     (executed : work actions s f before = .ok (after, out)) :
