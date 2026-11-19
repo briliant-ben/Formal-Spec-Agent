@@ -4,28 +4,34 @@ namespace FormalSpecAgent.InvariantFootprint
 
 open TypedIR TypedMachine TypedContracts TypedFiringContracts TimedObligations
 
-/-- Test whether evaluation can depend on a given store slot.
-Event slots, the state, and timer IDs are separate namespaces. -/
-def ignoresSlot (slot : Nat) {kind : Kind} (expr : Expr kind) : Bool :=
+/-- Check allowed store and timer reads, keeping their namespaces separate. -/
+def admitsReads (storeRead timerRead : Nat → Bool) {kind : Kind} (expr : Expr kind) : Bool :=
   match expr with
-  | .variable _ index => slot != index
-  | .literal _ _ | .field _ _ | .stateIs _ | .timerActive _ => true
+  | .variable _ index => storeRead index
+  | .timerActive id => timerRead id
+  | .literal _ _ | .field _ _ | .stateIs _ => true
   | .equal _ l r | .notEqual _ l r =>
-    ignoresSlot slot l && ignoresSlot slot r
+    admitsReads storeRead timerRead l && admitsReads storeRead timerRead r
   | .choose _ cond l r =>
-    ignoresSlot slot cond && ignoresSlot slot l && ignoresSlot slot r
+    admitsReads storeRead timerRead cond && admitsReads storeRead timerRead l && admitsReads storeRead timerRead r
   | .boolAnd l r | .boolOr l r | .implies l r =>
-    ignoresSlot slot l && ignoresSlot slot r
+    admitsReads storeRead timerRead l && admitsReads storeRead timerRead r
   | .add l r | .mul l r | .sub l r | .minimum l r | .intLe l r | .intGe l r =>
-    ignoresSlot slot l && ignoresSlot slot r
-  | .seqAdd l r => ignoresSlot slot l && ignoresSlot slot r
+    admitsReads storeRead timerRead l && admitsReads storeRead timerRead r
+  | .seqAdd l r => admitsReads storeRead timerRead l && admitsReads storeRead timerRead r
   | .seqDistance l r | .seqComparable l r | .seqLt l r | .seqLe l r =>
-    ignoresSlot slot l && ignoresSlot slot r
-  | .concat l r => ignoresSlot slot l && ignoresSlot slot r
-  | .byteAt buf i => ignoresSlot slot buf && ignoresSlot slot i
-  | .slice buf i count => ignoresSlot slot buf && ignoresSlot slot i && ignoresSlot slot count
-  | .boolNot expr | .bytesLength expr | .checksum expr => ignoresSlot slot expr
-  | .pack8 expr | .pack16 expr | .pack32 expr => ignoresSlot slot expr
+    admitsReads storeRead timerRead l && admitsReads storeRead timerRead r
+  | .concat l r => admitsReads storeRead timerRead l && admitsReads storeRead timerRead r
+  | .byteAt buf i => admitsReads storeRead timerRead buf && admitsReads storeRead timerRead i
+  | .slice buf i count => admitsReads storeRead timerRead buf && admitsReads storeRead timerRead i && admitsReads storeRead timerRead count
+  | .boolNot expr | .bytesLength expr | .checksum expr => admitsReads storeRead timerRead expr
+  | .pack8 expr | .pack16 expr | .pack32 expr => admitsReads storeRead timerRead expr
+
+def ignoresSlot (slot : Nat) (expr : Expr kind) : Bool :=
+  admitsReads (fun index => slot != index) (fun _ => true) expr
+
+def ignoresTimer (owner : Nat) (expr : Expr kind) : Bool :=
+  admitsReads (fun _ => true) (fun id => owner != id) expr
 
 theorem getValue_after_unrelated_set (readKind writeKind : Kind) (readSlot writeSlot : Nat)
     (source : Values) (value : Value writeKind) (different : readSlot ≠ writeSlot) :
@@ -40,9 +46,9 @@ theorem eval_after_unrelated_set {kind : Kind} (expr : Expr kind) (ctx : Context
       TypedIR.eval expr ctx := by
   induction expr with
   | «variable» kind index =>
-    simp only [ignoresSlot, bne_iff_ne] at untouched
+    simp only [ignoresSlot, admitsReads, bne_iff_ne] at untouched
     exact getValue_after_unrelated_set kind writeKind index slot ctx.store value (Ne.symm untouched)
-  | _ => simp_all [ignoresSlot, TypedIR.eval, Bool.and_eq_true]
+  | _ => simp_all [ignoresSlot, admitsReads, TypedIR.eval, Bool.and_eq_true]
 
 theorem invariant_after_unrelated_set (model : Model) (snapshot : Snapshot) (slot : Nat)
     (writeKind : Kind) (value : Value writeKind)

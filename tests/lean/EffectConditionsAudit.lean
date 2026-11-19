@@ -47,6 +47,18 @@ theorem wrong_order_rejected :
     candidate before wrongOrder fields wrongOrder.event (some 1) = .error .badDelay := by
   exact ⟨rfl, rfl, rfl, rfl, rfl⟩
 
+open EffectFootprint in
+theorem footprint_separates_reads :
+    let sameState := { ordered with target := ordered.source }
+    ignoresFiring (.field .integer 0) sameState (some 1) = true ∧
+    ignoresFiring (.variable .integer 0) sameState (some 1) = false ∧
+    ignoresFiring (.timerActive 1) sameState (some 1) = false ∧
+    ignoresFiring (.timerActive 2) sameState (some 1) = false ∧
+    ignoresFiring (.timerActive 3) sameState (some 1) = true ∧
+    ignoresFiring (.stateIs 7) ordered (some 1) = false := by
+  decide +kernel
+
+#print axioms footprint_separates_reads
 #print axioms ordered_firing
 #print axioms wrong_order_rejected
 

@@ -1,6 +1,7 @@
 import ExprRewrite
 import TypedFiringContracts
 import TimerInvariantFacts
+import EffectFootprint
 
 namespace FormalSpecAgent.EffectConditions
 open TypedIR TypedMachine TypedContracts TypedFiringContracts TimerInvariantFacts ExprRewrite
@@ -192,5 +193,29 @@ theorem preserves_clauses (model : Model) (rule : Rule) (firing : Option Nat)
   rw [ran] at ranAgain
   cases Except.ok.inj ranAgain
   simpa [invariantsHold] using post
+
+/-- Reuse the input evidence for clauses unaffected by the firing. -/
+theorem preserves_touched (model : Model) (rule : Rule) (firing : Option Nat)
+    (checked : ∀ s f, invariantsHold model s = true → s.state = rule.source →
+      TypedMachine.eval s f rule.guard = true →
+      holds (obligationsFor rule firing []) s f = true ∧
+      ∀ clause ∈ model.invariants, EffectFootprint.ignoresFiring clause rule firing = false →
+        holds (obligationsFor rule firing [clause]) s f = true) :
+    FiringPreserves model rule firing := by
+  intro s f valid source enabled
+  obtain ⟨total, clauses⟩ := checked s f valid source enabled
+  obtain ⟨t, ran, _⟩ := interpret model rule firing [] s f total
+  refine ⟨t, ran, List.all_eq_true.mpr ?_⟩
+  intro clause member
+  cases footprint : EffectFootprint.ignoresFiring clause rule firing with
+  | true =>
+    exact (EffectFootprint.candidate_same_eval clause rule firing s f zeroValues t source footprint ran).trans
+      (List.all_eq_true.mp valid clause member)
+  | false =>
+    obtain ⟨witness, ranAgain, post⟩ :=
+      interpret model rule firing [clause] s f (clauses clause member footprint)
+    rw [ran] at ranAgain
+    cases Except.ok.inj ranAgain
+    simpa [invariantsHold] using post
 
 end FormalSpecAgent.EffectConditions

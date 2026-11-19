@@ -256,6 +256,15 @@ query expiration with an empty queue, queued UDP, or queued TCP. Three
 cache configuration proofs cover empty, pending, and resolved phases.
 For the resolved phase, the proof carries the configured TTL through the
 preceding assignment and checks the exact delay used by the timer arm.
-The combined catalog covers 116 distinct raw firings out of 335. The proofs
-apply to arbitrary admitted pre-states and retain the original firing IDs
-and guards.
+The effect footprint checker tracks reads of store slots and timer IDs
+in separate namespaces. It checks timer removal as well as all subsequent
+actions. For rules that keep the machine state, clauses whose reads stay
+unchanged follow directly from the input invariants. The checker still
+requires evidence that the full firing succeeds.
+
+The UDP delivery rules use this checker for all three ARP phases. Their
+proofs derive the 1,472-byte payload bound from the original IPv4 packet
+bound and UDP length equality, including the buffer slice's clipping
+semantics. The combined catalog covers 119 distinct raw firings out of
+335. The proofs quantify over all admitted pre-states and use the
+original firing IDs and guards.
