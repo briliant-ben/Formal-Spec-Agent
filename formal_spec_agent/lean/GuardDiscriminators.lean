@@ -580,6 +580,50 @@ private theorem paddingFacts_sound (left right : Expr .integer) (ctx : Context)
   next => simp at member
 
 
+private def maximumFacts (left right : Expr .integer) : List Fact :=
+  match right with
+  | .choose _ (.intGe value (.literal _ limit)) retained (.literal _ floor) =>
+    match observation value, observation retained with
+    | some x, some y =>
+      if x.same y && decide (limit ≤ floor) then orderFacts left value (.lower 0) else []
+    | _, _ => []
+  | _ => []
+
+private theorem floor_length_bound (actual value limit floor : Int)
+    (enough : limit ≤ floor) (selected : actual = (if limit ≤ value then value else floor)) :
+    0 ≤ actual - value := by
+  split at selected <;> omega
+
+private theorem maximumFacts_sound (left right : Expr .integer) (ctx : Context)
+    (equal : TypedIR.eval left ctx = TypedIR.eval right ctx)
+    (fact : Fact) (member : fact ∈ maximumFacts left right) : fact.holds ctx := by
+  unfold maximumFacts at member
+  split at member
+  next value limit retained floor =>
+    cases source : observation value with
+    | none => simp [source] at member
+    | some x =>
+      cases selected : observation retained with
+      | none => simp [source, selected] at member
+      | some y =>
+        simp only [source, selected] at member
+        split at member
+        next valid =>
+          simp only [Bool.and_eq_true] at valid
+          obtain ⟨same, enough⟩ := valid
+          have sameValue : TypedIR.eval value ctx = TypedIR.eval retained ctx :=
+            (integer_observation_sound value ctx x source).symm.trans
+              ((observation_identical same).symm ▸ integer_observation_sound retained ctx y selected)
+          apply orderFacts_sound left value (.lower 0) ctx _ fact member
+          change TypedIR.eval left ctx =
+            (if decide (limit ≤ TypedIR.eval value ctx) then TypedIR.eval retained ctx else floor)
+            at equal
+          rw [← sameValue] at equal
+          exact floor_length_bound (TypedIR.eval left ctx) (TypedIR.eval value ctx)
+            limit floor (of_decide_eq_true enough) (by simpa using equal)
+        next => simp at member
+  next => simp at member
+
 private theorem reverse_distance (a b : ValueOps.Seq32) (positive : 0 < ValueOps.seqDistance a b) :
     ValueOps.seqDistance b a = 4294967296 - ValueOps.seqDistance a b := by
   unfold ValueOps.seqDistance at *
@@ -651,7 +695,7 @@ def facts {kind : Kind} (guard : Expr kind) : List Fact :=
   | .boolNot (.intLe expr (.literal _ value)) => integerFacts expr (.lower (value + 1))
   | .equal .octets expr (.literal _ value) =>
       literalByteFacts expr value ++ comparisonFacts expr (.literal .octets value) true
-  | .equal .integer left right => comparisonFacts left right true ++ orderFacts left right (.equal 0) ++ paddingFacts left right
+  | .equal .integer left right => comparisonFacts left right true ++ orderFacts left right (.equal 0) ++ (paddingFacts left right ++ maximumFacts left right)
   | .equal .octets left right => comparisonFacts left right true
   | .notEqual .integer left right
   | .boolNot (.equal .integer left right) => comparisonFacts left right false ++ orderFacts left right (.different 0)
@@ -671,6 +715,10 @@ def facts {kind : Kind} (guard : Expr kind) : List Fact :=
   | .equal .text (.field _ slot) (.literal _ value) => [.text (.field slot) value]
   | .equal .boolean (.variable _ slot) (.literal _ value) => [.boolean (.variable slot) value]
   | .equal .boolean (.field _ slot) (.literal _ value) => [.boolean (.field slot) value]
+  | .variable .boolean slot => [.boolean (.variable slot) true]
+  | .field .boolean slot => [.boolean (.field slot) true]
+  | .boolNot (.variable _ slot) => [.boolean (.variable slot) false]
+  | .boolNot (.field _ slot) => [.boolean (.field slot) false]
   | _ => []
 termination_by structural guard
 
@@ -728,7 +776,9 @@ private theorem facts_sound {kind : Kind} (guard : Expr kind) (ctx : Context)
       · exact comparisonFacts_sound left right true ctx enabled fact same
       · apply orderFacts_sound left right (.equal 0) ctx _ fact ordered
         exact Int.sub_eq_zero.mpr equal
-    · exact paddingFacts_sound left right ctx equal fact padded
+    · rcases List.mem_append.mp padded with bounded | floored
+      · exact paddingFacts_sound left right ctx equal fact bounded
+      · exact maximumFacts_sound left right ctx equal fact floored
   | case11 left right =>
     exact comparisonFacts_sound left right true ctx enabled fact member
   | case12 left right _ =>

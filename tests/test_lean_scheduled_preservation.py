@@ -93,6 +93,12 @@ example : separated (facts yes) (facts no) = true := rfl
 example : separated (facts yes) (facts fieldNo) = false := rfl
 example : separated (facts yes) (facts (.boolOr no (.literal .boolean true))) = false := rfl
 
+def variableFlag : Expr .boolean := .variable .boolean 0
+def fieldFlag : Expr .boolean := .field .boolean 0
+example : separated (facts variableFlag) (facts (.boolNot variableFlag)) = true := rfl
+example : separated (facts fieldFlag) (facts fieldNo) = true := rfl
+example : separated (facts variableFlag) (facts (.boolNot fieldFlag)) = false := rfl
+
 -- Use a clipped byte view. Comparing the same read at an inclusive boundary
 -- is insufficient unless the bounds are strictly separated.
 def firstByte : Expr .integer :=
@@ -156,6 +162,16 @@ def wireRule (id : Nat) (guard : Expr .boolean) : FormalSpecAgent.TypedMachine.R
 example : residualPairs [wireRule 0 (accepted 60), wireRule 1 malformed] = [] := rfl
 -- With total length 46, a 59-byte frame could satisfy both guards.
 example : (residualPairs [wireRule 0 (accepted 59), wireRule 1 malformed]).length = 1 := rfl
+
+def floored (cutoff padding : Int) (retained : Expr .integer) : Expr .boolean :=
+  .equal .integer physicalLength
+    (.choose .integer (.intGe plainLength (constant cutoff)) retained (constant padding))
+
+def tooShort : Expr .boolean := .intGe plainLength (.add physicalLength (constant 1))
+example : separated (facts (floored 60 60 plainLength)) (facts tooShort) = true := rfl
+-- A cutoff above the padding, or a different retained expression, need not bound the frame.
+example : separated (facts (floored 61 59 plainLength)) (facts tooShort) = false := rfl
+example : separated (facts (floored 60 60 ipTotal)) (facts tooShort) = false := rfl
 
 def serialBase : Expr .sequence := .variable .sequence 0
 def serialAck : Expr .sequence := .field .sequence 0
@@ -243,7 +259,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
             (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
             shutil.copyfile(ROOT/'tests/lean/TCPIPFrameCensus.lean', root/'TCPIPFrameCensus.lean')
             blocks = []
-            counts = [(0, 0, 0, 0), (27, 0, 0, 0), (27, 0, 6, 0), (27, 0, 25, 0), (27, 0, 25, 0)]
+            counts = [(0, 0, 0, 0), (0, 0, 0, 0), (0, 0, 6, 0), (0, 0, 25, 0), (0, 0, 25, 0)]
             for index, (prior, current) in enumerate(zip(counts, counts[1:])):
                 block = f'FrameBlock{index}'
                 (root/f'{block}.lean').write_text(

@@ -67,7 +67,7 @@ theorem malformed_length_preserves : raw_334_external :=
 
 theorem frame_pairs_remaining :
     (residualPairs conflictGroup_4).foldl TCPIPFrameCensus.countPair (0, 0, 0, 0) =
-      (27, 0, 25, 0) := by
+      (0, 0, 25, 0) := by
   rw [TCPIPFrameCensus.merge_blocks, frameBlock0, frameBlock1, frameBlock2, frameBlock3]
 
 private theorem false_or_false {a b : Bool} (impossible : a = true → b = true → False) :
