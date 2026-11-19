@@ -331,7 +331,11 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
             audit = (ROOT/'tests/lean/TCPIPTimedAudit.lean').read_text()
             self.assertEqual(audit.count('TCPIP_ABSENT_IDS'), 1)
             (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
-            for module in ('TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', 'TCPIPQueries', 'TCPIPCacheConfig', 'TCPIPUDPDeliver', 'TCPIPSendQueue'):
+            tcpip_modules = (
+                'TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', 'TCPIPQueries',
+                'TCPIPCacheConfig', 'TCPIPUDPDeliver', 'TCPIPSendQueue', 'TCPIPEmptyResponses',
+            )
+            for module in tcpip_modules:
                 shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
             blocks = [f'FrameBlock{index}' for index in range(16)]
             expected = {
@@ -359,7 +363,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                 + 'List.append_assoc, List.take_append_drop]\n')
 
             result = None
-            for module in [*MODULES, 'Approved', 'TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', 'TCPIPQueries', 'TCPIPCacheConfig', 'TCPIPUDPDeliver', 'TCPIPSendQueue', *blocks, 'FrameCatalogExact', 'TCPIPAudit']:
+            for module in [*MODULES, 'Approved', *tcpip_modules, *blocks, 'FrameCatalogExact', 'TCPIPAudit']:
                 result = subprocess.run([LEAN, '-o', module+'.olean', module+'.lean'],
                     cwd=root, env=env, capture_output=True, text=True, timeout=60)
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
@@ -367,7 +371,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                          'absent_initial_dispatch', 'closed_groups', 'frame_group', 'malformed_length_preserves',
                          'send_group', 'transmit_group', 'endpoint_guarded_count', 'endpoint_guarded_preservation',
                          'endpoint_reset_count', 'endpoint_preservation_count', 'endpoint_preservation_unique',
-                         'endpoint_preservation_checked', 'endpoint_query_retry_obligation', 'endpoint_arp_members', 'endpoint_udp_members', 'endpoint_send_member',
+                         'endpoint_preservation_checked', 'endpoint_query_retry_obligation', 'endpoint_arp_members', 'endpoint_udp_members', 'endpoint_send_member', 'endpoint_tcp_response_members',
                          'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)

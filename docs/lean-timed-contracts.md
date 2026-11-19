@@ -273,6 +273,17 @@ that write in the proof preserves the exact candidate, including its
 message, because preceding actions leave that slot intact. For the
 remaining effects, the input send-capacity guard bounds the sum of the
 new send buffer and the retransmit buffer. Only two invariant clauses
-need direct proofs. The combined catalog covers 120 distinct raw firings
-out of 335. The proofs quantify over all admitted pre-states and use the
-original firing IDs and guards.
+need direct proofs.
+
+Four TCP response cases send an empty TCP payload after a future ACK,
+duplicate data, data ahead of the receive sequence, or data while the
+window is zero. Each case has empty, pending, and resolved ARP variants.
+Lean checks the ordered actions and machine states before reusing each
+phase's proof. The resolved phase checks the emitted response's packet
+length. The pending and empty phases also certify the queued packet and
+its owner. The empty phase checks the new positive-delay timer arm and
+the transition to pending. All twelve cases retain their original
+guards and messages.
+
+The combined catalog covers 132 distinct raw firings out of 335. The
+proofs quantify over all admitted pre-states.
