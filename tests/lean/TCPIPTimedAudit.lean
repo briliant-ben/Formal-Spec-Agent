@@ -13,6 +13,7 @@ import TCPIPReceiveData
 import TCPIPRetransmit
 import TCPIPTransmit
 import TCPIPClosedControl
+import TCPIPDuplicateFin
 import FrameCatalogExact
 
 namespace TCPIPAudit
@@ -107,9 +108,9 @@ def endpoint_preservation_checks :=
     TCPIPQueries.firings ++ TCPIPCacheConfig.firings ++ TCPIPUDPDeliver.firings ++ [(rule_238, none)] ++
     TCPIPEmptyResponses.firings ++ TCPIPApplicationReadEmpty.firings ++ TCPIPAcknowledgments.firings ++
     TCPIPReceiveData.firings ++ TCPIPRetransmit.firings ++ TCPIPTransmit.firings ++
-    TCPIPClosedControl.firings
+    TCPIPClosedControl.firings ++ TCPIPDuplicateFin.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 178 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 190 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -120,6 +121,7 @@ theorem endpoint_preservation_unique :
 
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks := by
+  refine each_append ?_ TCPIPDuplicateFin.checked
   refine each_append (each_append ?_ TCPIPTransmit.checked) TCPIPClosedControl.checked
   refine each_append (each_append ?_ TCPIPReceiveData.checked) TCPIPRetransmit.checked
   exact each_append (each_append (each_append (each_append (each_append (each_append (each_append
@@ -127,6 +129,12 @@ theorem endpoint_preservation_checked :
     ⟨TCPIPTimerRules.query_retry, trivial⟩) TCPIPQueries.checked) TCPIPCacheConfig.checked)
     TCPIPUDPDeliver.checked) ⟨TCPIPSendQueue.send_queue, trivial⟩) TCPIPEmptyResponses.checked)
     TCPIPApplicationReadEmpty.checked) TCPIPAcknowledgments.checked
+
+theorem endpoint_duplicate_fin_members :
+    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPDuplicateFin.firings :=
+  TCPIPDuplicateFin.members
+
+#print axioms endpoint_duplicate_fin_members
 
 theorem endpoint_closed_control_members :
     Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPClosedControl.firings :=

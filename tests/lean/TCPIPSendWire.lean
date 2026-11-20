@@ -104,4 +104,47 @@ theorem pending_cache_requirements (s : Snapshot) (f : Values)
   simp only [phase, Bool.not_true, Bool.false_or, Bool.and_eq_true] at before
   exact ⟨before.1.1, before.2⟩
 
+private def queuePacket (post : Expr .boolean → List (Expr .boolean)) : Expr .octets :=
+  match post e1612 with
+  | [.intLe (.bytesLength packet) _] => packet
+  | _ => .literal .octets []
+
+private def queueCondition (post : Expr .boolean → List (Expr .boolean)) (pending : Expr .boolean) : Prop :=
+  let packet := queuePacket post
+  OctetBounds.certifies (.intLe (.bytesLength packet) e244) = true ∧
+    28 ≤ OctetBounds.lower packet ∧
+    queueClauses.map (post) = (queueChecks packet pending).map (fun e => [e])
+
+private def pendingGuard := Expr.equal .text e34 e34
+private def cacheCheck :=
+  Expr.implies pendingGuard (.boolAnd (.boolAnd e1587 e3) e1592)
+
+def linkCondition (post : Expr .boolean → List (Expr .boolean)) (phase : LinkPhase) : Prop :=
+  match phase with
+  | .empty =>
+    queueCondition post pendingGuard ∧
+      post e1597 = [cacheCheck] ∧
+      ∀ s f, Each (fun inv => holds (post inv) s f = true) [e1594, e1601, e1604, e1628]
+  | .pending => queueCondition post e35
+  | .resolved => True
+
+theorem link_checks (s : Snapshot) (f : Values) (post : Expr .boolean → List (Expr .boolean)) (phase : LinkPhase)
+    (ready : linkCondition post phase) (enabled : TypedMachine.eval s f (linkGuard phase) = true)
+    (valid : invariantsHold model s = true) :
+    Each (fun inv => holds (post inv) s f = true) (linkClauses phase) := by
+  cases phase
+  · obtain ⟨⟨bound, min, align⟩, cacheShape, static⟩ := ready
+    have queued := queue_from_post s f _ _ _ align bound min rfl
+    obtain ⟨mac, noExpiry⟩ := pending_cache_requirements s f enabled valid
+    have cache : holds (post e1597) s f = true := by
+      rw [cacheShape]
+      change (((TypedMachine.eval s f e1587 && true) && TypedMachine.eval s f e1592) && true) = true
+      simp [mac, noExpiry]
+    have facts := static s f
+    exact ⟨facts.1, cache, facts.2.1, facts.2.2.1, queued.1, queued.2.1, queued.2.2.1,
+      facts.2.2.2.1, queued.2.2.2.1, trivial⟩
+  · obtain ⟨bound, min, align⟩ := ready
+    exact queue_from_post s f _ _ _ align bound min enabled
+  · trivial
+
 end TCPIPSendWire

@@ -345,7 +345,13 @@ The queue proof checks both outcomes of the original ownership guard:
 the TCP-owned packet is cleared along with its owner, while a queue
 with any other owner retains its contents and metadata.
 
-The combined preservation catalog covers 178 distinct raw firings out of
+Twelve duplicate-FIN firings preserve the TCP control state in
+CLOSE-WAIT, CLOSING, LAST-ACK and TIME-WAIT across the three ARP
+phases. The proof uses the same packet and queue checks as retransmit.
+The TIME-WAIT variants also restart the timer with a positive delay
+and establish the timer-activity invariant for that control state.
+
+The combined preservation catalog covers 190 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 157 firings still need preservation
+the full model separately. The other 145 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.

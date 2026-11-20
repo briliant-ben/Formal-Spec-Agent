@@ -117,49 +117,6 @@ private theorem tcp_post (s : Snapshot) (f : Values) (phase : String)
 private def postChecks (r : Rule) (phase : LinkPhase) (inv : Expr .boolean) : List (Expr .boolean) :=
   (obligationsFor (cut r) (some 2) [inv]).drop (delays phase).length
 
-private def queuePacket (r : Rule) (phase : LinkPhase) : Expr .octets :=
-  match postChecks r phase e1612 with
-  | [.intLe (.bytesLength packet) _] => packet
-  | _ => .literal .octets []
-
-private def queueCondition (r : Rule) (phase : LinkPhase) (pending : Expr .boolean) : Prop :=
-  let packet := queuePacket r phase
-  OctetBounds.certifies (.intLe (.bytesLength packet) e244) = true ∧
-    28 ≤ OctetBounds.lower packet ∧
-    queueClauses.map (postChecks r phase) = (queueChecks packet pending).map (fun e => [e])
-
-private def pendingGuard := Expr.equal .text e34 e34
-private def cacheCheck :=
-  Expr.implies pendingGuard (.boolAnd (.boolAnd e1587 e3) e1592)
-
-private def linkCondition (r : Rule) (phase : LinkPhase) : Prop :=
-  match phase with
-  | .empty =>
-    queueCondition r .empty pendingGuard ∧
-      postChecks r .empty e1597 = [cacheCheck] ∧
-      ∀ s f, Each (fun inv => holds (postChecks r .empty inv) s f = true) [e1594, e1601, e1604, e1628]
-  | .pending => queueCondition r .pending e35
-  | .resolved => True
-
-private theorem link_checks (s : Snapshot) (f : Values) (r : Rule) (phase : LinkPhase)
-    (ready : linkCondition r phase) (enabled : TypedMachine.eval s f (linkGuard phase) = true)
-    (valid : invariantsHold model s = true) :
-    Each (fun inv => holds (postChecks r phase inv) s f = true) (linkClauses phase) := by
-  cases phase
-  · obtain ⟨⟨bound, min, align⟩, cacheShape, static⟩ := ready
-    have queued := queue_from_post s f _ _ _ align bound min rfl
-    obtain ⟨mac, noExpiry⟩ := pending_cache_requirements s f enabled valid
-    have cache : holds (postChecks r .empty e1597) s f = true := by
-      rw [cacheShape]
-      change (((TypedMachine.eval s f e1587 && true) && TypedMachine.eval s f e1592) && true) = true
-      simp [mac, noExpiry]
-    have facts := static s f
-    exact ⟨facts.1, cache, facts.2.1, facts.2.2.1, queued.1, queued.2.1, queued.2.2.1,
-      facts.2.2.2.1, queued.2.2.2.1, trivial⟩
-  · obtain ⟨bound, min, align⟩ := ready
-    exact queue_from_post s f _ _ _ align bound min enabled
-  · trivial
-
 private theorem certify (r : Rule) (phase : LinkPhase) (tcpGuard : Expr .boolean) (tcpState : String)
     (shape : r.guard = .boolAnd tcpGuard (linkGuard phase))
     (phaseKnown : ∀ s f, TypedMachine.eval s f tcpGuard = true → TypedMachine.eval s f e488 = tcpState)
@@ -173,7 +130,7 @@ private theorem certify (r : Rule) (phase : LinkPhase) (tcpGuard : Expr .boolean
     (timing : obligationsFor (cut r) (some 2) [] = delays phase)
     (alignment : tcpClauses.map (postChecks r phase) =
       tcpClauses.map (fun inv => [ExprRewrite.run reads inv]))
-    (linkReady : linkCondition r phase)
+    (linkReady : linkCondition (postChecks r phase) phase)
     (packetBound : (postChecks r phase e1706).all OctetBounds.certifies = true) :
     FiringPreserves model r (some 2) := by
   apply preserves_after_removing_text model r (some 2) (prefixActions r) 56 tcpState actions untouched
@@ -198,7 +155,7 @@ private theorem certify (r : Rule) (phase : LinkPhase) (tcpGuard : Expr .boolean
       · rw [List.map_inj_left.mp alignment inv tcpMember]
         change (TypedMachine.eval s f (ExprRewrite.run reads inv) && true) = true
         simp [(tcp_post s f tcpState (phaseKnown s f tcp) armed (flight s f tcp) facts).of_mem tcpMember]
-      · exact (link_checks s f r phase linkReady link valid).of_mem linkMember
+      · exact (link_checks s f (postChecks r phase) phase linkReady link valid).of_mem linkMember
       · exact OctetBounds.all_sound _ (context s f) packetBound
     rw [obligationsFor_split, timing, holds, List.all_append]
     change (holds (delays phase) s f && holds (postChecks r phase inv) s f) = true
@@ -223,7 +180,7 @@ private theorem control (r : Rule) (link : LinkPhase) (phase : String)
     (timing : obligationsFor (cut r) (some 2) [] = delays link)
     (alignment : tcpClauses.map (postChecks r link) =
       tcpClauses.map (fun inv => [ExprRewrite.run reads inv]))
-    (linkReady : linkCondition r link)
+    (linkReady : linkCondition (postChecks r link) link)
     (packetBound : (postChecks r link e1706).all OctetBounds.certifies = true) :
     FiringPreserves model r (some 2) :=
   certify r link (controlGuard phase) phase guard (control_known phase)
@@ -314,7 +271,7 @@ private theorem data (r : Rule) (link : LinkPhase)
     (timing : obligationsFor (cut r) (some 2) [] = delays link)
     (alignment : tcpClauses.map (postChecks r link) =
       tcpClauses.map (fun inv => [ExprRewrite.run reads inv]))
-    (linkReady : linkCondition r link)
+    (linkReady : linkCondition (postChecks r link) link)
     (packetBound : (postChecks r link e1706).all OctetBounds.certifies = true) :
     FiringPreserves model r (some 2) :=
   certify r link e1328 (fixedText e807) guard
