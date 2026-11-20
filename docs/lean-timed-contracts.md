@@ -334,7 +334,15 @@ positive delay. A continuing send retains the already active timer.
 Send and retransmit share the queue proof, with Lean checking each
 original rule's generated queue obligations.
 
-The combined preservation catalog covers 155 distinct raw firings out of
+The eight close and abort firings that enter CLOSED without emitting a
+reset share the same ordered timer and queue effects. The proof checks
+that cancelling the three TCP timers meets the CLOSED-state conditions.
+The prior phase implies that the TCP data buffers are already empty.
+The queue proof checks both outcomes of the original ownership guard:
+the TCP-owned packet is cleared along with its owner, while a queue
+with any other owner retains its contents and metadata.
+
+The combined preservation catalog covers 163 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 180 firings still need preservation
+the full model separately. The other 172 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.
