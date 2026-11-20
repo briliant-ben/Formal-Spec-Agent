@@ -71,6 +71,11 @@ theorem octet_lower_bound (ctx : Context) :
     2 ≤ (TypedIR.eval framed ctx).length :=
   OctetBounds.lower_sound (.concat (.pack16 (.field .integer 0)) fourOctets) ctx
 
+theorem octet_minimum_count_bound (ctx : Context) :
+    TypedIR.eval (.intLe (.bytesLength (.slice (.variable .octets 0) (.field .integer 0)
+      (.minimum (.field .integer 1) (.literal .integer 4)))) (.literal .integer 4)) ctx = true :=
+  OctetBounds.certifies_sound _ ctx (by decide +kernel)
+
 theorem octet_bound_rejects_insufficient_information :
     OctetBounds.certifies (.intLe (.bytesLength fourOctets) (.literal .integer 3)) = false ∧
     OctetBounds.certifies (.intLe (.bytesLength (.variable .octets 0)) (.literal .integer 1500)) = false ∧
@@ -79,6 +84,7 @@ theorem octet_bound_rejects_insufficient_information :
 
 #print axioms octet_bound_sound
 #print axioms octet_lower_bound
+#print axioms octet_minimum_count_bound
 #print axioms octet_bound_rejects_insufficient_information
 #print axioms footprint_separates_reads
 #print axioms ordered_firing

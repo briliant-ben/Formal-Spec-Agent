@@ -2,6 +2,7 @@ import Approved
 import EffectConditions
 import GuardedSuffix
 import SequenceFacts
+import OctetFacts
 
 namespace TCPIPAcknowledgments
 open Approved FormalSpecAgent TypedIR TypedMachine TypedContracts TypedFiringContracts
@@ -44,19 +45,10 @@ private abbrev estimate (s : Snapshot) (f : Values) := TypedMachine.eval s f e12
 private abbrev outstanding (s : Snapshot) (f : Values) := TypedMachine.eval s f e929
 private abbrev leftLength (s : Snapshot) (f : Values) := Int.ofNat (TypedMachine.eval s f e1283).length
 
-private theorem clipped_length (data : Bytes) (n : Int) (lo : 0 ≤ n) (hi : n ≤ (data.length : Int)) :
-    ((byteSlice data n data.length).length : Int) = (data.length : Int) - n := by
-  unfold byteSlice
-  rw [List.length_take, List.length_drop]
-  simp only [Int.toNat_natCast]
-  have less : data.length - n.toNat ≤ data.length := Nat.sub_le ..
-  rw [Nat.min_eq_right less]
-  omega
-
 private theorem projectedLength (s : Snapshot) (f : Values)
     (lower : 1 ≤ estimate s f) (upper : estimate s f ≤ outstanding s f) :
     leftLength s f = outstanding s f - estimate s f :=
-  clipped_length (TypedMachine.eval s f e928) (estimate s f)
+  OctetFacts.suffix_length (TypedMachine.eval s f e928) (estimate s f)
     (Int.le_trans (by decide : (0 : Int) ≤ 1) lower) upper
 
 private theorem prefix_trims_sequence (s : Snapshot) (f : Values)

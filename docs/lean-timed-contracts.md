@@ -324,7 +324,17 @@ derives length bounds from actual packet expressions using concatenation,
 slicing and fixed-width packing. These proofs quantify over all byte
 values, including inputs to checksum expressions.
 
-The combined preservation catalog covers 149 distinct raw firings out of
+The six TCP data transmit firings cover first and continuing sends in
+all three ARP phases. The original send count is capped by the queued
+bytes, available window and four-byte segment limit. The proof splits
+the send buffer at that count, checks the new retransmit-buffer length
+against the window, and relates the updated send sequence to the new
+buffer length across wraparound. The first send arms the timer with a
+positive delay. A continuing send retains the already active timer.
+Send and retransmit share the queue proof, with Lean checking each
+original rule's generated queue obligations.
+
+The combined preservation catalog covers 155 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 186 firings still need preservation
+the full model separately. The other 180 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.

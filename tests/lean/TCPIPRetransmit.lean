@@ -2,20 +2,15 @@ import Approved
 import EffectConditions
 import GuardedSuffix
 import OctetBounds
+import TCPIPSendWire
 
 namespace TCPIPRetransmit
 open Approved FormalSpecAgent TypedMachine TypedIR TypedFiringContracts
-open EffectConditions EffectFootprint GuardedSuffix TimedObligations
+open EffectConditions EffectFootprint GuardedSuffix TimedObligations TCPIPSendWire
 set_option maxRecDepth 16384
-
-private inductive LinkPhase where
-  | empty | pending | resolved
 
 private def rule : LinkPhase → Rule
   | .empty => rule_258 | .pending => rule_259 | .resolved => rule_260
-
-private def linkGuard : LinkPhase → Expr .boolean
-  | .empty => e16 | .pending => e35 | .resolved => e38
 
 private def prefixActions (r : Rule) := r.actions.dropLast
 private def cut (r : Rule) : Rule := {r with actions := prefixActions r}
@@ -33,23 +28,6 @@ private def delays : LinkPhase → List (Expr .boolean)
 private def tcpClauses : List (Expr .boolean) :=
   [e1631, e1638, e1642, e1646, e1651, e1654, e1657, e1660, e1663, e1666,
    e1680, e1681, e1687]
-
-private def linkClauses : LinkPhase → List (Expr .boolean)
-  | .empty => [e1594, e1597, e1601, e1604, e1612, e1614, e1615, e1628, e1721]
-  | .pending => [e1612, e1614, e1615, e1721]
-  | .resolved => []
-
-private def affected : LinkPhase → List (Expr .boolean)
-  | .empty => [e1594, e1597, e1601, e1604, e1612, e1614, e1615, e1628] ++
-      tcpClauses ++ [e1706, e1721]
-  | .pending => [e1612, e1614, e1615] ++ tcpClauses ++ [e1706, e1721]
-  | .resolved => tcpClauses ++ [e1706]
-
-private theorem partition (phase : LinkPhase) (inv : Expr .boolean)
-    (member : inv ∈ affected phase) :
-    inv ∈ tcpClauses ∨ inv ∈ linkClauses phase ∨ inv = e1706 := by
-  cases phase <;> simpa only [affected, linkClauses, List.mem_append, List.mem_cons,
-    List.not_mem_nil, or_false, false_or, or_assoc, or_left_comm, or_comm] using member
 
 private def reads : ExprRewrite.Rewrite :=
   { varRead := fun kind slot =>
@@ -164,86 +142,15 @@ private theorem packet_bound (s : Snapshot) (f : Values) (phase : LinkPhase) :
   apply OctetBounds.all_sound (postChecks phase e1706) (context s f)
   cases phase <;> decide +kernel
 
-set_option maxHeartbeats 1300000 in
-private theorem queue_bound (s : Snapshot) (f : Values) :
-    Post s f .empty e1612 ∧ Post s f .pending e1612 := by
-  constructor
-  · exact OctetBounds.all_sound (postChecks .empty e1612) (context s f) (by decide +kernel)
-  · exact OctetBounds.all_sound (postChecks .pending e1612) (context s f) (by decide +kernel)
-
 private def queuePacket : Expr .octets :=
   match postChecks .pending e1612 with
   | [.intLe (.bytesLength packet) _] => packet
   | _ => .literal .octets []
 
-private theorem queue_nonempty (s : Snapshot) (f : Values) :
-    28 ≤ Int.ofNat (TypedMachine.eval s f queuePacket).length := by
-  have lower : 28 ≤ OctetBounds.lower queuePacket := by decide +kernel
-  exact Int.ofNat_le.mpr (Nat.le_trans lower (OctetBounds.lower_sound queuePacket (context s f)))
+private theorem queue_bound :
+    OctetBounds.certifies (.intLe (.bytesLength queuePacket) e244) = true := by decide +kernel
 
-private theorem queue_state (s : Snapshot) (f : Values)
-    (pending : TypedMachine.eval s f e35 = true) : Post s f .pending e1614 := by
-  have shape : postChecks .pending e1614 = [.implies (.intGe (.bytesLength queuePacket) e44) e35] := rfl
-  unfold Post
-  rw [shape]
-  change ((!decide (1 ≤ Int.ofNat (TypedMachine.eval s f queuePacket).length) ||
-    TypedMachine.eval s f e35) && true) = true
-  simp [pending]
-
-private theorem new_queue_state (s : Snapshot) (f : Values) : Post s f .empty e1614 := by
-  have shape : postChecks .empty e1614 = [.implies (.intGe (.bytesLength queuePacket) e44)
-      (.equal .text e34 e34)] := rfl
-  unfold Post
-  rw [shape]
-  change ((!decide (1 ≤ Int.ofNat (TypedMachine.eval s f queuePacket).length) || true) && true) = true
-  simp
-
-private theorem opened_queue (s : Snapshot) (f : Values) :
-    Post s f .empty e1615 ∧ Post s f .pending e1615 := by
-  let queueCheck : Expr .boolean :=
-    .boolOr (.equal .integer (.bytesLength queuePacket) e1) (.intGe (.bytesLength queuePacket) e89)
-  have content : holds [queueCheck] s f = true := by
-    change ((decide (Int.ofNat (TypedMachine.eval s f queuePacket).length = 0) ||
-      decide (28 ≤ Int.ofNat (TypedMachine.eval s f queuePacket).length)) && true) = true
-    rw [decide_eq_true (queue_nonempty s f)]
-    simp
-  have empty : postChecks .empty e1615 = [queueCheck] := rfl
-  have pending : postChecks .pending e1615 = [queueCheck] := rfl
-  constructor <;> unfold Post
-  · rw [empty]; exact content
-  · rw [pending]; exact content
-
-private theorem queue_owner (s : Snapshot) (f : Values) :
-    Post s f .empty e1721 ∧ Post s f .pending e1721 := by
-  let size := Int.ofNat (TypedMachine.eval s f queuePacket).length
-  have enough : 28 ≤ size := queue_nonempty s f
-  have nonzero : size ≠ 0 := by omega
-  let noneOwner := Expr.equal .text e208 e5
-  let ownerCases := Expr.boolOr (.equal .text e208 e181) (.equal .text e208 e208)
-  let check := Expr.boolAnd (.boolOr noneOwner ownerCases)
-    (.equal .boolean noneOwner (.equal .integer (.bytesLength queuePacket) e1))
-  have checked : holds [check] s f = true := by
-    change ((true && decide (false = decide (size = 0))) && true) = true
-    simp [nonzero]
-  have empty : postChecks .empty e1721 = [check] := rfl
-  have pending : postChecks .pending e1721 = [check] := rfl
-  constructor <;> unfold Post
-  · rw [empty]; exact checked
-  · rw [pending]; exact checked
-
-private theorem cache (s : Snapshot) (f : Values)
-    (empty : TypedMachine.eval s f e16 = true)
-    (valid : invariantsHold model s = true) : Post s f .empty e1597 := by
-  have before := invariant s e1594 (by rw [model_invariants]; simp) valid
-  have phase : TypedMachine.eval s zeroValues e16 = true := empty
-  change (!TypedMachine.eval s zeroValues e16 ||
-    ((TypedMachine.eval s zeroValues e1587 && TypedMachine.eval s zeroValues e1589) &&
-      TypedMachine.eval s zeroValues e1592)) = true at before
-  simp only [phase, Bool.not_true, Bool.false_or, Bool.and_eq_true] at before
-  have mac : TypedMachine.eval s f e1587 = true := before.1.1
-  have noExpiry : TypedMachine.eval s f e1592 = true := before.2
-  change (((TypedMachine.eval s f e1587 && true) && TypedMachine.eval s f e1592) && true) = true
-  simp [mac, noExpiry]
+private theorem queue_minimum : 28 ≤ OctetBounds.lower queuePacket := by decide +kernel
 
 set_option maxHeartbeats 1800000 in
 private theorem link_checks (s : Snapshot) (f : Values) (phase : LinkPhase)
@@ -251,8 +158,20 @@ private theorem link_checks (s : Snapshot) (f : Values) (phase : LinkPhase)
     (valid : invariantsHold model s = true) :
     Each (Post s f phase) (linkClauses phase) := by
   cases phase
-  · exact ⟨rfl, cache s f enabled valid, rfl, rfl, (queue_bound s f).1, new_queue_state s f, (opened_queue s f).1, rfl, (queue_owner s f).1, trivial⟩
-  · exact ⟨(queue_bound s f).2, queue_state s f enabled, (opened_queue s f).2, (queue_owner s f).2, trivial⟩
+  · have aligned : queueClauses.map (postChecks .empty) =
+        (queueChecks queuePacket (.equal .text e34 e34)).map (fun e => [e]) := by
+      rfl
+    have queued := queue_from_post s f _ _ _ aligned queue_bound queue_minimum rfl
+    obtain ⟨mac, noExpiry⟩ := pending_cache_requirements s f enabled valid
+    have cache : Post s f .empty e1597 := by
+      change (((TypedMachine.eval s f e1587 && true) && TypedMachine.eval s f e1592) && true) = true
+      simp [mac, noExpiry]
+    exact ⟨rfl, cache, rfl, rfl, queued.1, queued.2.1, queued.2.2.1, rfl,
+      queued.2.2.2.1, trivial⟩
+  · have aligned : queueClauses.map (postChecks .pending) =
+        (queueChecks queuePacket e35).map (fun e => [e]) := by
+      rfl
+    exact queue_from_post s f _ _ _ aligned queue_bound queue_minimum enabled
   · trivial
 
 private theorem certify (phase : LinkPhase)
@@ -260,7 +179,7 @@ private theorem certify (phase : LinkPhase)
     (actions : (rule phase).actions = prefixActions (rule phase) ++ [.assign .text 56 e807])
     (untouched : (prefixActions (rule phase)).all (ignoresAction (.variable .text 56)) = true)
     (catalog : model.invariants.filter (fun inv => !ignoresFiring inv (cut (rule phase)) (some 2)) =
-      affected phase)
+      affected tcpClauses phase)
     (timing : obligationsFor (cut (rule phase)) (some 2) [] = delays phase)
     (alignment : tcpClauses.map (postChecks phase) =
       tcpClauses.map (fun inv => [ExprRewrite.run reads inv])) :
@@ -281,11 +200,11 @@ private theorem certify (phase : LinkPhase)
     have time := positive_delays s f phase facts
     refine ⟨timing ▸ time, ?_⟩
     intro inv member seen
-    have included : inv ∈ affected phase := by
+    have included : inv ∈ affected tcpClauses phase := by
       rw [← catalog]
       exact List.mem_filter.mpr ⟨member, by simp [seen]⟩
     have post : Post s f phase inv := by
-      rcases partition phase inv included with tcpMember | linkMember | rfl
+      rcases partition phase tcpClauses inv included with tcpMember | linkMember | rfl
       · exact tcp_checks s f phase alignment established flight facts inv tcpMember
       · exact (link_checks s f phase link valid).of_mem linkMember
       · exact packet_bound s f phase

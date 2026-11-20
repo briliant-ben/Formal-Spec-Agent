@@ -12,15 +12,45 @@ private theorem count_sound (count : Expr .integer) (ctx : Context) (n : Nat)
   cases count <;> simp [constantCount, eval] at found ⊢
   exact found
 
+private def countUpper (expr : Expr kind) : Option Nat :=
+  match expr with
+  | .literal .integer n => some n.toNat
+  | .minimum left right => (countUpper left).orElse fun _ => countUpper right
+  | _ => none
+termination_by structural expr
+
+private theorem countUpper_sound (expr : Expr .integer) (ctx : Context) (n : Nat)
+    (bound : countUpper expr = some n) : (eval expr ctx).toNat ≤ n := by
+  match expr with
+  | .literal _ value =>
+    have same : value.toNat = n := by simpa [countUpper] using bound
+    exact Nat.le_of_eq same
+  | .minimum left right =>
+    cases leftBound : countUpper left with
+    | some size =>
+      have sizeEq : size = n := by simpa [countUpper, leftBound] using bound
+      change (min (eval left ctx) (eval right ctx)).toNat ≤ n
+      exact Nat.le_trans (Int.toNat_le_toNat (Int.min_le_left ..))
+        (countUpper_sound left ctx n (sizeEq ▸ leftBound))
+    | none =>
+      have rightBound : countUpper right = some n := by simpa [countUpper, leftBound] using bound
+      change (min (eval left ctx) (eval right ctx)).toNat ≤ n
+      exact Nat.le_trans (Int.toNat_le_toNat (Int.min_le_right ..))
+        (countUpper_sound right ctx n rightBound)
+  | .variable .. | .field .. | .choose .. | .add .. | .mul .. | .sub .. |
+    .seqDistance .. | .bytesLength .. | .byteAt .. | .checksum .. =>
+    simp [countUpper] at bound
+termination_by sizeOf expr
+
 /-- Static upper bounds on octet count. A variable or field may have any
-length. A slice with constant count is bounded even when its inputs vary. -/
+length. A literal or a minimum with a known bound can limit a slice. -/
 def upper (expr : Expr kind) : Option Nat :=
   match expr with
   | .literal .octets bytes => some bytes.length
   | .concat left right => return (← upper left) + (← upper right)
   | .choose .octets _ yes no => return max (← upper yes) (← upper no)
   | .slice bytes _ count =>
-    match constantCount count with
+    match countUpper count with
     | some n => some n
     | none => upper bytes
   | .pack8 _ => some 1
@@ -67,11 +97,11 @@ theorem sound (expr : Expr .octets) (ctx : Context) (limit : Nat)
   | .slice data offset count =>
     change (byteSlice (eval data ctx) (eval offset ctx) (eval count ctx)).length ≤ limit
     rw [byteSlice, List.length_take]
-    cases known : constantCount count with
+    cases known : countUpper count with
     | some n =>
       have limitEq : n = limit := by simpa [upper, known] using checked
-      rw [count_sound count ctx n known, limitEq]
-      exact Nat.min_le_left ..
+      rw [← limitEq]
+      exact Nat.le_trans (Nat.min_le_left ..) (countUpper_sound count ctx n known)
     | none =>
       have bound : upper data = some limit := by simpa [upper, known] using checked
       rw [List.length_drop]
