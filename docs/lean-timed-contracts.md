@@ -368,7 +368,14 @@ guards for the received resets. In the ESTABLISHED cases, the proof
 checks all three buffer clears, the reset of the local receive window
 and the existing nonnegative peer-window bound.
 
-The combined preservation catalog covers 244 distinct raw firings out of
+Twenty more firings cover aborts that send a reset across the three
+ARP phases, passive open and passive reset into LISTEN, and reset
+inputs ignored in CLOSED. The abort proofs check both immediate
+transmission with queue release and the path that queues the reset
+until ARP resolves. The passive paths use the actual prior-phase
+guard to establish that the data buffers are empty.
+
+The combined preservation catalog covers 264 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 91 firings still need preservation
+the full model separately. The other 71 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.

@@ -1,7 +1,9 @@
 import TCPIPQueueRelease
+import TCPIPSendWire
+import GuardedSuffix
 namespace TCPIPClosedTransitions
 open Approved FormalSpecAgent TypedMachine TypedIR TypedFiringContracts
-open EffectConditions EffectFootprint TimedObligations
+open EffectConditions EffectFootprint TimedObligations TCPIPSendWire GuardedSuffix
 set_option maxRecDepth 16384
 
 private def phaseClauses : List (Expr .boolean) :=
@@ -259,25 +261,285 @@ theorem close_216 : Approved.raw_216_external :=
     (preserve_empty rule_216 none (fixedText e966) (some e1129) rfl (by decide) rfl)
     (by intro impossible; cases impossible)
 
+private def resetDelays : LinkPhase → List (Expr .boolean)
+  | .empty => [.intGe e10 e44]
+  | _ => []
+
+private def resetPost (r : Rule) (phase : LinkPhase) (inv : Expr .boolean) : List (Expr .boolean) :=
+  (obligationsFor r none [inv]).drop (resetDelays phase).length
+
+private def newLinkClauses : LinkPhase → List (Expr .boolean)
+  | .empty => [e1594, e1597, e1601, e1604, e1628]
+  | _ => []
+
+private def resetAffected (clear : Bool) (phase : LinkPhase) : List (Expr .boolean) :=
+  (match phase with | .empty => [e1594, e1597, e1601, e1604] | _ => []) ++
+    [e1612, e1614, e1615] ++ (match phase with | .empty => [e1628] | _ => []) ++
+    phaseClauses ++ (if clear then [e1691, e1692] else []) ++
+    [e1698] ++ (if clear then [e1699] else []) ++ [e1704] ++
+    (if clear then [e1705] else []) ++ [e1706, e1716, e1721]
+
+private theorem resetClassify (clear : Bool) (phase : LinkPhase) (inv : Expr .boolean)
+    (included : inv ∈ resetAffected clear phase) :
+    inv ∈ affected clear ∨ inv ∈ newLinkClauses phase ∨ inv = e1706 := by
+  cases clear <;> cases phase <;> simpa only [resetAffected, affected, newLinkClauses,
+    Bool.false_eq_true, ite_false, ite_true, List.mem_append, List.mem_cons,
+    List.not_mem_nil, or_false, false_or, or_assoc, or_left_comm, or_comm] using included
+
+private theorem resetQueue (r : Rule) (phase : LinkPhase) (s : Snapshot) (f : Values)
+    (valid : invariantsHold model s = true) (enabled : TypedMachine.eval s f (linkGuard phase) = true)
+    (ready : linkCondition (resetPost r phase) phase)
+    (release : phase = .resolved → TCPIPQueueRelease.queueClauses.map (resetPost r phase) =
+      TCPIPQueueRelease.queueClauses.map (fun inv => [ExprRewrite.run TCPIPQueueRelease.releaseReads inv]))
+    (inv : Expr .boolean) (member : inv ∈ TCPIPQueueRelease.queueClauses) :
+    holds (resetPost r phase inv) s f = true := by
+  cases phase
+  · apply (link_checks s f _ .empty ready enabled valid).of_mem
+    simp only [TCPIPQueueRelease.queueClauses, linkClauses, List.mem_cons, List.not_mem_nil,
+      or_false] at member ⊢
+    rcases member with a | a | a | a <;> simp [a]
+  · exact (link_checks s f _ .pending ready enabled valid).of_mem member
+  · rw [List.map_inj_left.mp (release rfl) inv member]
+    change (TypedMachine.eval s f (ExprRewrite.run TCPIPQueueRelease.releaseReads inv) && true) = true
+    simp [(TCPIPQueueRelease.release_queue_safe s f valid).of_mem member]
+
+private theorem resetLink (r : Rule) (phase : LinkPhase) (s : Snapshot) (f : Values)
+    (valid : invariantsHold model s = true) (enabled : TypedMachine.eval s f (linkGuard phase) = true)
+    (ready : linkCondition (resetPost r phase) phase) (inv : Expr .boolean)
+    (member : inv ∈ newLinkClauses phase) : holds (resetPost r phase inv) s f = true := by
+  cases phase
+  · apply (link_checks s f _ .empty ready enabled valid).of_mem
+    simp only [newLinkClauses, linkClauses, List.mem_cons, List.not_mem_nil, or_false] at member ⊢
+    rcases member with a | a | a | a | a <;> simp [a]
+  · exact False.elim (List.not_mem_nil member)
+  · exact False.elim (List.not_mem_nil member)
+
+private theorem abort_checked (r : Rule) (phase : LinkPhase) (start : String) (clear : Bool)
+    (guard : r.guard = .boolAnd (controlGuard start none) (linkGuard phase))
+    (timing : obligationsFor r none [] = resetDelays phase)
+    (catalog : model.invariants.filter (fun inv => !ignoresFiring inv r none) = resetAffected clear phase)
+    (statics : ∀ s f, (staticClauses clear).all (fun inv => holds (resetPost r phase inv) s f) = true)
+    (ready : linkCondition (resetPost r phase) phase)
+    (release : phase = .resolved → TCPIPQueueRelease.queueClauses.map (resetPost r phase) =
+      TCPIPQueueRelease.queueClauses.map (fun inv => [ExprRewrite.run TCPIPQueueRelease.releaseReads inv]))
+    (packet : (resetPost r phase e1706).all OctetBounds.certifies = true)
+    (buffer : ∀ s f, invariantsHold model s = true → TypedMachine.eval s f (controlGuard start none) = true →
+      holds (resetPost r phase e1698) s f = true)
+    (window : clear = true → resetPost r phase e1705 = [.intLe (.bytesLength e0) e1221]) :
+    FiringPreserves model r none := by
+  apply preserves_touched
+  intro s f valid _ enabled
+  rw [guard] at enabled
+  change (TypedMachine.eval s f (controlGuard start none) && TypedMachine.eval s f (linkGuard phase)) = true at enabled
+  simp only [Bool.and_eq_true] at enabled
+  have positive : holds (resetDelays phase) s f = true := by cases phase <;> rfl
+  refine ⟨timing ▸ positive, ?_⟩
+  intro inv member seen
+  have checked : holds (resetPost r phase inv) s f = true := by
+    have includes : inv ∈ resetAffected clear phase := by
+      rw [← catalog]
+      exact List.mem_filter.mpr ⟨member, by simp [seen]⟩
+    rcases resetClassify clear phase inv includes with base | ether | rfl
+    · rcases classify clear inv base with queue | static | rfl | ⟨cleared, rfl⟩
+      · exact resetQueue r phase s f valid enabled.2 ready release inv queue
+      · exact List.all_eq_true.mp (statics s f) _ static
+      · exact buffer s f valid enabled.1
+      · rw [window cleared]
+        have previous : TypedMachine.eval s f e929 ≤ TypedMachine.eval s f e1221 :=
+          of_decide_eq_true (List.all_eq_true.mp valid e1705 (by rw [model_invariants]; simp))
+        have nonneg : 0 ≤ TypedMachine.eval s f e929 := Int.natCast_nonneg _
+        change (decide (0 ≤ TypedMachine.eval s f e1221) && true) = true
+        rw [decide_eq_true (Int.le_trans nonneg previous)]
+        rfl
+    · exact resetLink r phase s f valid enabled.2 ready inv ether
+    · exact OctetBounds.all_sound _ (context s f) packet
+  rw [obligationsFor_split, timing, holds, List.all_append]
+  change (holds (resetDelays phase) s f && holds (resetPost r phase inv) s f) = true
+  simp [positive, checked]
+
+private theorem reset_buffer_empty (r : Rule) (phase : LinkPhase) (start : String)
+    (different : start ≠ fixedText e807)
+    (shape : resetPost r phase e1698 = [.implies (.boolNot (.equal .text e14 e807)) e935])
+    (s : Snapshot) (f : Values) (valid : invariantsHold model s = true)
+    (enabled : TypedMachine.eval s f (controlGuard start none) = true) :
+    holds (resetPost r phase e1698) s f = true := by
+  rw [shape]
+  change (TypedMachine.eval s f e935 && true) = true
+  simp [empty_before s f start none different enabled valid]
+
+theorem close_175 : Approved.raw_175_external :=
+  abort_checked rule_175 .empty (fixedText e740) false rfl rfl rfl (fun _ _ => rfl)
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+    (reset_buffer_empty rule_175 .empty (fixedText e740) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_176 : Approved.raw_176_external :=
+  abort_checked rule_176 .pending (fixedText e740) false rfl rfl rfl (fun _ _ => rfl)
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+    (reset_buffer_empty rule_176 .pending (fixedText e740) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_177 : Approved.raw_177_external :=
+  abort_checked rule_177 .resolved (fixedText e740) false rfl rfl rfl (fun _ _ => rfl)
+    trivial (fun _ => rfl) (by decide +kernel)
+    (reset_buffer_empty rule_177 .resolved (fixedText e740) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_178 : Approved.raw_178_external :=
+  abort_checked rule_178 .empty (fixedText e807) true rfl rfl rfl (fun _ _ => rfl)
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+    (fun _ _ _ _ => rfl) (fun _ => rfl)
+
+theorem close_179 : Approved.raw_179_external :=
+  abort_checked rule_179 .pending (fixedText e807) true rfl rfl rfl (fun _ _ => rfl)
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+    (fun _ _ _ _ => rfl) (fun _ => rfl)
+
+theorem close_180 : Approved.raw_180_external :=
+  abort_checked rule_180 .resolved (fixedText e807) true rfl rfl rfl (fun _ _ => rfl)
+    trivial (fun _ => rfl) (by decide +kernel)
+    (fun _ _ _ _ => rfl) (fun _ => rfl)
+
+theorem close_181 : Approved.raw_181_external :=
+  abort_checked rule_181 .empty (fixedText e940) false rfl rfl rfl (fun _ _ => rfl)
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+    (reset_buffer_empty rule_181 .empty (fixedText e940) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_182 : Approved.raw_182_external :=
+  abort_checked rule_182 .pending (fixedText e940) false rfl rfl rfl (fun _ _ => rfl)
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+    (reset_buffer_empty rule_182 .pending (fixedText e940) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_183 : Approved.raw_183_external :=
+  abort_checked rule_183 .resolved (fixedText e940) false rfl rfl rfl (fun _ _ => rfl)
+    trivial (fun _ => rfl) (by decide +kernel)
+    (reset_buffer_empty rule_183 .resolved (fixedText e940) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_184 : Approved.raw_184_external :=
+  abort_checked rule_184 .empty (fixedText e958) false rfl rfl rfl (fun _ _ => rfl)
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+    (reset_buffer_empty rule_184 .empty (fixedText e958) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_185 : Approved.raw_185_external :=
+  abort_checked rule_185 .pending (fixedText e958) false rfl rfl rfl (fun _ _ => rfl)
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+    (reset_buffer_empty rule_185 .pending (fixedText e958) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_186 : Approved.raw_186_external :=
+  abort_checked rule_186 .resolved (fixedText e958) false rfl rfl rfl (fun _ _ => rfl)
+    trivial (fun _ => rfl) (by decide +kernel)
+    (reset_buffer_empty rule_186 .resolved (fixedText e958) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_187 : Approved.raw_187_external :=
+  abort_checked rule_187 .empty (fixedText e943) false rfl rfl rfl (fun _ _ => rfl)
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+    (reset_buffer_empty rule_187 .empty (fixedText e943) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_188 : Approved.raw_188_external :=
+  abort_checked rule_188 .pending (fixedText e943) false rfl rfl rfl (fun _ _ => rfl)
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+    (reset_buffer_empty rule_188 .pending (fixedText e943) (by decide) rfl) (by intro impossible; cases impossible)
+
+theorem close_189 : Approved.raw_189_external :=
+  abort_checked rule_189 .resolved (fixedText e943) false rfl rfl rfl (fun _ _ => rfl)
+    trivial (fun _ => rfl) (by decide +kernel)
+    (reset_buffer_empty rule_189 .resolved (fixedText e943) (by decide) rfl) (by intro impossible; cases impossible)
+
+private theorem enter_listen (r : Rule) (start : String) (frameFilter : Option (Expr .boolean))
+    (guard : r.guard = controlGuard start frameFilter)
+    (different : start ≠ fixedText e807)
+    (total : obligationsFor r none [] = [])
+    (catalog : model.invariants.filter (fun inv => !ignoresFiring inv r none) =
+      phaseClauses ++ [e1698, e1704, e1716])
+    (statics : ∀ s f, (staticClauses false).all (fun inv => holds (obligationsFor r none [inv]) s f) = true)
+    (buffer : obligationsFor r none [e1698] = [.implies (.boolNot (.equal .text e579 e807)) e935]) :
+    FiringPreserves model r none := by
+  apply preserves_touched
+  intro s f valid _ enabled
+  refine ⟨total.symm ▸ rfl, ?_⟩
+  intro inv member seen
+  have included : inv ∈ phaseClauses ++ [e1698, e1704, e1716] := by
+    rw [← catalog]
+    exact List.mem_filter.mpr ⟨member, by simp [seen]⟩
+  have relevant : inv ∈ staticClauses false ∨ inv = e1698 := by
+    simpa only [staticClauses, Bool.false_eq_true, ite_false, List.append_nil, List.mem_append,
+      List.mem_cons, List.not_mem_nil, or_false, or_assoc, or_left_comm, or_comm] using included
+  rcases relevant with static | rfl
+  · exact List.all_eq_true.mp (statics s f) _ static
+  · rw [guard] at enabled
+    rw [buffer]
+    change (TypedMachine.eval s f e935 && true) = true
+    simp [empty_before s f start frameFilter different enabled valid]
+
+theorem open_passive : Approved.raw_67_external :=
+  enter_listen rule_67 (fixedText e14) none rfl (by decide) rfl rfl (fun _ _ => rfl) rfl
+
+theorem reset_passive : Approved.raw_196_external :=
+  enter_listen rule_196 (fixedText e740) (some e1088) rfl (by decide) rfl rfl (fun _ _ => rfl) rfl
+
+theorem reset_ack_passive : Approved.raw_208_external :=
+  enter_listen rule_208 (fixedText e740) (some e1123) rfl (by decide) rfl rfl (fun _ _ => rfl) rfl
+
+private def beforeControl (r : Rule) : Rule := {r with actions := r.actions.dropLast}
+
+private theorem ignored_reset (r : Rule) (select : Expr .boolean)
+    (guard : r.guard = controlGuard (fixedText e14) (some select))
+    (actions : r.actions = r.actions.dropLast ++ [.assign .text 56 e14])
+    (untouched : r.actions.dropLast.all (ignoresAction (.variable .text 56)) = true)
+    (total : obligationsFor (beforeControl r) none [] = [])
+    (catalog : model.invariants.filter (fun inv => !ignoresFiring inv (beforeControl r) none) =
+      TCPIPQueueRelease.queueClauses)
+    (bind : TCPIPQueueRelease.queueClauses.map (fun inv => obligationsFor (beforeControl r) none [inv]) =
+      TCPIPQueueRelease.queueClauses.map (fun inv => [ExprRewrite.run TCPIPQueueRelease.releaseReads inv])) :
+    FiringPreserves model r none := by
+  apply preserves_after_removing_text model r none r.actions.dropLast 56 (fixedText e14) actions untouched
+  · intro s f enabled
+    rw [guard] at enabled
+    change ((decide (TypedMachine.eval s f e488 = fixedText e14) && TypedMachine.eval s f select) &&
+      TypedMachine.eval s f e721) = true at enabled
+    simp only [Bool.and_eq_true] at enabled
+    exact of_decide_eq_true enabled.1.1
+  · change FiringPreserves model (beforeControl r) none
+    apply preserves_touched
+    intro s f valid _ _
+    refine ⟨total.symm ▸ rfl, ?_⟩
+    intro inv member seen
+    have queue : inv ∈ TCPIPQueueRelease.queueClauses := by
+      rw [← catalog]
+      exact List.mem_filter.mpr ⟨member, by simp [seen]⟩
+    rw [List.map_inj_left.mp bind inv queue]
+    change (TypedMachine.eval s f (ExprRewrite.run TCPIPQueueRelease.releaseReads inv) && true) = true
+    simp [(TCPIPQueueRelease.release_queue_safe s f valid).of_mem queue]
+
+theorem ignore_reset_closed : Approved.raw_193_external :=
+  ignored_reset rule_193 e1078 rfl rfl (by decide +kernel) rfl rfl rfl
+
+theorem ignore_reset_ack_closed : Approved.raw_205_external :=
+  ignored_reset rule_205 e1115 rfl rfl (by decide +kernel) rfl rfl rfl
+
 def firings : List (Rule × Option Nat) :=
-  [(rule_111, none), (rule_112, none), (rule_165, some 4),
-   (rule_166, some 4), (rule_167, some 4), (rule_168, some 4),
-   (rule_169, some 4), (rule_170, some 4), (rule_171, some 3),
-   (rule_172, none), (rule_173, none), (rule_174, none),
-   (rule_190, none), (rule_191, none), (rule_192, none),
-   (rule_197, none), (rule_198, none), (rule_199, none),
-   (rule_200, none), (rule_201, none), (rule_202, none),
-   (rule_203, none), (rule_204, none), (rule_207, none),
-   (rule_209, none), (rule_210, none), (rule_211, none),
-   (rule_212, none), (rule_213, none), (rule_214, none),
-   (rule_215, none), (rule_216, none)]
+  [(rule_67, none), (rule_111, none), (rule_112, none), (rule_165, some 4),
+   (rule_166, some 4), (rule_167, some 4), (rule_168, some 4), (rule_169, some 4),
+   (rule_170, some 4), (rule_171, some 3), (rule_172, none), (rule_173, none),
+   (rule_174, none), (rule_175, none), (rule_176, none), (rule_177, none),
+   (rule_178, none), (rule_179, none), (rule_180, none), (rule_181, none),
+   (rule_182, none), (rule_183, none), (rule_184, none), (rule_185, none),
+   (rule_186, none), (rule_187, none), (rule_188, none), (rule_189, none),
+   (rule_190, none), (rule_191, none), (rule_192, none), (rule_193, none),
+   (rule_196, none), (rule_197, none), (rule_198, none), (rule_199, none),
+   (rule_200, none), (rule_201, none), (rule_202, none), (rule_203, none),
+   (rule_204, none), (rule_205, none), (rule_207, none), (rule_208, none),
+   (rule_209, none), (rule_210, none), (rule_211, none), (rule_212, none),
+   (rule_213, none), (rule_214, none), (rule_215, none), (rule_216, none)]
 
 theorem checked : Each (fun p => FiringPreserves model p.1 p.2) firings :=
-  ⟨close_111, close_112, close_165, close_166, close_167, close_168,
-   close_169, close_170, close_171, close_172, close_173, close_174,
-   close_190, close_191, close_192, close_197, close_198, close_199,
-   close_200, close_201, close_202, close_203, close_204, close_207,
-   close_209, close_210, close_211, close_212, close_213, close_214,
+  ⟨open_passive, close_111, close_112, close_165, close_166,
+   close_167, close_168, close_169, close_170, close_171,
+   close_172, close_173, close_174, close_175, close_176,
+   close_177, close_178, close_179, close_180, close_181,
+   close_182, close_183, close_184, close_185, close_186,
+   close_187, close_188, close_189, close_190, close_191,
+   close_192, ignore_reset_closed, reset_passive, close_197, close_198,
+   close_199, close_200, close_201, close_202, close_203,
+   close_204, ignore_reset_ack_closed, close_207, reset_ack_passive, close_209,
+   close_210, close_211, close_212, close_213, close_214,
    close_215, close_216, trivial⟩
 
 private theorem externalMember (index : Nat) (r : Rule)
@@ -291,18 +553,28 @@ private theorem timerMember (index : Nat) (r : Rule) (timer : Nat)
   raw_timer_member model declaredTimers r timer (List.mem_iff_getElem?.mpr ⟨index, selected⟩) declared trigger
 
 theorem members : Each (fun p => p ∈ rawChecks model declaredTimers) firings :=
-  ⟨externalMember 111 rule_111 rfl (by decide), externalMember 112 rule_112 rfl (by decide),
-   timerMember 165 rule_165 4 rfl (by decide) rfl, timerMember 166 rule_166 4 rfl (by decide) rfl,
-   timerMember 167 rule_167 4 rfl (by decide) rfl, timerMember 168 rule_168 4 rfl (by decide) rfl,
-   timerMember 169 rule_169 4 rfl (by decide) rfl, timerMember 170 rule_170 4 rfl (by decide) rfl,
-   timerMember 171 rule_171 3 rfl (by decide) rfl, externalMember 172 rule_172 rfl (by decide),
-   externalMember 173 rule_173 rfl (by decide), externalMember 174 rule_174 rfl (by decide),
+  ⟨externalMember 67 rule_67 rfl (by decide), externalMember 111 rule_111 rfl (by decide),
+   externalMember 112 rule_112 rfl (by decide), timerMember 165 rule_165 4 rfl (by decide) rfl,
+   timerMember 166 rule_166 4 rfl (by decide) rfl, timerMember 167 rule_167 4 rfl (by decide) rfl,
+   timerMember 168 rule_168 4 rfl (by decide) rfl, timerMember 169 rule_169 4 rfl (by decide) rfl,
+   timerMember 170 rule_170 4 rfl (by decide) rfl, timerMember 171 rule_171 3 rfl (by decide) rfl,
+   externalMember 172 rule_172 rfl (by decide), externalMember 173 rule_173 rfl (by decide),
+   externalMember 174 rule_174 rfl (by decide), externalMember 175 rule_175 rfl (by decide),
+   externalMember 176 rule_176 rfl (by decide), externalMember 177 rule_177 rfl (by decide),
+   externalMember 178 rule_178 rfl (by decide), externalMember 179 rule_179 rfl (by decide),
+   externalMember 180 rule_180 rfl (by decide), externalMember 181 rule_181 rfl (by decide),
+   externalMember 182 rule_182 rfl (by decide), externalMember 183 rule_183 rfl (by decide),
+   externalMember 184 rule_184 rfl (by decide), externalMember 185 rule_185 rfl (by decide),
+   externalMember 186 rule_186 rfl (by decide), externalMember 187 rule_187 rfl (by decide),
+   externalMember 188 rule_188 rfl (by decide), externalMember 189 rule_189 rfl (by decide),
    externalMember 190 rule_190 rfl (by decide), externalMember 191 rule_191 rfl (by decide),
-   externalMember 192 rule_192 rfl (by decide), externalMember 197 rule_197 rfl (by decide),
+   externalMember 192 rule_192 rfl (by decide), externalMember 193 rule_193 rfl (by decide),
+   externalMember 196 rule_196 rfl (by decide), externalMember 197 rule_197 rfl (by decide),
    externalMember 198 rule_198 rfl (by decide), externalMember 199 rule_199 rfl (by decide),
    externalMember 200 rule_200 rfl (by decide), externalMember 201 rule_201 rfl (by decide),
    externalMember 202 rule_202 rfl (by decide), externalMember 203 rule_203 rfl (by decide),
-   externalMember 204 rule_204 rfl (by decide), externalMember 207 rule_207 rfl (by decide),
+   externalMember 204 rule_204 rfl (by decide), externalMember 205 rule_205 rfl (by decide),
+   externalMember 207 rule_207 rfl (by decide), externalMember 208 rule_208 rfl (by decide),
    externalMember 209 rule_209 rfl (by decide), externalMember 210 rule_210 rfl (by decide),
    externalMember 211 rule_211 rfl (by decide), externalMember 212 rule_212 rfl (by decide),
    externalMember 213 rule_213 rfl (by decide), externalMember 214 rule_214 rfl (by decide),
