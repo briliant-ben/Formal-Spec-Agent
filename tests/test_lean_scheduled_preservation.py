@@ -339,7 +339,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                 'TCPIPApplicationRead', 'TCPIPApplicationReadEmpty', 'TCPIPAcknowledgments',
                 'TCPIPReceiveData', 'TCPIPSendWire', 'TCPIPRetransmit',
                 'TCPIPTransmitFacts', 'TCPIPTransmit', 'TCPIPQueueRelease', 'TCPIPClosedControl',
-                'TCPIPDuplicateFin',
+                'TCPIPControlReplies',
             )
             for module in tcpip_modules:
                 shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
@@ -379,7 +379,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                          'endpoint_reset_count', 'endpoint_preservation_count', 'endpoint_preservation_unique',
                          'endpoint_preservation_checked', 'endpoint_query_retry_obligation', 'endpoint_arp_members', 'endpoint_udp_members', 'endpoint_send_member', 'endpoint_tcp_response_members', 'endpoint_tcp_read_members', 'endpoint_ack_members', 'endpoint_receive_members',
                          'endpoint_retransmit_members', 'endpoint_transmit_members', 'endpoint_closed_control_members',
-                         'endpoint_duplicate_fin_members',
+                         'endpoint_control_reply_members',
                          'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)

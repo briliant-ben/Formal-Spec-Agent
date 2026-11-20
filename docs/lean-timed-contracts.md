@@ -351,7 +351,13 @@ phases. The proof uses the same packet and queue checks as retransmit.
 The TIME-WAIT variants also restart the timer with a positive delay
 and establish the timer-activity invariant for that control state.
 
-The combined preservation catalog covers 190 distinct raw firings out of
+The same proof also covers twelve replies to invalid acknowledgments,
+invalid SYN-ACKs, and SYNs received in CLOSED. Lean checks that each
+reply retains its original TCP phase. When a CLOSED endpoint can send
+its reset directly, the proof also checks the ordered release of any
+TCP-owned queued packet and the preservation of other queue owners.
+
+The combined preservation catalog covers 202 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 145 firings still need preservation
+the full model separately. The other 133 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.
