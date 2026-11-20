@@ -121,9 +121,8 @@ list at the post-prefix snapshot.
 The kernel checks the exact list of eight declared external events with no
 rule in the pinned 335-rule TCP/IP model against the reified IR. Each event
 returns the uncovered fault from the model's initial snapshot for every
-nonnegative request time and arbitrary typed fields. The proof for arbitrary
-admitted snapshots with timers requires the separate timer contracts, which
-still need to be discharged for TCP/IP. The other thirteen declared external
+nonnegative request time and arbitrary typed fields. The completed TCP/IP timer contracts also establish this result for
+arbitrary admitted snapshots with timers. The other thirteen declared external
 events have at least one structural match. Their guards and raw actions have
 separate proof obligations.
 A separate compiled Lean batch replay and the Python reference both rejected
@@ -383,7 +382,23 @@ validated input length to bound the rebuilt IPv4 and ICMP data before
 Ethernet padding. Five malformed TCP frame drops keep the CLOSED
 state and check the same conditional queue release as ignored resets.
 
-The combined preservation catalog covers 281 distinct raw firings out of
+Three UDP transmission firings establish that the original action
+sequence produces a 28-byte IP/UDP header plus the full payload.
+The proof checks the bound of 1,500 bytes and the pending queue's
+UDP ownership, including an empty payload.
+
+The five timer IDs and all 30 timer firings have an exact Lean catalog.
+For any active timer in an admitted snapshot, the model invariants
+provide an enabled rule. The proof checks ARP retry and queue ownership,
+TCP control phases and the retransmit buffer. The model's declared
+targets and timer arms, unique IDs, guard disjointness, coverage and
+preservation then instantiate the actual scheduler's batch theorem.
+It reaches any nondecreasing requested time with all remaining timers
+strictly in the future and invariants preserved along the trace.
+The eight unwired external events return uncovered with rollback even
+when the timer prefix fires. External rule preservation remains separate.
+
+The combined preservation catalog covers 284 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 54 firings still need preservation
+the full model separately. The other 51 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.

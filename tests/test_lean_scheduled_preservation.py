@@ -339,7 +339,8 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                 'TCPIPApplicationRead', 'TCPIPApplicationReadEmpty', 'TCPIPAcknowledgments',
                 'TCPIPReceiveData', 'TCPIPSendWire', 'TCPIPRetransmit',
                 'TCPIPTransmitFacts', 'TCPIPTransmit', 'TCPIPQueueRelease', 'TCPIPClosedTransitions',
-                'TCPIPControlReplies', 'TCPIPArpLearn', 'TCPIPIcmpReply',
+                'TCPIPControlReplies', 'TCPIPArpLearn', 'TCPIPIcmpReply', 'TCPIPUdpSend',
+                'TCPIPTimerCoverage', 'TCPIPTimerContracts',
             )
             for module in tcpip_modules:
                 shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
@@ -373,6 +374,9 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                 result = subprocess.run([LEAN, '-o', module+'.olean', module+'.lean'],
                     cwd=root, env=env, capture_output=True, text=True, timeout=60)
                 self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
+            for name in ('count', 'exact_catalog'):
+                self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPTimerContracts.' + name)),
+                                     gate.AXIOMS)
             for name in ('absent_external_exact', 'absent_packet_rolls_back',
                          'absent_initial_dispatch', 'closed_groups', 'frame_group', 'malformed_length_preserves',
                          'send_group', 'transmit_group', 'endpoint_guarded_count', 'endpoint_guarded_preservation',
@@ -380,7 +384,8 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                          'endpoint_preservation_checked', 'endpoint_query_retry_obligation', 'endpoint_arp_members', 'endpoint_udp_members', 'endpoint_send_member', 'endpoint_tcp_response_members', 'endpoint_tcp_read_members', 'endpoint_ack_members', 'endpoint_receive_members',
                          'endpoint_retransmit_members', 'endpoint_transmit_members', 'endpoint_closed_transition_members',
                          'endpoint_control_reply_members', 'endpoint_arp_learn_members',
-                         'endpoint_icmp_reply_members',
+                         'endpoint_icmp_reply_members', 'endpoint_udp_send_members',
+                         'endpoint_timer_contract', 'endpoint_timer_batch', 'endpoint_absent_dispatch',
                          'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)

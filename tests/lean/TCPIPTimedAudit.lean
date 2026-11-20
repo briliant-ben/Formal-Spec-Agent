@@ -16,6 +16,8 @@ import TCPIPClosedTransitions
 import TCPIPControlReplies
 import TCPIPArpLearn
 import TCPIPIcmpReply
+import TCPIPUdpSend
+import TCPIPTimerContracts
 import FrameCatalogExact
 
 namespace TCPIPAudit
@@ -111,9 +113,9 @@ def endpoint_preservation_checks :=
     TCPIPEmptyResponses.firings ++ TCPIPApplicationReadEmpty.firings ++ TCPIPAcknowledgments.firings ++
     TCPIPReceiveData.firings ++ TCPIPRetransmit.firings ++ TCPIPTransmit.firings ++
     TCPIPClosedTransitions.firings ++ TCPIPControlReplies.firings ++
-    TCPIPArpLearn.firings ++ TCPIPIcmpReply.firings
+    TCPIPArpLearn.firings ++ TCPIPIcmpReply.firings ++ TCPIPUdpSend.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 281 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 284 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -124,6 +126,7 @@ theorem endpoint_preservation_unique :
 
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks := by
+  refine each_append ?_ TCPIPUdpSend.checked
   refine each_append (each_append ?_ TCPIPArpLearn.checked) TCPIPIcmpReply.checked
   refine each_append ?_ TCPIPControlReplies.checked
   refine each_append (each_append ?_ TCPIPTransmit.checked) TCPIPClosedTransitions.checked
@@ -133,6 +136,12 @@ theorem endpoint_preservation_checked :
     ⟨TCPIPTimerRules.query_retry, trivial⟩) TCPIPQueries.checked) TCPIPCacheConfig.checked)
     TCPIPUDPDeliver.checked) ⟨TCPIPSendQueue.send_queue, trivial⟩) TCPIPEmptyResponses.checked)
     TCPIPApplicationReadEmpty.checked) TCPIPAcknowledgments.checked
+
+theorem endpoint_udp_send_members :
+    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPUdpSend.firings :=
+  TCPIPUdpSend.members
+
+#print axioms endpoint_udp_send_members
 
 theorem endpoint_arp_learn_members :
     Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPArpLearn.firings :=
@@ -310,6 +319,30 @@ theorem endpoint_guards_disjoint : TypedContracts.GuardsDisjoint model := by
   obtain ⟨g0, g1, g2, g3, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14, g17, _⟩ := closed_groups
   exact ⟨g0, g1, g2, g3, frame_group, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14,
     send_group, transmit_group, g17, trivial⟩
+
+theorem endpoint_timer_contract : TimerContracts model declaredStates declaredTimers :=
+  TCPIPTimerContracts.contract endpoint_guards_disjoint
+
+theorem endpoint_timer_batch (s : Snapshot) (limit : Int)
+    (admitted : Admitted model declaredStates declaredTimers s) (bound : s.now ≤ limit) :
+    ∃ batch, advance model s limit = .ok batch ∧
+      Drained model declaredStates declaredTimers limit batch.after ∧
+      BatchPreservation.Preserved declaredTimers model batch :=
+  advance_total_with_timers model declaredStates declaredTimers limit endpoint_timer_contract s admitted bound
+
+theorem endpoint_absent_dispatch (s : Snapshot) (limit : Int)
+    (admitted : Admitted model declaredStates declaredTimers s) (bound : s.now ≤ limit)
+    (event : Nat) (fields : Values) (member : event ∈ absent) :
+    dispatch model s event fields limit = .error .uncovered ∧
+      rollback s (dispatch model s event fields limit) = s :=
+  absent_packet_rolls_back declaredStates declaredTimers limit endpoint_timer_contract s admitted
+    bound event fields member
+
+#print axioms TCPIPTimerContracts.count
+#print axioms TCPIPTimerContracts.exact_catalog
+#print axioms endpoint_timer_contract
+#print axioms endpoint_timer_batch
+#print axioms endpoint_absent_dispatch
 
 #print axioms endpoint_raw_exact
 #print axioms endpoint_raw_count
