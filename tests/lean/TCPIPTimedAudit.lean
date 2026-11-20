@@ -12,7 +12,7 @@ import TCPIPAcknowledgments
 import TCPIPReceiveData
 import TCPIPRetransmit
 import TCPIPTransmit
-import TCPIPClosedControl
+import TCPIPClosedTransitions
 import TCPIPControlReplies
 import FrameCatalogExact
 
@@ -108,9 +108,9 @@ def endpoint_preservation_checks :=
     TCPIPQueries.firings ++ TCPIPCacheConfig.firings ++ TCPIPUDPDeliver.firings ++ [(rule_238, none)] ++
     TCPIPEmptyResponses.firings ++ TCPIPApplicationReadEmpty.firings ++ TCPIPAcknowledgments.firings ++
     TCPIPReceiveData.firings ++ TCPIPRetransmit.firings ++ TCPIPTransmit.firings ++
-    TCPIPClosedControl.firings ++ TCPIPControlReplies.firings
+    TCPIPClosedTransitions.firings ++ TCPIPControlReplies.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 202 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 244 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -122,7 +122,7 @@ theorem endpoint_preservation_unique :
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks := by
   refine each_append ?_ TCPIPControlReplies.checked
-  refine each_append (each_append ?_ TCPIPTransmit.checked) TCPIPClosedControl.checked
+  refine each_append (each_append ?_ TCPIPTransmit.checked) TCPIPClosedTransitions.checked
   refine each_append (each_append ?_ TCPIPReceiveData.checked) TCPIPRetransmit.checked
   exact each_append (each_append (each_append (each_append (each_append (each_append (each_append
     (each_append (each_append endpoint_guarded_preservation (ResetPreservation.resetChecks_sound model declaredTimers))
@@ -136,11 +136,11 @@ theorem endpoint_control_reply_members :
 
 #print axioms endpoint_control_reply_members
 
-theorem endpoint_closed_control_members :
-    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPClosedControl.firings :=
-  TCPIPClosedControl.members
+theorem endpoint_closed_transition_members :
+    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPClosedTransitions.firings :=
+  TCPIPClosedTransitions.members
 
-#print axioms endpoint_closed_control_members
+#print axioms endpoint_closed_transition_members
 
 theorem endpoint_transmit_members :
     Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPTransmit.firings :=

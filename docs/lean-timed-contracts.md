@@ -357,7 +357,18 @@ reply retains its original TCP phase. When a CLOSED endpoint can send
 its reset directly, the proof also checks the ordered release of any
 TCP-owned queued packet and the preservation of other queue owners.
 
-The combined preservation catalog covers 202 distinct raw firings out of
+Eighteen more control replies cover ACK, SYN-ACK and FIN received in
+CLOSED or LISTEN. These rules preserve the original phase, and the
+same queue proof checks whether a reset is transmitted or queued.
+
+Seven user-timeout and TIME-WAIT-expiry firings, and seventeen
+received-reset firings, extend the CLOSED cleanup proof. Lean checks
+timer-event membership for the timer firings and the original input
+guards for the received resets. In the ESTABLISHED cases, the proof
+checks all three buffer clears, the reset of the local receive window
+and the existing nonnegative peer-window bound.
+
+The combined preservation catalog covers 244 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 133 firings still need preservation
+the full model separately. The other 91 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.

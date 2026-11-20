@@ -266,15 +266,108 @@ theorem closed_syn_resolved : Approved.raw_237_external :=
     (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
     trivial (fun _ => rfl) (by decide +kernel)
 
+theorem closed_ack_empty : Approved.raw_217_external :=
+  certify rule_217 .empty (fixedText e14) e1144 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem closed_ack_pending : Approved.raw_218_external :=
+  certify rule_218 .pending (fixedText e14) e1144 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem closed_ack_resolved : Approved.raw_219_external :=
+  certify rule_219 .resolved (fixedText e14) e1144 .releaseQueue rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    trivial (fun _ => rfl) (by decide +kernel)
+
+theorem listen_ack_empty : Approved.raw_220_external :=
+  certify rule_220 .empty (fixedText e579) e1144 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem listen_ack_pending : Approved.raw_221_external :=
+  certify rule_221 .pending (fixedText e579) e1144 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem listen_ack_resolved : Approved.raw_222_external :=
+  certify rule_222 .resolved (fixedText e579) e1144 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    trivial (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem closed_synack_empty : Approved.raw_223_external :=
+  certify rule_223 .empty (fixedText e14) e1155 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem closed_synack_pending : Approved.raw_224_external :=
+  certify rule_224 .pending (fixedText e14) e1155 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem closed_synack_resolved : Approved.raw_225_external :=
+  certify rule_225 .resolved (fixedText e14) e1155 .releaseQueue rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    trivial (fun _ => rfl) (by decide +kernel)
+
+theorem listen_synack_empty : Approved.raw_226_external :=
+  certify rule_226 .empty (fixedText e579) e1155 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem listen_synack_pending : Approved.raw_227_external :=
+  certify rule_227 .pending (fixedText e579) e1155 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem listen_synack_resolved : Approved.raw_228_external :=
+  certify rule_228 .resolved (fixedText e579) e1155 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    trivial (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem closed_fin_empty : Approved.raw_229_external :=
+  certify rule_229 .empty (fixedText e14) e1166 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem closed_fin_pending : Approved.raw_230_external :=
+  certify rule_230 .pending (fixedText e14) e1166 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem closed_fin_resolved : Approved.raw_231_external :=
+  certify rule_231 .resolved (fixedText e14) e1166 .releaseQueue rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    trivial (fun _ => rfl) (by decide +kernel)
+
+theorem listen_fin_empty : Approved.raw_232_external :=
+  certify rule_232 .empty (fixedText e579) e1166 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨⟨by decide +kernel, by decide +kernel, rfl⟩, rfl, fun _ _ => ⟨rfl, rfl, rfl, rfl, trivial⟩⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem listen_fin_pending : Approved.raw_233_external :=
+  certify rule_233 .pending (fixedText e579) e1166 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    ⟨by decide +kernel, by decide +kernel, rfl⟩ (by intro impossible; cases impossible) (by decide +kernel)
+
+theorem listen_fin_resolved : Approved.raw_234_external :=
+  certify rule_234 .resolved (fixedText e579) e1166 .keepTimers rfl
+    (by intro impossible; cases impossible) rfl (by decide +kernel) rfl rfl rfl
+    trivial (by intro impossible; cases impossible) (by decide +kernel)
+
 def firings : List (Rule × Option Nat) :=
-  [(rule_95, none), (rule_96, none), (rule_97, none),
-   (rule_98, none), (rule_99, none), (rule_100, none),
-   (rule_102, none), (rule_103, none), (rule_104, none),
-   (rule_138, none), (rule_139, none), (rule_140, none),
-   (rule_141, none), (rule_142, none), (rule_143, none),
-   (rule_144, none), (rule_145, none), (rule_146, none),
-   (rule_147, none), (rule_148, none), (rule_149, none),
-   (rule_235, none), (rule_236, none), (rule_237, none)]
+  [(rule_95, none), (rule_96, none), (rule_97, none), (rule_98, none),
+   (rule_99, none), (rule_100, none), (rule_102, none), (rule_103, none),
+   (rule_104, none), (rule_138, none), (rule_139, none), (rule_140, none),
+   (rule_141, none), (rule_142, none), (rule_143, none), (rule_144, none),
+   (rule_145, none), (rule_146, none), (rule_147, none), (rule_148, none),
+   (rule_149, none), (rule_217, none), (rule_218, none), (rule_219, none),
+   (rule_220, none), (rule_221, none), (rule_222, none), (rule_223, none),
+   (rule_224, none), (rule_225, none), (rule_226, none), (rule_227, none),
+   (rule_228, none), (rule_229, none), (rule_230, none), (rule_231, none),
+   (rule_232, none), (rule_233, none), (rule_234, none), (rule_235, none),
+   (rule_236, none), (rule_237, none)]
 
 theorem checked : Each (fun p => FiringPreserves model p.1 p.2) firings :=
   ⟨syn_sent_bad_ack_empty, syn_sent_bad_ack_pending, syn_sent_bad_ack_resolved,
@@ -284,6 +377,12 @@ theorem checked : Each (fun p => FiringPreserves model p.1 p.2) firings :=
    closing_fin_empty, closing_fin_pending, closing_fin_resolved,
    last_ack_fin_empty, last_ack_fin_pending, last_ack_fin_resolved,
    time_wait_fin_empty, time_wait_fin_pending, time_wait_fin_resolved,
+   closed_ack_empty, closed_ack_pending, closed_ack_resolved,
+   listen_ack_empty, listen_ack_pending, listen_ack_resolved,
+   closed_synack_empty, closed_synack_pending, closed_synack_resolved,
+   listen_synack_empty, listen_synack_pending, listen_synack_resolved,
+   closed_fin_empty, closed_fin_pending, closed_fin_resolved,
+   listen_fin_empty, listen_fin_pending, listen_fin_resolved,
    closed_syn_empty, closed_syn_pending, closed_syn_resolved,
    trivial⟩
 
@@ -303,7 +402,16 @@ theorem members : Each (fun p => p ∈ rawChecks model declaredTimers) firings :
    replyMember 143 rule_143 rfl (by decide), replyMember 144 rule_144 rfl (by decide),
    replyMember 145 rule_145 rfl (by decide), replyMember 146 rule_146 rfl (by decide),
    replyMember 147 rule_147 rfl (by decide), replyMember 148 rule_148 rfl (by decide),
-   replyMember 149 rule_149 rfl (by decide), replyMember 235 rule_235 rfl (by decide),
+   replyMember 149 rule_149 rfl (by decide), replyMember 217 rule_217 rfl (by decide),
+   replyMember 218 rule_218 rfl (by decide), replyMember 219 rule_219 rfl (by decide),
+   replyMember 220 rule_220 rfl (by decide), replyMember 221 rule_221 rfl (by decide),
+   replyMember 222 rule_222 rfl (by decide), replyMember 223 rule_223 rfl (by decide),
+   replyMember 224 rule_224 rfl (by decide), replyMember 225 rule_225 rfl (by decide),
+   replyMember 226 rule_226 rfl (by decide), replyMember 227 rule_227 rfl (by decide),
+   replyMember 228 rule_228 rfl (by decide), replyMember 229 rule_229 rfl (by decide),
+   replyMember 230 rule_230 rfl (by decide), replyMember 231 rule_231 rfl (by decide),
+   replyMember 232 rule_232 rfl (by decide), replyMember 233 rule_233 rfl (by decide),
+   replyMember 234 rule_234 rfl (by decide), replyMember 235 rule_235 rfl (by decide),
    replyMember 236 rule_236 rfl (by decide), replyMember 237 rule_237 rfl (by decide),
    trivial⟩
 
