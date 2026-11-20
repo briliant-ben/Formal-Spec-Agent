@@ -109,7 +109,7 @@ def endpoint_preservation_checks :=
     TCPIPReceiveData.firings ++ TCPIPRetransmit.firings ++ TCPIPTransmit.firings ++
     TCPIPClosedControl.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 163 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 178 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 

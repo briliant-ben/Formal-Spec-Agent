@@ -313,11 +313,14 @@ appending it keeps the receive buffer within 16 bytes. The window
 advertisement uses the updated buffer length. The proofs also check the
 packet bound and the queue, cache, and timer invariants for each phase.
 
-The three TCP data retransmit firings cover empty, pending and resolved
-ARP phases. Lean checks that consuming and rearming the retransmit timer
-keeps the required timer active, that doubling the timeout and
-incrementing the retry count preserve their bounds, and that the queued
-or transmitted packet satisfies the length and ownership constraints.
+The TCP retransmit proofs cover data and the control segments used in
+SYN-SENT, SYN-RECEIVED, FIN-WAIT-1, CLOSING and LAST-ACK. Each of these
+six cases has empty, pending and resolved ARP variants. Lean checks
+that consuming and rearming the retransmit timer keeps it active, that
+doubling the timeout and incrementing the retry count preserve their
+bounds, and that queued or transmitted packets satisfy the length and
+ownership constraints. The proof checks the actual control-state guard
+and that the final action writes that same state.
 The effect compiler proves that the ordered positive-delay checks are
 independent of the selected postconditions. The octet bound checker
 derives length bounds from actual packet expressions using concatenation,
@@ -342,7 +345,7 @@ The queue proof checks both outcomes of the original ownership guard:
 the TCP-owned packet is cleared along with its owner, while a queue
 with any other owner retains its contents and metadata.
 
-The combined preservation catalog covers 163 distinct raw firings out of
+The combined preservation catalog covers 178 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 172 firings still need preservation
+the full model separately. The other 157 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.
