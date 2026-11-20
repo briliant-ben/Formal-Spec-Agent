@@ -14,6 +14,8 @@ import TCPIPRetransmit
 import TCPIPTransmit
 import TCPIPClosedTransitions
 import TCPIPControlReplies
+import TCPIPArpLearn
+import TCPIPIcmpReply
 import FrameCatalogExact
 
 namespace TCPIPAudit
@@ -108,9 +110,10 @@ def endpoint_preservation_checks :=
     TCPIPQueries.firings ++ TCPIPCacheConfig.firings ++ TCPIPUDPDeliver.firings ++ [(rule_238, none)] ++
     TCPIPEmptyResponses.firings ++ TCPIPApplicationReadEmpty.firings ++ TCPIPAcknowledgments.firings ++
     TCPIPReceiveData.firings ++ TCPIPRetransmit.firings ++ TCPIPTransmit.firings ++
-    TCPIPClosedTransitions.firings ++ TCPIPControlReplies.firings
+    TCPIPClosedTransitions.firings ++ TCPIPControlReplies.firings ++
+    TCPIPArpLearn.firings ++ TCPIPIcmpReply.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 264 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 281 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -121,6 +124,7 @@ theorem endpoint_preservation_unique :
 
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks := by
+  refine each_append (each_append ?_ TCPIPArpLearn.checked) TCPIPIcmpReply.checked
   refine each_append ?_ TCPIPControlReplies.checked
   refine each_append (each_append ?_ TCPIPTransmit.checked) TCPIPClosedTransitions.checked
   refine each_append (each_append ?_ TCPIPReceiveData.checked) TCPIPRetransmit.checked
@@ -129,6 +133,17 @@ theorem endpoint_preservation_checked :
     ⟨TCPIPTimerRules.query_retry, trivial⟩) TCPIPQueries.checked) TCPIPCacheConfig.checked)
     TCPIPUDPDeliver.checked) ⟨TCPIPSendQueue.send_queue, trivial⟩) TCPIPEmptyResponses.checked)
     TCPIPApplicationReadEmpty.checked) TCPIPAcknowledgments.checked
+
+theorem endpoint_arp_learn_members :
+    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPArpLearn.firings :=
+  TCPIPArpLearn.members
+
+theorem endpoint_icmp_reply_members :
+    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPIcmpReply.firings :=
+  TCPIPIcmpReply.members
+
+#print axioms endpoint_arp_learn_members
+#print axioms endpoint_icmp_reply_members
 
 theorem endpoint_control_reply_members :
     Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPControlReplies.firings :=

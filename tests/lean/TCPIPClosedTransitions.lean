@@ -479,7 +479,7 @@ theorem reset_ack_passive : Approved.raw_208_external :=
 
 private def beforeControl (r : Rule) : Rule := {r with actions := r.actions.dropLast}
 
-private theorem ignored_reset (r : Rule) (select : Expr .boolean)
+private theorem retain_closed_with_queue_release (r : Rule) (select : Expr .boolean)
     (guard : r.guard = controlGuard (fixedText e14) (some select))
     (actions : r.actions = r.actions.dropLast ++ [.assign .text 56 e14])
     (untouched : r.actions.dropLast.all (ignoresAction (.variable .text 56)) = true)
@@ -509,10 +509,25 @@ private theorem ignored_reset (r : Rule) (select : Expr .boolean)
     simp [(TCPIPQueueRelease.release_queue_safe s f valid).of_mem queue]
 
 theorem ignore_reset_closed : Approved.raw_193_external :=
-  ignored_reset rule_193 e1078 rfl rfl (by decide +kernel) rfl rfl rfl
+  retain_closed_with_queue_release rule_193 e1078 rfl rfl (by decide +kernel) rfl rfl rfl
 
 theorem ignore_reset_ack_closed : Approved.raw_205_external :=
-  ignored_reset rule_205 e1115 rfl rfl (by decide +kernel) rfl rfl rfl
+  retain_closed_with_queue_release rule_205 e1115 rfl rfl (by decide +kernel) rfl rfl rfl
+
+theorem drop_short_closed : Approved.raw_279_external :=
+  retain_closed_with_queue_release rule_279 e1429 rfl rfl (by decide +kernel) rfl rfl rfl
+
+theorem drop_ip_length_closed : Approved.raw_280_external :=
+  retain_closed_with_queue_release rule_280 e1434 rfl rfl (by decide +kernel) rfl rfl rfl
+
+theorem drop_ip_checksum_closed : Approved.raw_281_external :=
+  retain_closed_with_queue_release rule_281 e1438 rfl rfl (by decide +kernel) rfl rfl rfl
+
+theorem drop_tcp_length_closed : Approved.raw_282_external :=
+  retain_closed_with_queue_release rule_282 e1447 rfl rfl (by decide +kernel) rfl rfl rfl
+
+theorem drop_tcp_checksum_closed : Approved.raw_283_external :=
+  retain_closed_with_queue_release rule_283 e1452 rfl rfl (by decide +kernel) rfl rfl rfl
 
 def firings : List (Rule × Option Nat) :=
   [(rule_67, none), (rule_111, none), (rule_112, none), (rule_165, some 4),
@@ -527,7 +542,8 @@ def firings : List (Rule × Option Nat) :=
    (rule_200, none), (rule_201, none), (rule_202, none), (rule_203, none),
    (rule_204, none), (rule_205, none), (rule_207, none), (rule_208, none),
    (rule_209, none), (rule_210, none), (rule_211, none), (rule_212, none),
-   (rule_213, none), (rule_214, none), (rule_215, none), (rule_216, none)]
+   (rule_213, none), (rule_214, none), (rule_215, none), (rule_216, none), (rule_279, none), (rule_280, none),
+   (rule_281, none), (rule_282, none), (rule_283, none)]
 
 theorem checked : Each (fun p => FiringPreserves model p.1 p.2) firings :=
   ⟨open_passive, close_111, close_112, close_165, close_166,
@@ -540,7 +556,9 @@ theorem checked : Each (fun p => FiringPreserves model p.1 p.2) firings :=
    close_199, close_200, close_201, close_202, close_203,
    close_204, ignore_reset_ack_closed, close_207, reset_ack_passive, close_209,
    close_210, close_211, close_212, close_213, close_214,
-   close_215, close_216, trivial⟩
+   close_215, close_216,
+   drop_short_closed, drop_ip_length_closed, drop_ip_checksum_closed, drop_tcp_length_closed,
+   drop_tcp_checksum_closed, trivial⟩
 
 private theorem externalMember (index : Nat) (r : Rule)
     (selected : model.rules[index]? = some r) (external : r.event ∈ model.externalEvents) :
@@ -579,6 +597,8 @@ theorem members : Each (fun p => p ∈ rawChecks model declaredTimers) firings :
    externalMember 211 rule_211 rfl (by decide), externalMember 212 rule_212 rfl (by decide),
    externalMember 213 rule_213 rfl (by decide), externalMember 214 rule_214 rfl (by decide),
    externalMember 215 rule_215 rfl (by decide), externalMember 216 rule_216 rfl (by decide),
-   trivial⟩
+   externalMember 279 rule_279 rfl (by decide), externalMember 280 rule_280 rfl (by decide),
+   externalMember 281 rule_281 rfl (by decide), externalMember 282 rule_282 rfl (by decide),
+   externalMember 283 rule_283 rfl (by decide), trivial⟩
 
 end TCPIPClosedTransitions

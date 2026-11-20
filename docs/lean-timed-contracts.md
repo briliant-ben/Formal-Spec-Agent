@@ -375,7 +375,15 @@ transmission with queue release and the path that queues the reset
 until ARP resolves. The passive paths use the actual prior-phase
 guard to establish that the data buffers are empty.
 
-The combined preservation catalog covers 264 distinct raw firings out of
+Nine ARP learning firings establish the six-byte cache address from
+the actual frame-length guard. The same proof checks cache timer
+activation, query cancellation or retention, and queue clearing when
+learning resolves a pending packet. Three ICMP reply firings use the
+validated input length to bound the rebuilt IPv4 and ICMP data before
+Ethernet padding. Five malformed TCP frame drops keep the CLOSED
+state and check the same conditional queue release as ignored resets.
+
+The combined preservation catalog covers 281 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 71 firings still need preservation
+the full model separately. The other 54 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.
