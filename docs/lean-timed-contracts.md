@@ -413,8 +413,22 @@ checks the decoded receive window's range, and preserves the flight,
 timer and retransmit-buffer constraints. It covers both ACK-only
 reception and packet-emitting responses in the three ARP phases.
 
-The combined preservation catalog covers 314 distinct raw firings out of
-335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The remaining 21 external firings are TCP close
-and peer FIN paths, which still need preservation proofs before the full
-TCP/IP case can use the Lean-only formal gate.
+Twenty-one TCP closing firings check local FIN, acknowledgments of
+FIN and peer FIN across the admitted states and ARP phases. The proofs
+use the prior buffer, sequence and timer invariants, and check when
+the transitions preserve a timer, arm it or cancel it. The wire paths
+check the emitted packet bound and pending queue ownership.
+
+For the pinned TCP/IP IR the checked preservation catalog equals the
+authoritative list of all 335 firings after sorting. Lean compares the
+full rule values and timer IDs. The endpoint theorem covers every
+declared external event at a nondecreasing time from an admitted
+pre-state. The scheduler first drains the due timers. When no external
+guard matches, dispatch returns uncovered and rolls back. When a
+guard matches, dispatch succeeds and preserves the invariants across
+the returned trace. Guard disjointness prevents a conflicting match.
+
+These model-level results are checked by the TCP/IP proof audit. A
+public Lean-only timed flow and its generated C observation checks
+still need to be wired into the case study before dropping the legacy
+Z3 backend.

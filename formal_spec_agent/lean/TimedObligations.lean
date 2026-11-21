@@ -56,6 +56,36 @@ theorem Each.of_mem {property : α → Prop} {items : List α} {item : α}
     · exact equal ▸ checked.1
     · exact ih checked.2 member
 
+/-- Apply stable partitions in order, preserving complete elements. -/
+def partitionPasses (passes : List (α → Bool)) (items : List α) : List α :=
+  passes.foldl (fun pending test =>
+    pending.filter (fun item => !test item) ++ pending.filter test) items
+
+theorem mem_partitionPasses (passes : List (α → Bool)) (items : List α) (item : α) :
+    item ∈ partitionPasses passes items ↔ item ∈ items := by
+  induction passes generalizing items with
+  | nil => rfl
+  | cons test rest ih =>
+    change item ∈ partitionPasses rest _ ↔ item ∈ items
+    rw [ih, List.mem_append]
+    cases h : test item <;> simp [List.mem_filter, h]
+
+theorem Each.of_partition_equality (property : α → Prop) (passes : List (α → Bool))
+    (checked catalog : List α)
+    (same : partitionPasses passes checked = partitionPasses passes catalog)
+    (preserved : Each property checked) : Each property catalog := by
+  have contains : ∀ item ∈ catalog, property item := by
+    intro item member
+    apply preserved.of_mem
+    apply (mem_partitionPasses passes checked item).mp
+    rw [same]
+    exact (mem_partitionPasses passes catalog item).mpr member
+  clear same
+  induction catalog with
+  | nil => trivial
+  | cons first rest ih =>
+    exact ⟨contains first (by simp), ih (fun item member => contains item (List.mem_cons_of_mem first member))⟩
+
 theorem external_raw_from_checks (model : Model) (ids : List Nat)
     (checked : Each (fun p => FiringPreserves model p.1 p.2) (rawChecks model ids)) :
     ∀ event ∈ model.externalEvents, ScheduledPreservation.MatchingRaw model event none := by

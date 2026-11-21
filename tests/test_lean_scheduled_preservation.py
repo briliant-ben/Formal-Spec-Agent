@@ -340,7 +340,8 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                 'TCPIPReceiveData', 'TCPIPSendWire', 'TCPIPRetransmit',
                 'TCPIPTransmitFacts', 'TCPIPTransmit', 'TCPIPQueueRelease', 'TCPIPClosedTransitions',
                 'TCPIPControlReplies', 'TCPIPArpLearn', 'TCPIPIcmpReply', 'TCPIPUdpSend',
-                'TCPIPOpen', 'TCPIPHandshakeAck', 'TCPIPTimerCoverage', 'TCPIPTimerContracts',
+                'TCPIPOpen', 'TCPIPHandshakeAck', 'TCPIPFinAck', 'TCPIPFinWire',
+                'TCPIPTimerCoverage', 'TCPIPTimerContracts',
             )
             for module in tcpip_modules:
                 shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
@@ -386,6 +387,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                          'endpoint_control_reply_members', 'endpoint_arp_learn_members',
                          'endpoint_icmp_reply_members', 'endpoint_udp_send_members',
                          'endpoint_open_members', 'endpoint_handshake_ack_members',
+                         'endpoint_preservation_catalog', 'endpoint_all_preservation', 'endpoint_dispatch',
                          'endpoint_initial_admitted', 'endpoint_timer_contract', 'endpoint_timer_batch', 'endpoint_absent_dispatch',
                          'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
                 self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),

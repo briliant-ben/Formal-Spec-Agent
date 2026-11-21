@@ -19,6 +19,8 @@ import TCPIPIcmpReply
 import TCPIPUdpSend
 import TCPIPOpen
 import TCPIPHandshakeAck
+import TCPIPFinAck
+import TCPIPFinWire
 import TCPIPTimerContracts
 import FrameCatalogExact
 
@@ -116,9 +118,9 @@ def endpoint_preservation_checks :=
     TCPIPReceiveData.firings ++ TCPIPRetransmit.firings ++ TCPIPTransmit.firings ++
     TCPIPClosedTransitions.firings ++ TCPIPControlReplies.firings ++
     TCPIPArpLearn.firings ++ TCPIPIcmpReply.firings ++ TCPIPUdpSend.firings ++ TCPIPOpen.firings ++
-    TCPIPHandshakeAck.firings
+    TCPIPHandshakeAck.firings ++ TCPIPFinAck.firings ++ TCPIPFinWire.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 314 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 335 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -129,6 +131,7 @@ theorem endpoint_preservation_unique :
 
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks := by
+  refine each_append (each_append ?_ TCPIPFinAck.checked) TCPIPFinWire.checked
   refine each_append ?_ TCPIPHandshakeAck.checked
   refine each_append (each_append ?_ TCPIPUdpSend.checked) TCPIPOpen.checked
   refine each_append (each_append ?_ TCPIPArpLearn.checked) TCPIPIcmpReply.checked
@@ -326,6 +329,19 @@ set_option maxRecDepth 16384 in
 theorem endpoint_raw_count : (rawChecks model declaredTimers).length = 335 := by
   rw [endpoint_raw_exact] <;> rfl
 
+private def firingOrder : List (Rule × Option Nat → Bool) :=
+  (List.range 9).map fun bit pairing => pairing.1.id.testBit bit
+
+set_option maxRecDepth 65536 in
+set_option maxHeartbeats 1000000 in
+theorem endpoint_preservation_catalog :
+    partitionPasses firingOrder endpoint_preservation_checks = partitionPasses firingOrder rawCatalog := by rfl
+
+theorem endpoint_all_preservation :
+    Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) (rawChecks model declaredTimers) := by
+  rw [endpoint_raw_exact]
+  exact Each.of_partition_equality _ firingOrder _ _ endpoint_preservation_catalog endpoint_preservation_checked
+
 set_option maxRecDepth 16384 in
 theorem endpoint_conflicts_exact : Approved.conflict_catalog_exact := by rfl
 set_option maxRecDepth 16384 in
@@ -357,6 +373,25 @@ theorem endpoint_timer_batch (s : Snapshot) (limit : Int)
       Drained model declaredStates declaredTimers limit batch.after ∧
       BatchPreservation.Preserved declaredTimers model batch :=
   advance_total_with_timers model declaredStates declaredTimers limit endpoint_timer_contract s admitted bound
+
+theorem endpoint_dispatch (s : Snapshot) (limit : Int)
+    (admitted : Admitted model declaredStates declaredTimers s) (bound : s.now ≤ limit)
+    (event : Nat) (fields : Values) (declared : event ∈ model.externalEvents) :
+    ∃ prefixBatch, advance model s limit = .ok prefixBatch ∧
+      Drained model declaredStates declaredTimers limit prefixBatch.after ∧
+      (if (enabled model prefixBatch.after event fields).isEmpty then
+        dispatch model s event fields limit = .error .uncovered ∧
+          rollback s (dispatch model s event fields limit) = s
+      else ∃ batch, dispatch model s event fields limit = .ok batch ∧
+        Admitted model declaredStates declaredTimers batch.after ∧ batch.after.now = limit ∧
+        BatchPreservation.Preserved declaredTimers model batch) :=
+  dispatch_success_or_uncovered model declaredStates declaredTimers limit endpoint_timer_contract
+    s admitted bound event fields declared
+    (external_raw_from_checks model declaredTimers endpoint_all_preservation event declared)
+
+#print axioms endpoint_preservation_catalog
+#print axioms endpoint_all_preservation
+#print axioms endpoint_dispatch
 
 theorem endpoint_absent_dispatch (s : Snapshot) (limit : Int)
     (admitted : Admitted model declaredStates declaredTimers s) (bound : s.now ≤ limit)
