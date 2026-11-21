@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        track: [lean-only, cli]
+        track: [lean-only, tcpip-timed, cli]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -48,7 +48,7 @@ jobs:
             --task examples/lean-bytes/task.json --workspace examples/lean-bytes \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-byte-recheck
       - name: Prove Lean-only installation has no Z3 and checks all scoped units
-        if: matrix.track == 'lean-only'
+        if: matrix.track == 'lean-only' || matrix.track == 'tcpip-timed'
         env:
           FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
           FSA_LEAN_REQUIRED: '1'
@@ -59,7 +59,9 @@ jobs:
           FSA_TCPIP_EVIDENCE_OUT: /tmp/tcpip-timed-kernel
         run: |
           cd /tmp
-          /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
+          PARTITION=core
+          if [ '${{ matrix.track }}' = tcpip-timed ]; then PARTITION=tcpip-timed; fi
+          /tmp/lean-only-venv/bin/python "$GITHUB_WORKSPACE/tests/run_lean_ci.py" "$PARTITION" > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
       - name: Check and recheck ordered state transaction without Z3
         if: matrix.track == 'cli'
         run: |

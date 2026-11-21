@@ -1,0 +1,10 @@
+{
+  "run_id": 44917864818,
+  "job_id": 136887240414,
+  "artifact_id": 14713156889,
+  "head": "1ba0c022005e4bc5ed91d43609398078e5a8d5c2",
+  "sha256": "bba91487a69ca677d345ff467972e5b4dc062c37c715eb1a86a80c2116c05850",
+  "job_status": "cancelled",
+  "module_status": "resource_unknown",
+  "module": "TCPIPTransmit"
+}
