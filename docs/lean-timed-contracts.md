@@ -398,7 +398,15 @@ strictly in the future and invariants preserved along the trace.
 The eight unwired external events return uncovered with rollback even
 when the timer prefix fires. External rule preservation remains separate.
 
-The combined preservation catalog covers 284 distinct raw firings out of
+Nine active, passive and simultaneous TCP open firings preserve
+the control-sequence relation and timer requirements in SYN-SENT or
+SYN-RECEIVED. The proof checks the positive delays of newly armed
+timers, retention of the existing timers for simultaneous open, and
+the original packet and queue effects across the three ARP phases.
+Lean also checks that the model's actual initial snapshot satisfies
+the admission conditions for the timer scheduler.
+
+The combined preservation catalog covers 293 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 51 firings still need preservation
+the full model separately. The other 42 firings still need preservation
 proofs before the full TCP/IP case can use the Lean-only formal gate.

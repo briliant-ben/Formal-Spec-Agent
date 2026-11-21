@@ -17,6 +17,7 @@ import TCPIPControlReplies
 import TCPIPArpLearn
 import TCPIPIcmpReply
 import TCPIPUdpSend
+import TCPIPOpen
 import TCPIPTimerContracts
 import FrameCatalogExact
 
@@ -113,9 +114,9 @@ def endpoint_preservation_checks :=
     TCPIPEmptyResponses.firings ++ TCPIPApplicationReadEmpty.firings ++ TCPIPAcknowledgments.firings ++
     TCPIPReceiveData.firings ++ TCPIPRetransmit.firings ++ TCPIPTransmit.firings ++
     TCPIPClosedTransitions.firings ++ TCPIPControlReplies.firings ++
-    TCPIPArpLearn.firings ++ TCPIPIcmpReply.firings ++ TCPIPUdpSend.firings
+    TCPIPArpLearn.firings ++ TCPIPIcmpReply.firings ++ TCPIPUdpSend.firings ++ TCPIPOpen.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 284 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 293 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -126,7 +127,7 @@ theorem endpoint_preservation_unique :
 
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks := by
-  refine each_append ?_ TCPIPUdpSend.checked
+  refine each_append (each_append ?_ TCPIPUdpSend.checked) TCPIPOpen.checked
   refine each_append (each_append ?_ TCPIPArpLearn.checked) TCPIPIcmpReply.checked
   refine each_append ?_ TCPIPControlReplies.checked
   refine each_append (each_append ?_ TCPIPTransmit.checked) TCPIPClosedTransitions.checked
@@ -136,6 +137,12 @@ theorem endpoint_preservation_checked :
     ⟨TCPIPTimerRules.query_retry, trivial⟩) TCPIPQueries.checked) TCPIPCacheConfig.checked)
     TCPIPUDPDeliver.checked) ⟨TCPIPSendQueue.send_queue, trivial⟩) TCPIPEmptyResponses.checked)
     TCPIPApplicationReadEmpty.checked) TCPIPAcknowledgments.checked
+
+theorem endpoint_open_members :
+    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPOpen.firings :=
+  TCPIPOpen.members
+
+#print axioms endpoint_open_members
 
 theorem endpoint_udp_send_members :
     Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPUdpSend.firings :=
@@ -322,6 +329,18 @@ theorem endpoint_guards_disjoint : TypedContracts.GuardsDisjoint model := by
 
 theorem endpoint_timer_contract : TimerContracts model declaredStates declaredTimers :=
   TCPIPTimerContracts.contract endpoint_guards_disjoint
+
+theorem endpoint_initial_admitted : Admitted model declaredStates declaredTimers initial := by
+  refine ⟨rfl, by decide, ?_, ?_⟩
+  · intro entry member
+    change entry ∈ ([] : List TimerEntry) at member
+    simp at member
+  · apply (TimerRank.wellTimed_iff initial).mpr
+    intro entry member
+    change entry ∈ ([] : List TimerEntry) at member
+    simp at member
+
+#print axioms endpoint_initial_admitted
 
 theorem endpoint_timer_batch (s : Snapshot) (limit : Int)
     (admitted : Admitted model declaredStates declaredTimers s) (bound : s.now ≤ limit) :
