@@ -1,0 +1,12 @@
+{
+  "schema": "fsa-lean-timed-proof-manifest-v1",
+  "model": {
+    "model.json": "45ca8517c7da78ebbb1397cd8bd149da6a65ffe53c7756a37e83ce6a9a8356b1"
+  },
+  "modules": [
+    {
+      "module": "TimedProof",
+      "sha256": "aca43a1af5cb5e8c0fd1f86e5ac45e9ab408cfd93f2b6723f166dac92075f705"
+    }
+  ]
+}

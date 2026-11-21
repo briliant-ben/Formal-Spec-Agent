@@ -1,9 +1,8 @@
 import copy
-import importlib.util
 import unittest
 
 from protocol_lab.ir import CLOCK_SEMANTICS, Machine, ModelError, evaluate, validate, value_ok
-from protocol_lab.symbolic import Encoding, check, crosscheck_trace
+from formal_spec_agent.lean_timed_contracts import render
 
 
 def model():
@@ -56,30 +55,6 @@ class RationalClockTests(unittest.TestCase):
         self.assertEqual(runtime.values['x'],{'n':3,'d':7})
         with self.assertRaises(ModelError):runtime.dispatch('go',{'n':0,'r':{'n':6,'d':14}},8)
 
-
-@unittest.skipUnless(importlib.util.find_spec('z3'),'Z3 required')
-class SymbolicRationalClockTests(unittest.TestCase):
-    def test_clock_guard_exact_fraction_witness_and_full_trace_replay(self):
-        m=Machine(model());m.dispatch('go',{'n':1},7);m.dispatch('go',{'n':1},11)
-        result=crosscheck_trace(m.model,m.trace)
-        self.assertEqual(result['status'],'match',result.get('reason'))
-        self.assertEqual(result['witness']['steps'][1]['after']['variables']['x'],{'n':9,'d':64})
-        self.assertEqual(check(model(),depth=2,symbolic_initials=())['status'],'bounded_pass')
-
-    def test_all_rational_ceil_values_and_dispatch_clock_have_independent_queries(self):
-        m=model();enc=Encoding(m,1,(),byte_encoding='length',sequence_encoding='modular-int')
-        z=enc.z;x=z.Real('arbitrary_rational')
-        frame={**enc.frames[0],'values':{**enc.frames[0]['values'],'x':x}}
-        ceil=enc.expr({'op':'rat_ceil','args':[{'var':'x'}]},frame,{})
-        solver=z.Solver();solver.add(z.Or(ceil<x,ceil>=x+1))
-        self.assertEqual(solver.check(),z.unsat)
-        enc.solver.add(z.Int('choice_0')==0,enc.frames[1]['now']==7,enc.events[0]['go']['n']==1)
-        self.assertEqual(enc.solve(),z.sat)
-        self.assertEqual(enc.witness(enc.solver.model())['steps'][0]['after']['variables']['seen'],7)
-
-    def test_backend_rejects_nonrational_witness_instead_of_rounding_it(self):
-        enc=Encoding(model(),1,());z=enc.z;x=z.Real('unsupported_irrational')
-        solver=z.Solver();solver.add(x*x==2,x>0)
-        self.assertEqual(solver.check(),z.sat)
-        with self.assertRaisesRegex(ModelError,'Non-rational symbolic witness'):
-            enc.concrete(solver.model(),x)
+    def test_lean_formal_gate_rejects_the_unsupported_clock_profile(self):
+        with self.assertRaisesRegex(ValueError, 'atomic-v1'):
+            render(validate(model()))

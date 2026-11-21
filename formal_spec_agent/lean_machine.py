@@ -17,6 +17,7 @@ MODULES=['Foundation','ValueOps','TypedIR','TypedMachine','MachineObserve']
 
 class MachineView:
     def __init__(self,model):
+        if any(set(t)!={'event'}for t in model['timers'].values()):raise ValueError('Unsupported typed machine timer fields')
         self.m=model;self.v=View(model).build();self.timers=sorted(model['timers']);self.events=list(model['events']);self.messages=list(model['messages'])
         if any(t not in KINDS for x in model['messages'].values()for t in x['fields'].values()):raise ValueError('Unsupported machine message type')
         if any(set(a)not in ({'set'},{'emit'},{'arm'},{'cancel'})for r in model['transitions']for a in r['actions']):raise ValueError('Unsupported typed machine action')

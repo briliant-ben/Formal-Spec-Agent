@@ -84,10 +84,10 @@ The `batch_reference_match` runtime result explicitly leaves
 `kernel_literal_contract_checked`, `efsm_safety_proved`,
 `compiler_correctness_proved` and `protocol_correctness_proved` false.
 
-## Remaining migration gates
+## Timed model proofs and reachability
 
-Extend universal typed-rule
-preservation, overlap/coverage and witness generation before applying the new
-path to the complete TCPIP case. Preserve all historical checker epochs and
-UNKNOWNs. Z3 is already absent from the base installation but remains an optional
-backend for supported tasks that lack an equivalent accepted Lean path.
+The [timed contracts](lean-timed-contracts.md) connect the batch semantics
+to the complete rule-preservation and overlap audit of the pinned IPv4
+prototype. Directed reachability and coverage beyond the supplied scenarios
+retain separate obligations. Historical solver receipts remain bound to their
+original checker revisions.

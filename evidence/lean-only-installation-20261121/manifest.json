@@ -1,0 +1,38 @@
+{
+  "schema": "fsa-lean-only-installed-evidence-v1",
+  "framework_source_commit": "1530853f6fb255e832887a7a4fa6bbfbc4459179",
+  "wheel": "formal_spec_agent-0.1.0-py3-none-any.whl",
+  "wheel_sha256": "7b38a010e38042c25d0ff1899baea283da807a130e5ba8d03bd620bf2944e37a",
+  "package_dependencies": [],
+  "z3_installed": false,
+  "closeout_formal": "checked_timed_dispatch_contract",
+  "firings": 335,
+  "conflict_groups": 18,
+  "native_cases": 77,
+  "exploration_rules": 10,
+  "retained_audit": {
+    "schema": "spec-flow-verification-v1",
+    "status": "retained_evidence_consistent",
+    "assessment": "unresolved",
+    "run_id": "dfeb32f0-d9fd-4de1-af0a-77858cc159b8",
+    "inputs_checked": 219,
+    "artifacts_checked": 1048,
+    "fresh_execution": false,
+    "authenticity_established": false,
+    "scope": "retained file/source/dependency/verdict integrity only; rerun flow for fresh execution"
+  },
+  "archive_sha256": "f76ed755303f48723407fb7b19c0865f2fa4fcc501e91cefcd2e47795cebe754",
+  "members": {
+    "flow.json": "5c1f77a02a0c057992a74d71c4254fd93c64a414ae645ecafa8fd9e95a5e6b3e",
+    "request.json": "9a55103a197edfa74d07a43391dbf999e5aad2d5c17154a11a1d1f74b11fd5ee",
+    "stages/build/result.json": "c31ae6cbb6bac9aa04fe5947081766e906c5600fca6a86182c354b787934e6ad",
+    "stages/compare/result.json": "6bc457aefe56a5f1a3c3d98b637999a293118092596aed35725a8d0f98fdc2a1",
+    "stages/formal/queries/TimedAudit.stdout": "b3715040ed2e0ae39998e2178c5100316bde1bb15143f04d2afeaa2d10ddd2ed",
+    "stages/formal/queries/result.json": "ac6848f941eaf611cce9543c5c628042cd86d368f0baba544c8ec72074e110af",
+    "stages/tests/result.json": "8bc47be36c014fa2a295d36339b9ce7a4dd7196c502ee791de2703cb26e29caa",
+    "tests/installed-full.log": "6d17a5fc07c314fbef734b1bc28e0933a79d594d91652b18179689545ce5a0df",
+    "tests/provenance-recheck.log": "9725c6f6d4a4e1ce418f814e7a858e6647c5231b1c58de52255e4892aff49591",
+    "tests/source-no-lean.log": "f11c9b1697efaf4befa49cad075b4a289d2b354afffa5c968b43013506638d3a",
+    "verifier.json": "78be7dd14c8ee9d7e73403d5b4668dd8322c035dae22cea73262c28f5c05acc0"
+  }
+}

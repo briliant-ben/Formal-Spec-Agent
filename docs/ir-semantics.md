@@ -1,8 +1,10 @@
 # Protocol IR: reader's guide
 
 Protocol IR is the sole behavioral authority. The current interpreter is
-[`protocol_lab/ir.py`](../protocol_lab/ir.py); the independent symbolic encoder is
-[`protocol_lab/symbolic.py`](../protocol_lab/symbolic.py). This guide introduces
+[`protocol_lab/ir.py`](../protocol_lab/ir.py). The maintained formal path uses
+the [typed Lean semantics](../formal_spec_agent/lean/TypedMachine.lean) and
+the [timed contract adapter](../formal_spec_agent/lean_timed_contracts.py).
+This guide introduces
 the interface, not a proof that an English specification was encoded correctly.
 
 | Element | Explicit representation |

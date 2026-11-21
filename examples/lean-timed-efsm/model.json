@@ -1,0 +1,646 @@
+{
+  "ir_version": "0.6",
+  "semantics": "flat-efsm-atomic-ordered-v1",
+  "protocol": "generic-typed-cell-timed",
+  "states": [
+    "COLD",
+    "HOT"
+  ],
+  "initial_state": "COLD",
+  "variables": {
+    "buf": {
+      "type": "bytes",
+      "initial": []
+    },
+    "n": {
+      "type": "int",
+      "initial": 0
+    },
+    "cursor": {
+      "type": "seq32",
+      "initial": 0
+    },
+    "label": {
+      "type": "string",
+      "initial": ""
+    },
+    "accepted": {
+      "type": "bool",
+      "initial": false
+    }
+  },
+  "events": {
+    "app.put": {
+      "origin": "application",
+      "fields": {
+        "payload": "bytes",
+        "sequence": "seq32",
+        "delta": "int",
+        "label": "string",
+        "allow": "bool"
+      }
+    },
+    "timer.expiry": {
+      "origin": "timer",
+      "fields": {}
+    }
+  },
+  "messages": {
+    "cell.accept": {
+      "fields": {
+        "buf": "bytes",
+        "n": "int",
+        "cursor": "seq32",
+        "label": "string",
+        "accepted": "bool"
+      }
+    },
+    "cell.reject": {
+      "fields": {
+        "buf": "bytes",
+        "n": "int",
+        "cursor": "seq32",
+        "label": "string",
+        "accepted": "bool"
+      }
+    },
+    "cell.expired": {
+      "fields": {
+        "buf": "bytes",
+        "n": "int",
+        "cursor": "seq32",
+        "label": "string",
+        "accepted": "bool"
+      }
+    }
+  },
+  "timers": {
+    "expiry": {
+      "event": "timer.expiry"
+    }
+  },
+  "requirements": {
+    "TIMED_CELL": {
+      "source": "spec.md#timed-cell-v1",
+      "interpretation": "Faithful ordered typed-cell acceptance/rejection with timer-based expiry."
+    }
+  },
+  "invariants": [
+    {
+      "id": "NONNEGATIVE",
+      "assert": {
+        "op": "ge",
+        "args": [
+          {
+            "var": "n"
+          },
+          0
+        ]
+      },
+      "requirements": [
+        "TIMED_CELL"
+      ]
+    },
+    {
+      "id": "MAXLEN",
+      "assert": {
+        "op": "le",
+        "args": [
+          {
+            "var": "n"
+          },
+          16
+        ]
+      },
+      "requirements": [
+        "TIMED_CELL"
+      ]
+    },
+    {
+      "id": "N_EQ_LEN",
+      "assert": {
+        "op": "eq",
+        "args": [
+          {
+            "var": "n"
+          },
+          {
+            "op": "bytes_len",
+            "args": [
+              {
+                "var": "buf"
+              }
+            ]
+          }
+        ]
+      },
+      "requirements": [
+        "TIMED_CELL"
+      ]
+    },
+    {
+      "id": "TIMER_ACTIVE_IFF_HOT",
+      "assert": {
+        "op": "eq",
+        "args": [
+          {
+            "timer_active": "expiry"
+          },
+          {
+            "state": "HOT"
+          }
+        ]
+      },
+      "requirements": [
+        "TIMED_CELL"
+      ]
+    },
+    {
+      "id": "COLD_IMPLIES_EMPTY",
+      "assert": {
+        "op": "implies",
+        "args": [
+          {
+            "state": "COLD"
+          },
+          {
+            "op": "and",
+            "args": [
+              {
+                "op": "eq",
+                "args": [
+                  {
+                    "var": "n"
+                  },
+                  0
+                ]
+              },
+              {
+                "op": "eq",
+                "args": [
+                  {
+                    "var": "label"
+                  },
+                  ""
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "requirements": [
+        "TIMED_CELL"
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "PUT.ACCEPT.COLD",
+      "from": "COLD",
+      "to": "HOT",
+      "event": "app.put",
+      "guard": {
+        "op": "and",
+        "args": [
+          {
+            "op": "eq",
+            "args": [
+              {
+                "event": "allow"
+              },
+              true
+            ]
+          },
+          {
+            "op": "le",
+            "args": [
+              {
+                "op": "bytes_len",
+                "args": [
+                  {
+                    "event": "payload"
+                  }
+                ]
+              },
+              16
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "buf",
+            "value": {
+              "event": "payload"
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "n",
+            "value": {
+              "op": "bytes_len",
+              "args": [
+                {
+                  "var": "buf"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "cursor",
+            "value": {
+              "op": "seq_add",
+              "args": [
+                {
+                  "event": "sequence"
+                },
+                {
+                  "event": "delta"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "label",
+            "value": {
+              "event": "label"
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "accepted",
+            "value": true
+          }
+        },
+        {
+          "arm": {
+            "timer": "expiry",
+            "delay_ms": 10
+          }
+        },
+        {
+          "emit": {
+            "message": "cell.accept",
+            "fields": {
+              "buf": {
+                "var": "buf"
+              },
+              "n": {
+                "var": "n"
+              },
+              "cursor": {
+                "var": "cursor"
+              },
+              "label": {
+                "var": "label"
+              },
+              "accepted": {
+                "var": "accepted"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "TIMED_CELL"
+      ]
+    },
+    {
+      "id": "PUT.REJECT.COLD",
+      "from": "COLD",
+      "to": "COLD",
+      "event": "app.put",
+      "guard": {
+        "op": "not",
+        "args": [
+          {
+            "op": "and",
+            "args": [
+              {
+                "op": "eq",
+                "args": [
+                  {
+                    "event": "allow"
+                  },
+                  true
+                ]
+              },
+              {
+                "op": "le",
+                "args": [
+                  {
+                    "op": "bytes_len",
+                    "args": [
+                      {
+                        "event": "payload"
+                      }
+                    ]
+                  },
+                  16
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "accepted",
+            "value": false
+          }
+        },
+        {
+          "emit": {
+            "message": "cell.reject",
+            "fields": {
+              "buf": {
+                "var": "buf"
+              },
+              "n": {
+                "var": "n"
+              },
+              "cursor": {
+                "var": "cursor"
+              },
+              "label": {
+                "var": "label"
+              },
+              "accepted": {
+                "var": "accepted"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "TIMED_CELL"
+      ]
+    },
+    {
+      "id": "PUT.ACCEPT.HOT",
+      "from": "HOT",
+      "to": "HOT",
+      "event": "app.put",
+      "guard": {
+        "op": "and",
+        "args": [
+          {
+            "op": "eq",
+            "args": [
+              {
+                "event": "allow"
+              },
+              true
+            ]
+          },
+          {
+            "op": "le",
+            "args": [
+              {
+                "op": "bytes_len",
+                "args": [
+                  {
+                    "event": "payload"
+                  }
+                ]
+              },
+              16
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "buf",
+            "value": {
+              "event": "payload"
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "n",
+            "value": {
+              "op": "bytes_len",
+              "args": [
+                {
+                  "var": "buf"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "cursor",
+            "value": {
+              "op": "seq_add",
+              "args": [
+                {
+                  "event": "sequence"
+                },
+                {
+                  "event": "delta"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "label",
+            "value": {
+              "event": "label"
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "accepted",
+            "value": true
+          }
+        },
+        {
+          "arm": {
+            "timer": "expiry",
+            "delay_ms": 10
+          }
+        },
+        {
+          "emit": {
+            "message": "cell.accept",
+            "fields": {
+              "buf": {
+                "var": "buf"
+              },
+              "n": {
+                "var": "n"
+              },
+              "cursor": {
+                "var": "cursor"
+              },
+              "label": {
+                "var": "label"
+              },
+              "accepted": {
+                "var": "accepted"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "TIMED_CELL"
+      ]
+    },
+    {
+      "id": "PUT.REJECT.HOT",
+      "from": "HOT",
+      "to": "HOT",
+      "event": "app.put",
+      "guard": {
+        "op": "not",
+        "args": [
+          {
+            "op": "and",
+            "args": [
+              {
+                "op": "eq",
+                "args": [
+                  {
+                    "event": "allow"
+                  },
+                  true
+                ]
+              },
+              {
+                "op": "le",
+                "args": [
+                  {
+                    "op": "bytes_len",
+                    "args": [
+                      {
+                        "event": "payload"
+                      }
+                    ]
+                  },
+                  16
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "set": {
+            "var": "accepted",
+            "value": false
+          }
+        },
+        {
+          "emit": {
+            "message": "cell.reject",
+            "fields": {
+              "buf": {
+                "var": "buf"
+              },
+              "n": {
+                "var": "n"
+              },
+              "cursor": {
+                "var": "cursor"
+              },
+              "label": {
+                "var": "label"
+              },
+              "accepted": {
+                "var": "accepted"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "TIMED_CELL"
+      ]
+    },
+    {
+      "id": "EXPIRY.HOT",
+      "from": "HOT",
+      "to": "COLD",
+      "event": "timer.expiry",
+      "guard": true,
+      "actions": [
+        {
+          "set": {
+            "var": "buf",
+            "value": {
+              "bytes": []
+            }
+          }
+        },
+        {
+          "set": {
+            "var": "n",
+            "value": 0
+          }
+        },
+        {
+          "set": {
+            "var": "label",
+            "value": ""
+          }
+        },
+        {
+          "set": {
+            "var": "accepted",
+            "value": false
+          }
+        },
+        {
+          "emit": {
+            "message": "cell.expired",
+            "fields": {
+              "buf": {
+                "var": "buf"
+              },
+              "n": {
+                "var": "n"
+              },
+              "cursor": {
+                "var": "cursor"
+              },
+              "label": {
+                "var": "label"
+              },
+              "accepted": {
+                "var": "accepted"
+              }
+            }
+          }
+        }
+      ],
+      "requirements": [
+        "TIMED_CELL"
+      ]
+    }
+  ],
+  "scope": {
+    "terminal_states": [],
+    "excluded": [
+      "native",
+      "compiler",
+      "protocol proof"
+    ]
+  }
+}

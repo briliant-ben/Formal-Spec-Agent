@@ -8,13 +8,17 @@ permissions:
   contents: read
 jobs:
   lean-kernel:
+    strategy:
+      fail-fast: false
+      matrix:
+        track: [lean-only, tcpip-timed, cli]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Install checksum-pinned official Lean and the independent framework package
+      - name: Install checksum-pinned official Lean
         run: |
           curl --fail --location --connect-timeout 20 --max-time 300 \
             https://github.com/leanprover/lean4/releases/download/v4.35.0/lean-4.35.0-linux.tar.zst \
@@ -22,8 +26,8 @@ jobs:
           echo '7289597a44543246c9227b8cae501767e095ce17f6d448b95fc4a8dc97268f6d  /tmp/lean.tar.zst' | sha256sum --check
           tar --zstd -xf /tmp/lean.tar.zst -C /tmp
           /tmp/lean-4.35.0-linux/bin/lean --version
-          python3 -m venv /tmp/lean-framework-venv
-          /tmp/lean-framework-venv/bin/python -m pip install '.[z3]'
+      - name: Install the framework
+        run: |
           python3 -m venv /tmp/lean-only-venv
           /tmp/lean-only-venv/bin/python -m pip install .
       - name: Fetch the immutable TCPIP pure-expression input
@@ -33,26 +37,18 @@ jobs:
             https://raw.githubusercontent.com/briliant-ben/TCPIP-Model/dda2f02f90229146b017421fade8701c74534308/model/ipv4-endpoint-virtual-link.json \
             --output /tmp/tcpip-typed-input/model.json
           echo '7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5  /tmp/tcpip-typed-input/model.json' | sha256sum --check
-      - name: Check installed package and actual kernel positive/negative cases
-        env:
-          FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
-          FSA_LEAN_REQUIRED: '1'
-          FSA_TCPIP_MODEL: /tmp/tcpip-typed-input/model.json
-          FSA_TCPIP_REQUIRED: '1'
-          FSA_TCPIP_MACHINE_REQUIRED: '1'
-        run: |
-          cd /tmp
-          /tmp/lean-framework-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/lean-tests.log" 2>&1
       - name: Check and freshly recheck the frozen IR expression through the public CLI
+        if: matrix.track == 'cli'
         run: |
           TASK_SHA=$(sha256sum examples/lean-bytes/task.json | cut -d ' ' -f 1)
-          /tmp/lean-framework-venv/bin/formal-spec-agent lean-check examples/lean-bytes/task.json \
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-bytes/task.json \
             --workspace examples/lean-bytes --proofs examples/lean-bytes/proofs.json \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-byte-check
-          /tmp/lean-framework-venv/bin/formal-spec-agent lean-verify /tmp/lean-byte-check \
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-verify /tmp/lean-byte-check \
             --task examples/lean-bytes/task.json --workspace examples/lean-bytes \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-byte-recheck
       - name: Prove Lean-only installation has no Z3 and checks all scoped units
+        if: matrix.track == 'lean-only' || matrix.track == 'tcpip-timed'
         env:
           FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
           FSA_LEAN_REQUIRED: '1'
@@ -60,11 +56,15 @@ jobs:
           FSA_TCPIP_MODEL: /tmp/tcpip-typed-input/model.json
           FSA_TCPIP_REQUIRED: '1'
           FSA_TCPIP_MACHINE_REQUIRED: '1'
+          FSA_TCPIP_EVIDENCE_OUT: /tmp/tcpip-timed-kernel
+          FSA_FLOW_EVIDENCE_OUT: /tmp/lean-flow-tests
         run: |
           cd /tmp
-          /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -p 'test_lean*.py' -v > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
-          /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -p 'test_no_z3.py' -v >> "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
+          PARTITION=core
+          if [ '${{ matrix.track }}' = tcpip-timed ]; then PARTITION=tcpip-timed; fi
+          /tmp/lean-only-venv/bin/python "$GITHUB_WORKSPACE/tests/run_lean_ci.py" "$PARTITION" > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
       - name: Check and recheck ordered state transaction without Z3
+        if: matrix.track == 'cli'
         run: |
           TASK_SHA=$(sha256sum examples/lean-state/task.json | cut -d ' ' -f 1)
           /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-state/task.json \
@@ -74,9 +74,16 @@ jobs:
             --task examples/lean-state/task.json --workspace examples/lean-state \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-state-recheck
       - name: Run and audit the complete Lean-backed flow without Z3
+        if: matrix.track == 'cli'
         env:
           FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
         run: |
+          MAILBOX_SHA=$(sha256sum examples/mailbox/task.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent run examples/mailbox/task.json \
+            --workspace examples/mailbox --task-sha256 "$MAILBOX_SHA" \
+            --out /tmp/lean-mailbox-flow > lean-mailbox.log
+          /tmp/lean-only-venv/bin/formal-spec-agent verify /tmp/lean-mailbox-flow \
+            --workspace examples/mailbox --task-sha256 "$MAILBOX_SHA" > lean-mailbox-audit.log
           TASK_SHA=$(sha256sum examples/lean-efsm/flow.json | cut -d ' ' -f 1)
           /tmp/lean-only-venv/bin/formal-spec-agent run examples/lean-efsm/flow.json \
             --workspace examples/lean-efsm --task-sha256 "$TASK_SHA" \
@@ -88,6 +95,7 @@ jobs:
             --task examples/lean-efsm/task.json --workspace examples/lean-efsm \
             --task-sha256 "$CONTRACT_SHA" --lean "$FSA_LEAN" --out /tmp/lean-efsm-recheck
       - name: Check actual C-expression correspondence and compiled Lean reference
+        if: matrix.track == 'cli'
         run: |
           TASK_SHA=$(sha256sum examples/lean-c-read/task.json | cut -d ' ' -f 1)
           /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-c-read/task.json \
@@ -100,6 +108,7 @@ jobs:
             --workspace examples/lean-c-read --proofs examples/lean-c-read/proofs.json \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-native-reference
       - name: Check all compact-case operators and compiled typed values without Z3
+        if: matrix.track == 'cli'
         run: |
           TASK_SHA=$(sha256sum examples/lean-values/task.json | cut -d ' ' -f 1)
           /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-values/task.json \
@@ -115,6 +124,7 @@ jobs:
             --workspace /tmp/tcpip-typed-input --model-sha256 7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5 \
             --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/tcpip-typed-view
       - name: Check typed actions and scheduled timers, then run the complete case interpreter
+        if: matrix.track == 'cli'
         run: |
           TASK_SHA=$(sha256sum examples/lean-machine/task.json | cut -d ' ' -f 1)
           /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-machine/task.json \
@@ -136,6 +146,7 @@ jobs:
             --model-sha256 7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5 \
             --cases-sha256 "$CASES_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/tcpip-machine-runtime
       - name: Check and freshly recheck the complete typed batch certificate
+        if: matrix.track == 'cli'
         run: |
           TASK_SHA=$(sha256sum examples/lean-batch/task.json | cut -d ' ' -f 1)
           /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-batch/task.json \
@@ -145,6 +156,7 @@ jobs:
             --task examples/lean-batch/task.json --workspace examples/lean-batch \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-batch-recheck
       - name: Run the total typed batch reference without Z3
+        if: matrix.track == 'cli'
         run: |
           /tmp/lean-only-venv/bin/formal-spec-agent lean-batch-run examples/lean-batch/model.json \
             --workspace examples/lean-batch --cases examples/lean-batch/cases.json \
@@ -155,11 +167,13 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: lean-expression-${{ github.sha }}
+          name: lean-expression-${{ matrix.track }}-${{ github.sha }}
           path: |
-            lean-tests.log
             lean-only-tests.log
             lean-flow.log
+            lean-mailbox.log
+            lean-mailbox-audit.log
+            /tmp/lean-mailbox-flow
             lean-flow-audit.log
             /tmp/lean-byte-check
             /tmp/lean-byte-recheck
@@ -173,6 +187,8 @@ jobs:
             /tmp/lean-typed-values
             /tmp/lean-typed-values-recheck
             /tmp/lean-typed-native
+            /tmp/tcpip-timed-kernel
+            /tmp/lean-flow-tests
             /tmp/tcpip-typed-view
             /tmp/lean-machine-check
             /tmp/lean-machine-recheck

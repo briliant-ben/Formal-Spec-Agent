@@ -1,9 +1,8 @@
 # Lean expression proof gates (pilot v1)
 
-Lean is the primary proof-development direction. The base installation requires
-no Z3; old Z3 strategies remain an explicit optional extra alongside the reference
-interpreter, C generator and observation pipeline. Nothing upgrades old
-UNKNOWN results, finite runs or recorded PCAP into Lean proofs.
+Lean is the maintained formal backend alongside reference execution, C
+generation and observation. Historical solver results and UNKNOWNs retain
+their original scopes and are reproducible at their pinned Git revisions.
 
 ## Exactly what is checked
 

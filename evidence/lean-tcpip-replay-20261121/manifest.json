@@ -1,0 +1,28 @@
+{
+  "schema": "fsa-tcpip-lean-replay-evidence-v1",
+  "case_study_commit": "a77440c5ed0528bc4e288c653d180ff1a6bd2684",
+  "model_sha256": "7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5",
+  "case_sha256": "3ab918beb3a7f0bada6068c7f0874c08867c04c71267ce9166eb58bdce447a7d",
+  "archived_linux_peer_sha256": "b47bf2a2a0f7b92c23632e2eff5c7a17cfc1d681ed5f8de84b9de02f0bfea5d6",
+  "before": "resource_unknown",
+  "after": "batch_reference_match",
+  "operations": 19,
+  "transitions": 19,
+  "scope": "Offline replay of original generated C observations from a Linux virtual link using the compiled Lean interpreter.",
+  "archive_sha256": "eae85cc5c56f27127954f3a4c55ac61bdf795cbc64223485bed61904fdc3e13d",
+  "members": {
+    "after/ModelMachine.lean": "098cb90aec807b70a560d4230774be85934270b4910ae1d2af995ae3271d58c6",
+    "after/Runner.lean": "18c00af5ffa39d790062a4c6a0c89058c66f8aaa5e9092ddf19ed80fc88c612b",
+    "after/lean-machine.stdout": "d7c5b888eb1977a400c841f818f132ae9e80f153b401dfa4da9a71c0f8270559",
+    "after/result.json": "7c88a024b7edfc2e5109e721fa5994c8904068dcdacd56b04b9c17b08110df89",
+    "before/Runner.lean": "f02b432b8dc3ca71d6e23566a40888ec659a9cfd38022710e6eba0a6926db047",
+    "before/result.json": "b04e7891f3ec7f0b1a31d3ff022f2174abdde2a8afeb7481c05d7540bfecf9b5",
+    "before/runner-compilation.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "before/runner-compilation.stdout": "3a3c6661d880b2d7b9b54372ca3aaaef17573a351465b8100545924a47e8214f",
+    "input/linux-peer-cases.json": "3ab918beb3a7f0bada6068c7f0874c08867c04c71267ce9166eb58bdce447a7d",
+    "input/original-capture-provenance.json": "ecb0c4249c2c83cddd62b3897df6f672b68b9b1bfe5cc09b7ad68509b2584d8c",
+    "input/original-fixture-converter.py": "e55a836f6a0f9c0a652520dc0dff819b8a2a63e2172567cf6f06f085df534573",
+    "tests/batch-gates.log": "bd7885f93572bb969e4feb1c6ef36c2ca007c3e2963d54181837a6b9bb0acf96",
+    "tests/complete-timed-audit.log": "990ceb34b6195c06b560e6e4dc977660121b28bf4a461dddee0e7166429dacc5"
+  }
+}

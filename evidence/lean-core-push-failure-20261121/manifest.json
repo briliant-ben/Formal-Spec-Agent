@@ -1,0 +1,10 @@
+{
+  "head": "57970125bb0449d1c00f3e968977f3227733254a",
+  "run_id": 44919903813,
+  "job_id": 136893456095,
+  "artifact_id": 14713384127,
+  "zip_sha256": "5915abd7057a67d17f68652df2e81a7ae465e359db7393525308ebe4c82cd9e8",
+  "tests": 154,
+  "failures": 2,
+  "specific_stage_cause": "not retained; no inference"
+}

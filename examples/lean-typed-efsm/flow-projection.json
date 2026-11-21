@@ -1,0 +1,7 @@
+{
+  "frozen_cases_sha256": "2e6f5a87da2814e50488248590d64c927d913552afe9d81b4bde14ef3f054ace",
+  "seed_sha256": "2961d09d8c6ba235de2c6a76c36a499d3088268492458cebe8b5c441af0e4ff6",
+  "projection": "Exact original six stimuli; each original literal trace at_ms/emitted projection and complete final state. Original full snapshots/rule/field outputs remain unchanged and checked in Lean14 certificate. No runtime used to produce expected data.",
+  "original_steps": 6,
+  "seed_steps": 6
+}
