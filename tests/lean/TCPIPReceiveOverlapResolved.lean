@@ -5,6 +5,7 @@ open Approved FormalSpecAgent TypedMachine TypedIR TypedFiringContracts
 open EffectConditions EffectFootprint GuardedSuffix TimedObligations
 set_option maxRecDepth 16384
 
+set_option maxHeartbeats 2200000 in
 theorem overlap_resolved_clauses (s : Snapshot) (f : Values)
     (valid : invariantsHold model s = true) (enabled : TypedMachine.eval s f (linkGuard .resolved) = true)
     (est : TypedMachine.eval s f e923 = true) (room : 1 ≤ TypedMachine.eval s f e1233) :
