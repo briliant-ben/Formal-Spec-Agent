@@ -428,7 +428,13 @@ guard matches, dispatch returns uncovered and rolls back. When a
 guard matches, dispatch succeeds and preserves the invariants across
 the returned trace. Guard disjointness prevents a conflicting match.
 
-These model-level results are checked by the TCP/IP proof audit. A
-public Lean-only timed flow and its generated C observation checks
-still need to be wired into the case study before dropping the legacy
-Z3 backend.
+The compiled Lean batch interpreter also matches the 19 operations
+in the archived generated C session with Linux peers. Its runtime
+renderer places each operation in its own Lean declaration to keep
+MTU-sized input elaboration within the existing budget. The first
+resource failure and the successful replay use the same model and
+literal observations. See the [replay evidence](../evidence/lean-tcpip-replay-20261121/README.md).
+
+The public Lean-only timed flow still needs to connect this proof
+audit and the C observation checks to the case study before dropping
+the legacy Z3 backend.

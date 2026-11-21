@@ -33,6 +33,11 @@ class BatchGateTests(unittest.TestCase):
         self.assertNotIn('def witness_', source[0])
         self.assertNotIn('Approved', source[1])
         self.assertIn('BatchMachine.rollback', source[1])
+        declarations, main = source[1].split('def main : IO Unit := do', 1)
+        input_count = sum(len(case['steps']) for case in cases)
+        self.assertEqual(declarations.count('\ndef command_'), input_count)
+        self.assertNotIn('BatchMachine.dispatch', main)
+        self.assertNotIn('BatchMachine.tick', main)
 
     def test_trace_fields_and_failed_prefix_are_observed(self):
         cases = json.loads((EX / 'cases.json').read_text())

@@ -18,19 +18,39 @@ def batchText : FormalSpecAgent.BatchObserve.Outcome → String
   | .error f s => "{\\\"status\\\":\\\"error\\\",\\\"fault\\\":\\\"" ++ faultName f ++
       "\\\",\\\"after\\\":" ++ ss s ++ ",\\\"trace\\\":[]}"
 
-def main : IO Unit := do
 '''
-    rows=0
-    for i,c in enumerate(cases):
-        if type(c)is not dict or set(c)!={'id','initial','steps'}or type(c['id'])is not str or type(c['steps'])is not list or not 1<=len(c['steps'])<=128:raise ValueError('Batch runtime accepts inputs only')
-        before='s_'+str(i)+'_0';runner+='  let '+before+' := '+view.snapshot(c['initial'])+'\n'
-        for j,step in enumerate(c['steps']):
-            result='r_'+str(i)+'_'+str(j);command=view.command(step,before).replace(' model ',' MachineRuntime.model ')
-            runner+='  let '+result+' := '+command+'\n'
-            runner+='  IO.println (batchText ('+OBS+'outcome MachineRuntime.schema MachineRuntime.eventSchemas '+before+' '+result+'))\n'
-            after='s_'+str(i)+'_'+str(j+1);runner+='  let '+after+' := '+NS+'rollback '+before+' '+result+'\n';before=after;rows+=1
-    if rows>512:raise ValueError('Batch runtime resource limit exceeded')
-    return source,runner
+    declarations = []
+    operations = ['def main : IO Unit := do']
+    rows = 0
+    snapshot_type = 'FormalSpecAgent.TypedMachine.Snapshot'
+    for i, case in enumerate(cases):
+        if (type(case) is not dict or set(case) != {'id', 'initial', 'steps'}
+                or type(case['id']) is not str or type(case['steps']) is not list
+                or not 1 <= len(case['steps']) <= 128):
+            raise ValueError('Batch runtime accepts inputs only')
+        # Standalone declarations give each operation its own elaboration budget.
+        # Large wire inputs are still rendered with the exact typed values.
+        initial = f'initial_{i}'
+        declarations.append(f"def {initial} : {snapshot_type} := {view.snapshot(case['initial'])}")
+        before = f's_{i}_0'
+        operations.append(f'  let {before} := {initial}')
+        for j, step in enumerate(case['steps']):
+            name = f'command_{i}_{j}'
+            body = view.command(step, 'snapshot').replace(' model ', ' MachineRuntime.model ')
+            declarations.append(f'def {name} (snapshot : {snapshot_type}) := {body}')
+            result = f'r_{i}_{j}'
+            operations.append(f'  let {result} := {name} {before}')
+            operations.append(
+                f'  IO.println (batchText ({OBS}outcome MachineRuntime.schema '
+                f'MachineRuntime.eventSchemas {before} {result}))'
+            )
+            after = f's_{i}_{j+1}'
+            operations.append(f'  let {after} := {NS}rollback {before} {result}')
+            before = after
+            rows += 1
+    if rows > 512:
+        raise ValueError('Batch runtime resource limit exceeded')
+    return source, runner + '\n'.join(declarations + [''] + operations) + '\n'
 
 
 def expected_values(view,cases):
