@@ -192,5 +192,7 @@ timer-free fragment. Its [Typed Cell benchmark](examples/lean-typed-efsm) has 14
 kernel-checked obligations plus fresh rechecking. Universal contracts and finite
 execution witnesses are reported separately. Its explicit task-v7 now runs all
 ten stages without Z3, including independent C text input, generated tests,
-Difference and traceability. Timer-bearing universal EFSM contracts and whole
-TCPIP migration remain open.
+Difference and traceability. The separate [timed endpoint proof](docs/lean-timed-contracts.md)
+checks all 335 raw firings, 18 guard conflict groups and dispatch contracts of
+the pinned TCP/IP model. Reachability coverage and C compiler correctness remain
+separate obligations.

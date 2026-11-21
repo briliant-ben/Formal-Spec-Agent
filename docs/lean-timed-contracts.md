@@ -1,7 +1,8 @@
 # Raw firing and scheduled preservation
 
-This checkpoint connects actual timer removal and selection to the typed raw
-candidate semantics. It does not yet certify a concrete timed EFSM universally.
+This layer connects actual timer removal and selection to the typed raw
+candidate semantics. The endpoint proof below instantiates its universal
+contracts for the pinned concrete IR, with the documented admission conditions.
 
 TypedFiringContracts.FiringPreserves generalizes the timer-free raw property
 with an explicit optional fired timer. It quantifies over all typed stores and
