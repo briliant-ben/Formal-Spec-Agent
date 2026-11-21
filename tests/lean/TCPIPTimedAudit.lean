@@ -18,6 +18,7 @@ import TCPIPArpLearn
 import TCPIPIcmpReply
 import TCPIPUdpSend
 import TCPIPOpen
+import TCPIPHandshakeAck
 import TCPIPTimerContracts
 import FrameCatalogExact
 
@@ -114,9 +115,10 @@ def endpoint_preservation_checks :=
     TCPIPEmptyResponses.firings ++ TCPIPApplicationReadEmpty.firings ++ TCPIPAcknowledgments.firings ++
     TCPIPReceiveData.firings ++ TCPIPRetransmit.firings ++ TCPIPTransmit.firings ++
     TCPIPClosedTransitions.firings ++ TCPIPControlReplies.firings ++
-    TCPIPArpLearn.firings ++ TCPIPIcmpReply.firings ++ TCPIPUdpSend.firings ++ TCPIPOpen.firings
+    TCPIPArpLearn.firings ++ TCPIPIcmpReply.firings ++ TCPIPUdpSend.firings ++ TCPIPOpen.firings ++
+    TCPIPHandshakeAck.firings
 
-theorem endpoint_preservation_count : endpoint_preservation_checks.length = 293 := by
+theorem endpoint_preservation_count : endpoint_preservation_checks.length = 314 := by
   simp only [endpoint_preservation_checks, List.length_append, endpoint_guarded_count,
     endpoint_reset_count] <;> rfl
 
@@ -127,6 +129,7 @@ theorem endpoint_preservation_unique :
 
 theorem endpoint_preservation_checked :
     Each (fun p => TypedFiringContracts.FiringPreserves model p.1 p.2) endpoint_preservation_checks := by
+  refine each_append ?_ TCPIPHandshakeAck.checked
   refine each_append (each_append ?_ TCPIPUdpSend.checked) TCPIPOpen.checked
   refine each_append (each_append ?_ TCPIPArpLearn.checked) TCPIPIcmpReply.checked
   refine each_append ?_ TCPIPControlReplies.checked
@@ -143,6 +146,12 @@ theorem endpoint_open_members :
   TCPIPOpen.members
 
 #print axioms endpoint_open_members
+
+theorem endpoint_handshake_ack_members :
+    Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPHandshakeAck.firings :=
+  TCPIPHandshakeAck.members
+
+#print axioms endpoint_handshake_ack_members
 
 theorem endpoint_udp_send_members :
     Each (fun p => p ∈ rawChecks model declaredTimers) TCPIPUdpSend.firings :=

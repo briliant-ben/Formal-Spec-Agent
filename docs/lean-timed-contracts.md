@@ -406,7 +406,15 @@ the original packet and queue effects across the three ARP phases.
 Lean also checks that the model's actual initial snapshot satisfies
 the admission conditions for the timer scheduler.
 
-The combined preservation catalog covers 293 distinct raw firings out of
+Twenty-one TCP handshake acknowledgments establish the ESTABLISHED
+invariants for initial, retry and multiple-retry cases. The proof
+connects the actual wire acknowledgment to the next send sequence,
+checks the decoded receive window's range, and preserves the flight,
+timer and retransmit-buffer constraints. It covers both ACK-only
+reception and packet-emitting responses in the three ARP phases.
+
+The combined preservation catalog covers 314 distinct raw firings out of
 335 and quantifies over all admitted pre-states. Guard disjointness covers
-the full model separately. The other 42 firings still need preservation
-proofs before the full TCP/IP case can use the Lean-only formal gate.
+the full model separately. The remaining 21 external firings are TCP close
+and peer FIN paths, which still need preservation proofs before the full
+TCP/IP case can use the Lean-only formal gate.
