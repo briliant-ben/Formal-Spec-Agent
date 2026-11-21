@@ -9,7 +9,7 @@ import traceback
 from ..ir import load,Machine,ModelError,Uncovered,Conflict
 from ..codegen import generate as generate_native,Unsupported,sha
 from ..codegen.execute import build,commands
-from .task import read,write,resolve,LEAN_RESULTS
+from .task import read,write,resolve,LEAN_RESULTS,TIMED_SCHEMA
 from ..json_values import same_value
 from .testgen import generate as generate_tests,classification
 
@@ -83,9 +83,15 @@ def stage(name,t,workspace,job,out):
                                 rules=len(model['transitions']),invariants=len(model['invariants'])))
     if name=='formal':
         if t['schema']in LEAN_RESULTS:
-            from formal_spec_agent.lean_backend import check
             f=t['formal']
-            checked=check(resolve(workspace,f['task']),workspace,out/'queries',resolve(workspace,f['proofs']),f['task_sha256'],os.environ.get('FSA_LEAN')or'lean')
+            lean = os.environ.get('FSA_LEAN') or 'lean'
+            if t['schema'] == TIMED_SCHEMA:
+                from formal_spec_agent.lean_timed_check import check
+                checked = check(model_file, resolve(workspace, f['manifest']), f['manifest_sha256'],
+                                out/'queries', lean)
+            else:
+                from formal_spec_agent.lean_backend import check
+                checked=check(resolve(workspace,f['task']),workspace,out/'queries',resolve(workspace,f['proofs']),f['task_sha256'],lean)
             status='pass'if checked['status']==LEAN_RESULTS[t['schema']]else'blocked'if checked['status']=='blocked'else'unknown'if checked.get('classification')=='resource_unknown'else'fail'
             return result(status,None if status=='pass'else checked.get('classification',checked['status']),checked)
         if t['schema']=='spec-flow-task-v5':

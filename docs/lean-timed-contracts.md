@@ -435,6 +435,42 @@ MTU-sized input elaboration within the existing budget. The first
 resource failure and the successful replay use the same model and
 literal observations. See the [replay evidence](../evidence/lean-tcpip-replay-20261121/README.md).
 
-The public Lean-only timed flow still needs to connect this proof
-audit and the C observation checks to the case study before dropping
-the legacy Z3 backend.
+The public Lean-only timed flow connects the proof audit to generated
+C observations. The case-study and legacy-backend migration status is
+tracked separately.
+
+## Running the timed proof check
+
+`formal-spec-agent lean-timed-check` compiles reviewed Lean modules
+against an `Approved.lean` generated from the pinned Protocol IR.
+The proof manifest uses `fsa-lean-timed-proof-manifest-v1`, with
+`model` mapping root and base filenames relative to the root IR directory
+to SHA-256 digests and `modules` listing ordered `module` and `sha256`
+entries. The Lean files sit next to the manifest. The last module,
+`TimedProof`, exports these theorems:
+
+| Theorem | Contract |
+|---|---|
+| `TimedProof.initial` | The IR's default state is admitted at time zero |
+| `TimedProof.timers` | The scheduler's timer, domain and guard contracts |
+| `TimedProof.preservation` | Every raw firing in the authoritative IR catalog preserves the declared invariants |
+
+The checker instantiates timer advance and external dispatch theorems,
+checks their axiom dependencies, and records frozen inputs, compiler
+logs and verdicts. The digest supplied by the caller binds the reviewed
+manifest. These proof modules are executable Lean source.
+
+```sh
+formal-spec-agent lean-timed-check model.json \
+  --proof-manifest proofs/manifest.json --proof-sha256 "$REVIEWED_PROOF_SHA256" \
+  --out /tmp/timed-proof-check
+```
+
+The [mailbox timed flow](../examples/mailbox/lean-task.json) connects the
+same check to the C generation and comparison stages. Its `formal` object contains `strategy: "lean-timed"`,
+`manifest` and `manifest_sha256`. Declare the manifest and each
+proof module under `sources` and pass the reviewed flow digest through
+`--task-sha256`. Flow verification revalidates the retained model,
+proof sources and compiler receipts. Run the pinned flow again for a
+fresh kernel check. Test generation reports reachable observations
+within its declared exploration independently of the proof verdict.

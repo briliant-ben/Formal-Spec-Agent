@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 import uuid
-from .task import TOOL,load_task,inputs,check_inputs,freeze_inputs,read,write,sha,resolve,LEAN_RESULTS
+from .task import TOOL,load_task,inputs,check_inputs,freeze_inputs,read,write,sha,resolve,LEAN_RESULTS,TIMED_SCHEMA
 
 STAGES=('sources','ir','formal','tests','reference','generate','build','execute','compare','traceability')
 DEPENDENCIES={'sources':(),'ir':(),'formal':('ir',),'tests':('ir',),'reference':('ir','tests'),
@@ -66,6 +66,8 @@ def run(task_file,workspace,out,expected_task_sha256=None):
     if expected_task_sha256 is not None:
         if not re.fullmatch('[0-9a-f]{64}',expected_task_sha256)or expected_task_sha256!=before:raise ValueError('Task differs from caller-pinned digest')
     t=load_task(task_file,workspace)
+    if t['schema'] == TIMED_SCHEMA and expected_task_sha256 is None:
+        raise ValueError('Timed Lean execution requires a caller-pinned reviewed flow task')
     if sha(task_file)!=before:raise ValueError('Task changed during admission')
     snapshot=inputs(task_file,workspace,t)
     if snapshot['workspace/'+task_file.relative_to(workspace).as_posix()]!=before:raise ValueError('Task changed during snapshot admission')
@@ -122,6 +124,8 @@ def verify(out,workspace,expected_task_sha256=None):
     canonical=load_task(task_path,workspace)
     if canonical!=request['task']or sha(task_path)!=r['task_sha256']or r['scope']!=canonical['scope']or r['task_id']!=canonical['id']:
         raise ValueError('Task/request/source binding differs')
+    if canonical['schema'] == TIMED_SCHEMA and request['expected_task_sha256'] is None:
+        raise ValueError('Timed Lean run lacks the original reviewed flow pin')
     if r['expected_task_sha256']!=request['expected_task_sha256']or r['task_pin_matched']is not (request['expected_task_sha256'] is not None):raise ValueError('Task pin claim differs')
     if request['expected_task_sha256']is not None and request['expected_task_sha256']!=r['task_sha256']:raise ValueError('Original caller pin differs')
     if expected_task_sha256 is not None and expected_task_sha256!=r['task_sha256']:raise ValueError('Task differs from verifier caller pin')
@@ -153,9 +157,16 @@ def verify(out,workspace,expected_task_sha256=None):
         expected_formal={'spec-flow-task-v4':'inductive_invariants_pass','spec-flow-task-v5':'initial_step_contracts_pass',**LEAN_RESULTS}.get(canonical['schema'],'bounded_pass')
         if name=='formal'and stage['status']=='pass'and stage['data'].get('status')!=expected_formal:raise ValueError('Unknown/failed formal result falsely promoted')
         if name=='formal'and canonical['schema']in LEAN_RESULTS and stage['status']in ('pass','unknown'):
-            from formal_spec_agent.lean_backend import inspect_certificate
             f=canonical['formal']
-            checked=inspect_certificate(out/'stages/formal/queries',resolve(workspace,f['task']),workspace,f['task_sha256'],require_pass=stage['status']=='pass')
+            certificate = out/'stages/formal/queries'
+            if canonical['schema'] == TIMED_SCHEMA:
+                from formal_spec_agent.lean_timed_check import inspect
+                checked = inspect(certificate, resolve(workspace, canonical['model']),
+                                  resolve(workspace, f['manifest']), f['manifest_sha256'],
+                                  require_pass=stage['status']=='pass')
+            else:
+                from formal_spec_agent.lean_backend import inspect_certificate
+                checked=inspect_certificate(certificate,resolve(workspace,f['task']),workspace,f['task_sha256'],require_pass=stage['status']=='pass')
             if checked!=stage['data']:raise ValueError('Lean formal report/claim differs')
         if name=='formal'and canonical['schema']=='spec-flow-task-v4'and stage['status']in ('pass','unknown'):
             from ..sequence_induction import verify as verify_induction
@@ -170,8 +181,8 @@ def verify(out,workspace,expected_task_sha256=None):
         if name=='formal'and stage['status']in ('pass','unknown')and stage['data']!=read(out/'stages/formal/queries/result.json'):
             raise ValueError('Underlying formal report changed')
         if name=='formal'and canonical['schema']not in LEAN_RESULTS and stage['status']in ('pass','unknown')and stage['data'].get('solver_timeout_ms',10000)!=canonical['formal'].get('solver_timeout_ms',10000):raise ValueError('Formal solver budget differs from task')
-        if name=='formal'and canonical['schema']not in ('spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6','spec-flow-task-v7')and stage['status']in ('pass','unknown')and stage['data'].get('solver_preprocess','none')!=canonical['formal'].get('solver_preprocess','none'):raise ValueError('Formal solver preprocessing policy differs from task')
-        if name=='formal'and canonical['schema']not in ('spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6','spec-flow-task-v7')and stage['status']in ('pass','unknown'):
+        if name=='formal'and canonical['schema']not in {'spec-flow-task-v4','spec-flow-task-v5',*LEAN_RESULTS}and stage['status']in ('pass','unknown')and stage['data'].get('solver_preprocess','none')!=canonical['formal'].get('solver_preprocess','none'):raise ValueError('Formal solver preprocessing policy differs from task')
+        if name=='formal'and canonical['schema']not in {'spec-flow-task-v4','spec-flow-task-v5',*LEAN_RESULTS}and stage['status']in ('pass','unknown'):
             _policy=canonical['formal'].get('solver_preprocess','none')
             if _policy=='exact-v1'and not {'solver_preprocess','solver_tactics','solver_preprocess_source'}<=set(stage['data']):raise ValueError('Formal solver preprocessing metadata missing')
             _canon_tactics=['propagate-values','solve-eqs','simplify','smt']if _policy=='exact-v1'else([]if _policy=='none'else None)

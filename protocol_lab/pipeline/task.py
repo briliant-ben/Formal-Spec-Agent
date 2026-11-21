@@ -5,12 +5,14 @@ import re
 
 TOOL=Path(__file__).resolve().parents[1]
 SCHEMA='spec-flow-task-v2'
-SCHEMAS={'spec-flow-task-v1',SCHEMA,'spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6','spec-flow-task-v7'}
+SCHEMAS={'spec-flow-task-v1',SCHEMA,'spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6','spec-flow-task-v7','spec-flow-task-v8'}
 
 
-LEAN_STRATEGIES={'spec-flow-task-v6':'lean-efsm','spec-flow-task-v7':'lean-typed-efsm'}
+TIMED_SCHEMA = 'spec-flow-task-v8'
+LEAN_STRATEGIES={'spec-flow-task-v6':'lean-efsm','spec-flow-task-v7':'lean-typed-efsm',TIMED_SCHEMA:'lean-timed'}
 LEAN_CONTRACTS={'spec-flow-task-v6':'fsa-lean-efsm-task-v1','spec-flow-task-v7':'fsa-lean-typed-efsm-task-v1'}
-LEAN_RESULTS={'spec-flow-task-v6':'checked_efsm_contract','spec-flow-task-v7':'checked_typed_efsm_contract'}
+LEAN_RESULTS={'spec-flow-task-v6':'checked_efsm_contract','spec-flow-task-v7':'checked_typed_efsm_contract',
+              TIMED_SCHEMA:'checked_timed_dispatch_contract'}
 
 
 def framework_files():
@@ -58,7 +60,7 @@ def load_task(filename,workspace):
         if not re.fullmatch('[0-9a-f]{64}',s['sha256']):raise ValueError('Invalid source digest')
         if not isinstance(s['uri_aliases'],list)or not s['uri_aliases']or any(not isinstance(u,str)or not u for u in s['uri_aliases']):raise ValueError('Source URI aliases required')
     if len(ids)!=len(set(ids)):raise ValueError('Duplicate source ID')
-    if t['schema']in ('spec-flow-task-v2','spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6','spec-flow-task-v7'):
+    if t['schema']in ('spec-flow-task-v2','spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6','spec-flow-task-v7',TIMED_SCHEMA):
         pinned={resolve(workspace,s['path'])for s in t['sources']}
         required={resolve(workspace,t['exploration']),*(resolve(workspace,n)for n in t['seeds'])}
         if 'wire'in t:required|={resolve(workspace,t['wire']['binding']),*(resolve(workspace,n)for n in t['wire']['scenarios'])}
@@ -67,7 +69,23 @@ def load_task(filename,workspace):
     for b in t['requirement_bindings'].values():
         if set(b)!={'source','clause','reference'}or b['source']not in ids or any(not isinstance(b[k],str)or not b[k]for k in b):raise ValueError('Incomplete requirement binding')
     f=t['formal'];limits=t['limits']
-    if t['schema']in LEAN_STRATEGIES:
+    if t['schema'] == TIMED_SCHEMA:
+        if (set(f) != {'strategy', 'manifest', 'manifest_sha256'}
+                or f['strategy'] != LEAN_STRATEGIES[TIMED_SCHEMA]
+                or type(f['manifest']) is not str or Path(f['manifest']).is_absolute()):
+            raise ValueError('Unsupported timed Lean formal configuration')
+        manifest = resolve(workspace, f['manifest'])
+        if manifest not in pinned:
+            raise ValueError('Timed proof manifest must be source-pinned')
+        from formal_spec_agent.lean_timed_check import proof_inputs
+        model_path = resolve(workspace, t['model'])
+        _, model_sources, modules = proof_inputs(model_path, manifest, f['manifest_sha256'])
+        from ..ir import model_files
+        if {model_path.parent/name for name in model_sources} != set(model_files(model_path)):
+            raise ValueError('Timed proof manifest must cover the flow model inheritance chain')
+        if not {manifest.parent/(name + '.lean') for name in modules} <= pinned:
+            raise ValueError('Every timed proof module must be source-pinned')
+    elif t['schema']in LEAN_STRATEGIES:
         if set(f)!={'strategy','task','task_sha256','proofs'}or f['strategy']!=LEAN_STRATEGIES[t['schema']]:raise ValueError('Unsupported Lean formal strategy/configuration')
         if any(type(f[n])is not str or Path(f[n]).is_absolute()for n in ('task','proofs')):raise ValueError('Relative Lean inputs required')
         contract=resolve(workspace,f['task']);proofs=resolve(workspace,f['proofs'])

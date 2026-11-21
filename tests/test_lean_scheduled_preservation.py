@@ -1,4 +1,5 @@
 """Kernel-check raw model obligations before the successful scheduler bridges."""
+import json
 import os
 from pathlib import Path
 import shutil
@@ -7,16 +8,12 @@ import tempfile
 import unittest
 
 from formal_spec_agent import lean_backend as gate
+from formal_spec_agent.lean_timed_check import CHECKED, MODULES, SCHEMA, check as check_timed, inspect
 from formal_spec_agent.lean_timed_contracts import render
 from protocol_lab.ir import load
 
 ROOT=Path(__file__).resolve().parents[1]
 LEAN=os.environ.get('FSA_LEAN')or shutil.which('lean')
-MODULES=['Foundation','ValueOps','SequenceFacts','OctetFacts','TypedIR','OctetBounds','TypedMachine','TypedContracts',
-         'TypedFiringContracts','TimerRank','TimerMinimum','ScheduledPreservation','TimerDomain',
-         'TimerEffects','TimerProgress','BatchMachine','BatchReplay','BatchPreservation','TimedSelection','BatchTotality',
-         'StoreFacts','MachineObserve','BatchObserve','TimedObligations','GuardDiscriminators','InvariantFootprint','ResetPreservation','TimerInvariantFacts',
-         'ExprRewrite','EffectFootprint','GuardedSuffix','EffectConditions']
 TARGETS=['FormalSpecAgent.ScheduledPreservation.'+n for n in [
     'MatchingRaw','fire_success_invariant_from_raw','external_success_invariant_from_raw',
     'timer_success_invariant_from_raw']]+['ScheduledController.raw_obligation_rejects_filtered_timer_loss']
@@ -311,8 +308,7 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
         absent = ('T.net.syn', 'T.net.synack', 'T.net.ack', 'T.net.fin',
                   'T.net.rst', 'T.net.rstack', 'T.net.data', 'T.net.packet')
         ids = [list(model['events']).index(name) for name in absent]
-        literal = '[' + ', '.join(map(str, ids)) + ']'
-        approved, goals = render(model)
+        _, goals = render(model)
         self.assertEqual(sum(name.startswith('raw_') for name in goals), 336)  # 335 clauses plus equality
         self.assertEqual(sum(name.startswith('conflict_') for name in goals), 19)  # 18 groups plus equality
         # Match the audit's numeric layer partition to actual IR rule names.
@@ -326,57 +322,23 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
 
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            env = dict(PATH=os.defpath, LEAN_PATH=str(root), LANG='C.UTF-8')
-            for module in MODULES:
-                shutil.copyfile(ROOT/'formal_spec_agent/lean'/(module+'.lean'), root/(module+'.lean'))
-            (root/'Approved.lean').write_text(approved)
-            audit = (ROOT/'tests/lean/TCPIPTimedAudit.lean').read_text()
-            self.assertEqual(audit.count('TCPIP_ABSENT_IDS'), 1)
-            (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
-            tcpip_modules = (
-                'TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', 'TCPIPQueries',
-                'TCPIPCacheConfig', 'TCPIPUDPDeliver', 'TCPIPSendQueue', 'TCPIPEmptyResponses',
-                'TCPIPApplicationRead', 'TCPIPApplicationReadEmpty', 'TCPIPAcknowledgments',
-                'TCPIPReceiveData', 'TCPIPSendWire', 'TCPIPRetransmit',
-                'TCPIPTransmitFacts', 'TCPIPTransmit', 'TCPIPQueueRelease', 'TCPIPClosedTransitions',
-                'TCPIPControlReplies', 'TCPIPArpLearn', 'TCPIPIcmpReply', 'TCPIPUdpSend',
-                'TCPIPOpen', 'TCPIPHandshakeAck', 'TCPIPFinAck', 'TCPIPFinWire',
-                'TCPIPTimerCoverage', 'TCPIPTimerContracts',
-            )
-            for module in tcpip_modules:
-                shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
-            blocks = [f'FrameBlock{index}' for index in range(16)]
-            expected = {
-                5: '(TCPIPFramePairs.control.take 3).map TCPIPFrameCatalog.pairId',
-                6: '(TCPIPFramePairs.control.drop 3).map TCPIPFrameCatalog.pairId',
-                10: '(TCPIPFramePairs.data.take 13).map TCPIPFrameCatalog.pairId',
-                11: '(TCPIPFramePairs.data.drop 13).map TCPIPFrameCatalog.pairId',
-            }
-            for index, block in enumerate(blocks):
-                (root/f'{block}.lean').write_text(
-                    'import TCPIPFramePairs\n'
-                    'set_option maxRecDepth 65536 in\n'
-                    'set_option maxHeartbeats 8000000 in\n'
-                    f'theorem frameBlock{index} : TCPIPFrameCatalog.blockIds {index} = '
-                    f'{expected.get(index, "[]")} := by decide +kernel\n')
-            (root/'FrameCatalogExact.lean').write_text(
-                ''.join(f'import {block}\n' for block in blocks)
-                + 'open FormalSpecAgent.GuardDiscriminators Approved TCPIPFrameCatalog\n'
-                + 'set_option maxRecDepth 16384 in\n'
-                + 'theorem frameCatalogExact : (residualPairs conflictGroup_4).map pairId = '
-                + '(TCPIPFramePairs.control ++ TCPIPFramePairs.data).map pairId := by\n'
-                + '  rw [TCPIPFrameCatalog.merge_blocks, '
-                + ', '.join(f'frameBlock{index}' for index in range(len(blocks))) + ']\n'
-                + '  simp only [List.nil_append, List.append_nil, ← List.map_append, '
-                + 'List.append_assoc, List.take_append_drop]\n')
-
-            result = None
-            for module in [*MODULES, 'Approved', *tcpip_modules, *blocks, 'FrameCatalogExact', 'TCPIPAudit']:
-                result = subprocess.run([LEAN, '-o', module+'.olean', module+'.lean'],
-                    cwd=root, env=env, capture_output=True, text=True, timeout=60)
-                self.assertEqual(result.returncode, 0, module+'\n'+result.stdout+result.stderr)
+            manifest = prepare_tcpip_proofs(root, source, ids)
+            out = root/'checked'
+            result = check_timed(source, manifest, gate.sha(manifest), out, LEAN)
+            if result['status'] != CHECKED:
+                name = result.get('failed_module')
+                log = ((out/f'{name}.stdout').read_text() + (out/f'{name}.stderr').read_text()) if name else str(result)
+                self.fail(log)
+            self.assertEqual((result['raw_firings'], result['conflict_groups']), (335, 18))
+            self.assertEqual(inspect(out, source, manifest, gate.sha(manifest)), result)
+            result_file = out/'result.json'
+            gate.write(result_file, dict(result, raw_firings=334))
+            with self.assertRaisesRegex(ValueError, 'claim or input identity'):
+                inspect(out, source, manifest, gate.sha(manifest))
+            gate.write(result_file, result)
+            audit_stdout = (out/'TCPIPAudit.stdout').read_text()
             for name in ('count', 'exact_catalog'):
-                self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPTimerContracts.' + name)),
+                self.assertLessEqual(set(gate.read_axioms(audit_stdout, 'TCPIPTimerContracts.' + name)),
                                      gate.AXIOMS)
             for name in ('absent_external_exact', 'absent_packet_rolls_back',
                          'absent_initial_dispatch', 'closed_groups', 'frame_group', 'malformed_length_preserves',
@@ -390,5 +352,65 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
                          'endpoint_preservation_catalog', 'endpoint_all_preservation', 'endpoint_dispatch',
                          'endpoint_initial_admitted', 'endpoint_timer_contract', 'endpoint_timer_batch', 'endpoint_absent_dispatch',
                          'endpoint_raw_exact', 'endpoint_raw_count', 'endpoint_conflicts_exact', 'endpoint_guards_disjoint'):
-                self.assertLessEqual(set(gate.read_axioms(result.stdout, 'TCPIPAudit.' + name)),
+                self.assertLessEqual(set(gate.read_axioms(audit_stdout, 'TCPIPAudit.' + name)),
                                      gate.AXIOMS)
+
+
+def prepare_tcpip_proofs(root, model_file, absent_ids):
+    literal = '[' + ', '.join(map(str, absent_ids)) + ']'
+    audit = (ROOT/'tests/lean/TCPIPTimedAudit.lean').read_text()
+    assert audit.count('TCPIP_ABSENT_IDS') == 1
+    (root/'TCPIPAudit.lean').write_text(audit.replace('TCPIP_ABSENT_IDS', literal))
+    tcpip_modules = (
+        'TCPIPFrameCatalog', 'TCPIPFramePairs', 'TCPIPTimerRules', 'TCPIPQueries',
+        'TCPIPCacheConfig', 'TCPIPUDPDeliver', 'TCPIPSendQueue', 'TCPIPEmptyResponses',
+        'TCPIPApplicationRead', 'TCPIPApplicationReadEmpty', 'TCPIPAcknowledgments',
+        'TCPIPReceiveData', 'TCPIPSendWire', 'TCPIPRetransmit',
+        'TCPIPTransmitFacts', 'TCPIPTransmit', 'TCPIPQueueRelease', 'TCPIPClosedTransitions',
+        'TCPIPControlReplies', 'TCPIPArpLearn', 'TCPIPIcmpReply', 'TCPIPUdpSend',
+        'TCPIPOpen', 'TCPIPHandshakeAck', 'TCPIPFinAck', 'TCPIPFinWire',
+        'TCPIPTimerCoverage', 'TCPIPTimerContracts',
+    )
+    for module in tcpip_modules:
+        shutil.copyfile(ROOT/'tests/lean'/(module+'.lean'), root/(module+'.lean'))
+    blocks = [f'FrameBlock{index}' for index in range(16)]
+    expected = {
+        5: '(TCPIPFramePairs.control.take 3).map TCPIPFrameCatalog.pairId',
+        6: '(TCPIPFramePairs.control.drop 3).map TCPIPFrameCatalog.pairId',
+        10: '(TCPIPFramePairs.data.take 13).map TCPIPFrameCatalog.pairId',
+        11: '(TCPIPFramePairs.data.drop 13).map TCPIPFrameCatalog.pairId',
+    }
+    for index, block in enumerate(blocks):
+        (root/f'{block}.lean').write_text(
+            'import TCPIPFramePairs\n'
+            'set_option maxRecDepth 65536 in\n'
+            'set_option maxHeartbeats 8000000 in\n'
+            f'theorem frameBlock{index} : TCPIPFrameCatalog.blockIds {index} = '
+            f'{expected.get(index, "[]")} := by decide +kernel\n')
+    (root/'FrameCatalogExact.lean').write_text(
+        ''.join(f'import {block}\n' for block in blocks)
+        + 'open FormalSpecAgent.GuardDiscriminators Approved TCPIPFrameCatalog\n'
+        + 'set_option maxRecDepth 16384 in\n'
+        + 'theorem frameCatalogExact : (residualPairs conflictGroup_4).map pairId = '
+        + '(TCPIPFramePairs.control ++ TCPIPFramePairs.data).map pairId := by\n'
+        + '  rw [TCPIPFrameCatalog.merge_blocks, '
+        + ', '.join(f'frameBlock{index}' for index in range(len(blocks))) + ']\n'
+        + '  simp only [List.nil_append, List.append_nil, ← List.map_append, '
+        + 'List.append_assoc, List.take_append_drop]\n')
+
+    (root/'TimedProof.lean').write_text(
+        'import TCPIPAudit\n'
+        'namespace TimedProof\n'
+        'open Approved FormalSpecAgent BatchTotality TimedObligations TypedFiringContracts\n'
+        'theorem initial : Approved.initial_admitted := TCPIPAudit.endpoint_initial_admitted\n'
+        'theorem timers : TimerContracts model declaredStates declaredTimers := TCPIPAudit.endpoint_timer_contract\n'
+        'theorem preservation : Each (fun p => FiringPreserves model p.1 p.2) '
+        '(rawChecks model declaredTimers) := TCPIPAudit.endpoint_all_preservation\n'
+        'end TimedProof\n')
+    manifest = root/'manifest.json'
+    manifest.write_text(json.dumps(dict(
+        schema=SCHEMA, model={model_file.name: gate.sha(model_file)},
+        modules=[dict(module=name, sha256=gate.sha(root/f'{name}.lean'))
+                 for name in [*tcpip_modules, *blocks, 'FrameCatalogExact', 'TCPIPAudit', 'TimedProof']],
+    )))
+    return manifest
