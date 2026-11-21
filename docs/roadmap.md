@@ -7,9 +7,12 @@
 - Optional independent DeepSeek proposal roles, pinned inputs and a persistent
   request ledger. Responses cannot self-approve or execute model-returned code.
 - Compact C expression factoring with retained semantics/failure regressions.
-- Optional Lean expression-contract pilot: frozen source/statement hashes,
+- Lean expression contracts: frozen source/statement hashes,
   proof-data-only workers, actual Lean 4.35.0 checks, a separate axiom audit,
   positive witnesses, mutation/tamper rejection and fresh certificate rechecking.
+- Lean-only maintained formal workflows, with no Z3 dependency or fallback.
+  The pinned IPv4 endpoint has checked initial admission, all 335 raw firings,
+  18 guard conflict groups, timer advance and transactional dispatch contracts.
 
 These are finite, explicit scopes. A passing expression unit is not a proof of
 its containing EFSM, the generated C compiler, an Internet standard or TCP/IP.
@@ -26,26 +29,28 @@ The compact case's five types and 26 pure operators are now represented by typed
 Lean data and evaluated by a pure interpreter. Complete case expression typing,
 59 kernel obligations and compiled reference values are separate claims. Exact
 long-buffer content is preserved, and timer membership is not scheduling. See
-[typed values](lean-typed-values.md). Extend this layer to transition effects and
-timer scheduling next; the whole335-rule EFSM is not yet certified.
+[typed values](lean-typed-values.md). The later [timed endpoint proof](lean-timed-contracts.md)
+composes transition effects and scheduling for all 335 raw firings. This does
+not prove complete TCP/IP behavior, reachability or C compiler correctness.
 
 Typed ordered actions and scheduled single-step timers now have a separate
 [29-obligation contract](lean-scheduled-microsteps.md). Complete case actions
 compile and nine frozen native/reference transitions match compiled Lean. This
-does not certify batched scheduling or universal rule preservation before runtime
-invariant filtering. Extend those obligations before whole-case migration.
+unit does not by itself certify batched scheduling or universal rule preservation
+before runtime invariant filtering; those have separate timed proof obligations.
 
 An all-rule timer-free integer EFSM contract now feeds the complete ten-stage
 flow through explicit task-v6. It checks preservation before runtime filtering,
 disjointness, total state/event coverage, initial validity and admitted literal
 witnesses. This is a larger proof boundary than the earlier selected action block;
 it still excludes timers/bytes/native arithmetic and interpreter/compiler proofs.
-See [Lean EFSM flow](lean-efsm-flow.md). Next extend value/operator coverage,
-then scheduling, before migrating TCP/IP and retiring the optional backend.
+See [Lean EFSM flow](lean-efsm-flow.md). The typed v7 and reviewed timed v8
+contracts extend this boundary with separately stated scopes.
 
 The Python package installs without solver dependencies. An integer, timer-free action-block
 unit now checks ordered set/emit and final-invariant rollback. See the
-[capability gates](lean-first.md) before retiring the optional solver backend.
+[supported fragments](lean-first.md). The old solver backend is retired from
+the maintained package; historical receipts require their original revision.
 Neither milestone replaces whole-EFSM checking or proves C statements.
 
 Extend the typed pure expression fragment to statements and its evaluation contract.

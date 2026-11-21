@@ -4,7 +4,8 @@ Task-v6 explicitly selects `formal.strategy="lean-efsm"`, `formal.task`, the
 approved contract digest and `formal.proofs`. Both files must be source-pinned,
 and the contract must name the flow's exact model. Every workspace dependency of
 the contract must also be in the flow snapshot. Other fields, including BMC depth
-or solver tactics, are rejected for v6. Old task versions keep their old backend.
+or solver tactics, are rejected for v6. Historical solver task versions require
+their original pinned Git checker; the maintained package explicitly rejects them.
 
 The trusted EFSM adapter checks IR0.5/0.6 atomic-v1, timer-free integer variables
 and external integer events. It represents variable/event slots by declared
