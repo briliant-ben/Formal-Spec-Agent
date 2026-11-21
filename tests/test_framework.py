@@ -14,6 +14,7 @@ from protocol_lab.pipeline.runner import run, verify
 from protocol_lab.pipeline.task import sha, load_task
 from protocol_lab.ir import load
 from protocol_lab.codegen import render, Unsupported
+from flow_diagnostics import record_flow
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,7 +27,8 @@ class FrameworkTests(unittest.TestCase):
             task = workspace/'task.json'
             out = Path(tmp)/'flow'
             result = run(task, workspace, out, expected_task_sha256=sha(task))
-            self.assertEqual(result['assessment'], 'verified_event_slice')
+            diagnostic = record_flow(out, 'framework-mailbox', result)
+            self.assertEqual(result['assessment'], 'verified_event_slice', diagnostic)
             self.assertEqual(set(result['stages']), {'sources','ir','formal','tests','reference','generate','build','execute','compare','traceability'})
             self.assertFalse(result['protocol_correctness_proved'])
             self.assertEqual(verify(out,workspace,sha(task))['status'],'retained_evidence_consistent')

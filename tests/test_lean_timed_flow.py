@@ -8,6 +8,7 @@ import unittest
 from formal_spec_agent.lean_timed_check import CHECKED, inspect
 from protocol_lab.pipeline.runner import STAGES, run, verify
 from protocol_lab.pipeline.task import read, sha, write
+from flow_diagnostics import record_flow
 
 ROOT = Path(__file__).resolve().parents[1]
 MAILBOX = ROOT/'examples/mailbox'
@@ -30,7 +31,8 @@ class TimedFlowTests(unittest.TestCase):
             task_path = MAILBOX/'task.json'
             pin = sha(task_path)
             result = run(task_path, MAILBOX, output, pin)
-            self.assertEqual(result['assessment'], 'verified_event_slice')
+            diagnostic = record_flow(output, 'timed-mailbox', result)
+            self.assertEqual(result['assessment'], 'verified_event_slice', diagnostic)
             self.assertEqual({k: v['status'] for k, v in result['stages'].items()},
                              dict.fromkeys(STAGES, 'pass'))
             formal = result['stages']['formal']['data']

@@ -57,6 +57,7 @@ jobs:
           FSA_TCPIP_REQUIRED: '1'
           FSA_TCPIP_MACHINE_REQUIRED: '1'
           FSA_TCPIP_EVIDENCE_OUT: /tmp/tcpip-timed-kernel
+          FSA_FLOW_EVIDENCE_OUT: /tmp/lean-flow-tests
         run: |
           cd /tmp
           PARTITION=core
@@ -187,6 +188,7 @@ jobs:
             /tmp/lean-typed-values-recheck
             /tmp/lean-typed-native
             /tmp/tcpip-timed-kernel
+            /tmp/lean-flow-tests
             /tmp/tcpip-typed-view
             /tmp/lean-machine-check
             /tmp/lean-machine-recheck
