@@ -2,7 +2,7 @@
 
 ## Implemented baseline
 
-- Declarative Protocol IR, independent reference/Z3 checks, generated tests,
+- Declarative Protocol IR, independent reference and formal checks, generated tests,
   standalone C, exact observations/Difference and source traceability.
 - Optional independent DeepSeek proposal roles, pinned inputs and a persistent
   request ledger. Responses cannot self-approve or execute model-returned code.
@@ -43,7 +43,7 @@ it still excludes timers/bytes/native arithmetic and interpreter/compiler proofs
 See [Lean EFSM flow](lean-efsm-flow.md). Next extend value/operator coverage,
 then scheduling, before migrating TCP/IP and retiring the optional backend.
 
-Lean-first installation no longer requires Z3. An integer, timer-free action-block
+The Python package installs without solver dependencies. An integer, timer-free action-block
 unit now checks ordered set/emit and final-invariant rollback. See the
 [capability gates](lean-first.md) before retiring the optional solver backend.
 Neither milestone replaces whole-EFSM checking or proves C statements.
@@ -80,7 +80,7 @@ bridge decomposes it into real selector/step equations. Compiled Lean matches
 exact next-step equations and stronger byte-content lemmas; the original resource
 UNKNOWN attempts remain independent history. Extend universal typed-rule
 preservation/coverage before whole-case/full-flow migration; do not
-retire the optional Z3 backend yet. See [batch scheduling](lean-batch-scheduling.md).
+cover full protocol or compiler correctness. See [batch scheduling](lean-batch-scheduling.md).
 
 ## Universal typed EFSM checkpoint
 

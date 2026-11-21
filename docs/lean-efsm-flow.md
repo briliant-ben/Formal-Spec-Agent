@@ -46,5 +46,5 @@ The mathematical EFSM proof view is trusted translation of the authoritative IR;
 it is not a proof of the Python interpreter, generic dispatcher, scheduler or C
 compiler. It does not prove reachability, liveness, termination, standard-to-IR
 interpretation, timers, bytes or native arithmetic/memory behavior. These remain
-explicit migration gates before retiring all optional Z3 code or revalidating
+separate requirements for revalidating
 the TCP/IP case under Lean.

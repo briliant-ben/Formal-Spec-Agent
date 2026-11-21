@@ -10,7 +10,7 @@ import shutil
 import subprocess
 from . import generate,render,sha,string_literals
 from ..ir import load,value_ok,ModelError
-from ..symbolic import model_hash
+from ..model_identity import model_hash
 from ..flow import run_scenario
 from ..json_values import same_value
 

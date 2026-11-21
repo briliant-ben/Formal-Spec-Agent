@@ -2,7 +2,7 @@
 
 The `direct-c99-shared-expressions-v5` backend emits standalone C99 from the
 same admitted IR fragment as v4. Protocol policy stays in IR. The reference
-interpreter, Z3 encoding, dispatcher and byte runtime are unchanged.
+interpreter, dispatcher and byte runtime are unchanged in this generator epoch.
 
 The generator counts exact lowered compound expressions, including their result
 type, and extracts repeated expressions of at least 80 source characters into

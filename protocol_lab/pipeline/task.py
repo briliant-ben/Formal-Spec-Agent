@@ -4,11 +4,8 @@ from pathlib import Path
 import re
 
 TOOL=Path(__file__).resolve().parents[1]
-SCHEMA='spec-flow-task-v2'
-SCHEMAS={'spec-flow-task-v1',SCHEMA,'spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6','spec-flow-task-v7','spec-flow-task-v8'}
-
-
 TIMED_SCHEMA = 'spec-flow-task-v8'
+HISTORICAL_SCHEMAS = {f'spec-flow-task-v{version}' for version in range(1, 6)}
 LEAN_STRATEGIES={'spec-flow-task-v6':'lean-efsm','spec-flow-task-v7':'lean-typed-efsm',TIMED_SCHEMA:'lean-timed'}
 LEAN_CONTRACTS={'spec-flow-task-v6':'fsa-lean-efsm-task-v1','spec-flow-task-v7':'fsa-lean-typed-efsm-task-v1'}
 LEAN_RESULTS={'spec-flow-task-v6':'checked_efsm_contract','spec-flow-task-v7':'checked_typed_efsm_contract',
@@ -39,14 +36,11 @@ def load_task(filename,workspace):
     t=read(filename)
     if 'wire' in t:raise ValueError('Legacy TCP wire binding belongs to the TCPIP benchmark; use IR byte outputs or an external observation adapter')
     keys={'schema','id','model','sources','requirement_bindings','exploration','seeds','formal','limits','scope'}
-    if t.get('schema')=='spec-flow-task-v3':keys.add('wire')
-    if set(t)!=keys or t['schema']not in SCHEMAS:raise ValueError('Unknown task fields/version')
+    if t.get('schema') in HISTORICAL_SCHEMAS:
+        raise ValueError('Historical solver task. Use its pinned framework revision or migrate it to Lean.')
+    if set(t)!=keys or t['schema']not in LEAN_STRATEGIES:raise ValueError('Unknown task fields/version')
     if not isinstance(t['id'],str)or not re.fullmatch(r'[A-Za-z0-9_.-]+',t['id']):raise ValueError('Invalid task ID')
     names=[t['model'],t['exploration'],*t['seeds'],*(s['path']for s in t['sources'])]
-    if 'wire'in t:
-        w=t['wire']
-        if set(w)!={'binding','scenarios'}or not isinstance(w['scenarios'],list)or not w['scenarios']:raise ValueError('Explicit wire binding/scenarios required')
-        names += [w['binding'],*w['scenarios']]
     if any(Path(n).is_absolute()for n in names):raise ValueError('Task input paths must be relative to workspace')
     resolve(workspace,t['model']);resolve(workspace,t['exploration'])
     if not isinstance(t['seeds'],list):raise ValueError('Seeds must be a list')
@@ -60,11 +54,10 @@ def load_task(filename,workspace):
         if not re.fullmatch('[0-9a-f]{64}',s['sha256']):raise ValueError('Invalid source digest')
         if not isinstance(s['uri_aliases'],list)or not s['uri_aliases']or any(not isinstance(u,str)or not u for u in s['uri_aliases']):raise ValueError('Source URI aliases required')
     if len(ids)!=len(set(ids)):raise ValueError('Duplicate source ID')
-    if t['schema']in ('spec-flow-task-v2','spec-flow-task-v3','spec-flow-task-v4','spec-flow-task-v5','spec-flow-task-v6','spec-flow-task-v7',TIMED_SCHEMA):
-        pinned={resolve(workspace,s['path'])for s in t['sources']}
-        required={resolve(workspace,t['exploration']),*(resolve(workspace,n)for n in t['seeds'])}
-        if 'wire'in t:required|={resolve(workspace,t['wire']['binding']),*(resolve(workspace,n)for n in t['wire']['scenarios'])}
-        if not required<=pinned:raise ValueError('Task v2 must pin every seed and exploration input')
+    pinned = {resolve(workspace, source['path']) for source in t['sources']}
+    required = {resolve(workspace, t['exploration']), *(resolve(workspace, n) for n in t['seeds'])}
+    if not required <= pinned:
+        raise ValueError('Task must pin every seed and exploration input')
     if not isinstance(t['requirement_bindings'],dict):raise ValueError('Requirement bindings required')
     for b in t['requirement_bindings'].values():
         if set(b)!={'source','clause','reference'}or b['source']not in ids or any(not isinstance(b[k],str)or not b[k]for k in b):raise ValueError('Incomplete requirement binding')
@@ -98,18 +91,6 @@ def load_task(filename,workspace):
         contract_inputs=prepare(contract,workspace,f['task_sha256'])[2]
         required_contract_inputs={resolve(workspace,n.split('/',1)[1])for n in contract_inputs if n.startswith('workspace/')}
         if not required_contract_inputs<=pinned|set(model_files(resolve(workspace,t['model']))):raise ValueError('Every Lean contract workspace input must be flow-pinned')
-    elif t['schema']=='spec-flow-task-v5':
-        if set(f)-{'strategy','solver_timeout_ms'} or f.get('strategy')!='initial-step-contracts':raise ValueError('Unsupported v5 formal strategy/configuration')
-    elif t['schema']=='spec-flow-task-v4':
-        if 'solver_preprocess' in f:raise ValueError('BMC solver preprocessing is not valid for sequence induction')
-        if set(f)not in ({'strategy'},{'strategy','solver_timeout_ms'})or f.get('strategy')!='sequence-invariant-induction':raise ValueError('Unsupported v4 formal strategy/configuration')
-    else:
-        allowed={'depth','symbolic_initials','solver_timeout_ms','solver_preprocess'}
-        required={'depth','symbolic_initials'}
-        if set(f)-allowed or not required<=set(f) or type(f['depth'])is not int or not 1<=f['depth']<=30 or not isinstance(f['symbolic_initials'],list):raise ValueError('Unsupported formal configuration')
-        if f.get('solver_preprocess','none')not in ('none','exact-v1'):raise ValueError('Unsupported formal solver preprocessing plan')
-    budget=f.get('solver_timeout_ms',10000)
-    if type(budget)is not int or not 100<=budget<=60000:raise ValueError('Invalid solver time budget')
     if set(limits)!={'stage_seconds','max_prefixes','max_cases'}or any(type(n)is not int for n in limits.values()):raise ValueError('Invalid resource limits')
     if not 1<=limits['stage_seconds']<=600 or not 1<=limits['max_prefixes']<=10000 or not 1<=limits['max_cases']<=1000:raise ValueError('Resource budget outside admitted range')
     if not isinstance(t['scope'],dict)or set(t['scope'])!={'purpose','assumptions','excluded'}:raise ValueError('Explicit task scope required')

@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        track: [with-z3, lean-only, cli]
+        track: [lean-only, cli]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -26,13 +26,7 @@ jobs:
           echo '7289597a44543246c9227b8cae501767e095ce17f6d448b95fc4a8dc97268f6d  /tmp/lean.tar.zst' | sha256sum --check
           tar --zstd -xf /tmp/lean.tar.zst -C /tmp
           /tmp/lean-4.35.0-linux/bin/lean --version
-      - name: Install the framework with the optional Z3 backend
-        if: matrix.track == 'with-z3'
-        run: |
-          python3 -m venv /tmp/lean-framework-venv
-          /tmp/lean-framework-venv/bin/python -m pip install '.[z3]'
-      - name: Install the framework without Z3
-        if: matrix.track != 'with-z3'
+      - name: Install the framework
         run: |
           python3 -m venv /tmp/lean-only-venv
           /tmp/lean-only-venv/bin/python -m pip install .
@@ -43,25 +37,14 @@ jobs:
             https://raw.githubusercontent.com/briliant-ben/TCPIP-Model/dda2f02f90229146b017421fade8701c74534308/model/ipv4-endpoint-virtual-link.json \
             --output /tmp/tcpip-typed-input/model.json
           echo '7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5  /tmp/tcpip-typed-input/model.json' | sha256sum --check
-      - name: Check installed package and actual kernel positive/negative cases
-        if: matrix.track == 'with-z3'
-        env:
-          FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
-          FSA_LEAN_REQUIRED: '1'
-          FSA_TCPIP_MODEL: /tmp/tcpip-typed-input/model.json
-          FSA_TCPIP_REQUIRED: '1'
-          FSA_TCPIP_MACHINE_REQUIRED: '1'
-        run: |
-          cd /tmp
-          /tmp/lean-framework-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/lean-tests.log" 2>&1
       - name: Check and freshly recheck the frozen IR expression through the public CLI
-        if: matrix.track == 'with-z3'
+        if: matrix.track == 'cli'
         run: |
           TASK_SHA=$(sha256sum examples/lean-bytes/task.json | cut -d ' ' -f 1)
-          /tmp/lean-framework-venv/bin/formal-spec-agent lean-check examples/lean-bytes/task.json \
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-check examples/lean-bytes/task.json \
             --workspace examples/lean-bytes --proofs examples/lean-bytes/proofs.json \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-byte-check
-          /tmp/lean-framework-venv/bin/formal-spec-agent lean-verify /tmp/lean-byte-check \
+          /tmp/lean-only-venv/bin/formal-spec-agent lean-verify /tmp/lean-byte-check \
             --task examples/lean-bytes/task.json --workspace examples/lean-bytes \
             --task-sha256 "$TASK_SHA" --lean /tmp/lean-4.35.0-linux/bin/lean --out /tmp/lean-byte-recheck
       - name: Prove Lean-only installation has no Z3 and checks all scoped units
@@ -75,8 +58,7 @@ jobs:
           FSA_TCPIP_MACHINE_REQUIRED: '1'
         run: |
           cd /tmp
-          /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -p 'test_lean*.py' -v > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
-          /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -p 'test_no_z3.py' -v >> "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
+          /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
       - name: Check and recheck ordered state transaction without Z3
         if: matrix.track == 'cli'
         run: |
@@ -92,6 +74,12 @@ jobs:
         env:
           FSA_LEAN: /tmp/lean-4.35.0-linux/bin/lean
         run: |
+          MAILBOX_SHA=$(sha256sum examples/mailbox/task.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent run examples/mailbox/task.json \
+            --workspace examples/mailbox --task-sha256 "$MAILBOX_SHA" \
+            --out /tmp/lean-mailbox-flow > lean-mailbox.log
+          /tmp/lean-only-venv/bin/formal-spec-agent verify /tmp/lean-mailbox-flow \
+            --workspace examples/mailbox --task-sha256 "$MAILBOX_SHA" > lean-mailbox-audit.log
           TASK_SHA=$(sha256sum examples/lean-efsm/flow.json | cut -d ' ' -f 1)
           /tmp/lean-only-venv/bin/formal-spec-agent run examples/lean-efsm/flow.json \
             --workspace examples/lean-efsm --task-sha256 "$TASK_SHA" \
@@ -177,9 +165,11 @@ jobs:
         with:
           name: lean-expression-${{ matrix.track }}-${{ github.sha }}
           path: |
-            lean-tests.log
             lean-only-tests.log
             lean-flow.log
+            lean-mailbox.log
+            lean-mailbox-audit.log
+            /tmp/lean-mailbox-flow
             lean-flow-audit.log
             /tmp/lean-byte-check
             /tmp/lean-byte-recheck

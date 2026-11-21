@@ -54,5 +54,6 @@ The flow seed is only an exact emission/time projection of the independent
 cases; full transition snapshots remain checked by the 14 Lean obligations.
 Finite exploration covers both rules and is distinct from universal contracts.
 Timers, reachability, native integer/memory/compiler refinement, English
-specification correctness and the complete TCPIP case remain separate work. Existing integer task schemas and
-historical Z3 results retain their original meanings. Z3 is not retired here.
+specification correctness remain separate obligations. The
+[timed proof](lean-timed-contracts.md) extends the maintained route to the IPv4
+endpoint. Historical solver results retain the scopes of their original tasks.

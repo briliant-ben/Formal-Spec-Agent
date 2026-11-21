@@ -1,12 +1,12 @@
 # Code generation and Lean correspondence
 
-Z3 does not generate our C. The declarative Protocol IR is lowered by the direct
-C99 generator; Z3 checks declared model properties. Lean is an additional proof
-checker and can also compile executable Lean definitions to C.
+The direct C99 generator lowers Protocol IR to the standalone subject.
+Lean checks properties of the reified IR and can compile its own executable
+reference definitions to C.
 
 | Route | Current purpose | Runtime / guarantee |
 |---|---|---|
-| IR → direct C99 generator → C | Standalone subject implementation | No Python or Lean runtime; existing reference/Z3/native evidence |
+| IR → direct C99 generator → C | Standalone subject implementation | No Python or Lean runtime; reference and native execution evidence |
 | IR + actual C → typed semantic views → Lean | Per-output expression translation validation | Checked pure expression correspondence under explicit runtime/ABI contracts |
 | IR → Lean interpreter → Lean compiler → C | Optional compiled reference execution | Lean runtime required; matching literals do not prove the native compiler |
 

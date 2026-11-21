@@ -25,7 +25,7 @@ explicit pin update and newly executed benchmark checks. There is no circular
 submodule dependency and no copy of the TCP model tree here.
 
 The initial extraction does not claim semantic/compiler equivalence merely from
-copying hashes. Tests exercise non-TCP reference/C/Z3/evidence/tamper boundaries;
+copying hashes. Tests exercise non-TCP reference, formal, C and evidence integrity boundaries;
 external TCP/UDP tasks demonstrate data separation. Old full-protocol UNKNOWNs,
 coverage gaps and implementation Differences stay in their original repository.
 Future MCP/Skill/harness integrations can call the CLI; none is required now.

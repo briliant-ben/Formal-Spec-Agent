@@ -3,7 +3,7 @@ import copy
 import unittest
 
 from protocol_lab.ir import Machine, ModelError
-from protocol_lab.symbolic import crosscheck_trace, replay
+from protocol_lab.trace_replay import replay
 
 
 def timer_model():
@@ -38,16 +38,27 @@ def timer_model():
                         "assert": {"op": "ge", "args": [{"var": "x"}, 0]}}]}
 
 
-class SymbolicTimerReplayTests(unittest.TestCase):
+def recorded_witness(model, machine):
+    steps = [
+        dict(at_ms=row['time_ms'], event=row['event']['name'],
+             origin=model['events'][row['event']['name']]['origin'],
+             transition=row['transition'], fields=row['event']['fields'],
+             after=row['after'], emitted=row['emitted'])
+        for row in machine.trace
+    ]
+    return dict(initial=machine.trace[0]['before']['variables'], steps=steps)
+
+
+class TimerTraceReplayTests(unittest.TestCase):
     def test_tied_timers_and_prefix_match_each_logical_transition(self):
         model = timer_model()
         machine = Machine(model)
         machine.dispatch("start", {}, 0)
         machine.tick(10)
         self.assertEqual([r["transition"] for r in machine.trace], ["START", "TA", "TB"])
-        checked = crosscheck_trace(model, machine.trace)
-        self.assertEqual((checked["query"], checked["status"]), ("sat", "match"))
-        prefix = copy.deepcopy(checked["witness"])
+        witness = recorded_witness(model, machine)
+        self.assertEqual(replay(model, witness), {"status": "match", "compared_steps": 3})
+        prefix = copy.deepcopy(witness)
         prefix["steps"] = prefix["steps"][:2]
         self.assertEqual(prefix["steps"][-1]["after"]["timers"], {"b": 10})
         self.assertEqual(replay(model, prefix), {"status": "match", "compared_steps": 2})
@@ -72,11 +83,11 @@ class SymbolicTimerReplayTests(unittest.TestCase):
                 machine = Machine(model)
                 machine.dispatch("start", {}, 0)
                 machine.tick(15)
-                result = crosscheck_trace(model, machine.trace)
-                self.assertEqual((result["query"], result["status"]), ("sat", "match"))
+                witness = recorded_witness(model, machine)
+                self.assertEqual(replay(model, witness)["status"], "match")
                 if "arm" in action:
                     self.assertEqual(machine.trace[-1]["time_ms"], 15)
-                    forged = copy.deepcopy(result["witness"])
+                    forged = copy.deepcopy(witness)
                     forged["steps"][-1]["at_ms"] = 10
                     self.assertEqual(replay(model, forged)["status"], "runtime_rejected")
                 else:
@@ -88,7 +99,7 @@ class SymbolicTimerReplayTests(unittest.TestCase):
         machine = Machine(model)
         machine.dispatch("start", {}, 0)
         machine.tick(10)
-        witness = crosscheck_trace(model, machine.trace)["witness"]
+        witness = recorded_witness(model, machine)
         for edits in ({"event": "timer.b"}, {"transition": "TB"}, {"origin": "network"}):
             with self.subTest(edits=edits):
                 forged = copy.deepcopy(witness)
@@ -100,9 +111,9 @@ class SymbolicTimerReplayTests(unittest.TestCase):
         machine = Machine(model)
         machine.dispatch("start", {}, 0)
         machine.dispatch("go", {}, 10)
-        result = crosscheck_trace(model, machine.trace)
-        self.assertEqual(result["status"], "match")
-        forged = copy.deepcopy(result["witness"])
+        witness = recorded_witness(model, machine)
+        self.assertEqual(replay(model, witness)["status"], "match")
+        forged = copy.deepcopy(witness)
         forged["steps"] = [forged["steps"][0], forged["steps"][-1]]
         self.assertEqual(replay(model, forged)["status"], "semantic_mismatch")
 

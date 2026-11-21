@@ -2,7 +2,9 @@ import concurrent.futures
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
+import shutil
 import tempfile
 import threading
 import unittest
@@ -17,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class FrameworkTests(unittest.TestCase):
+    @unittest.skipUnless(os.environ.get("FSA_LEAN") or shutil.which("lean"), "Pinned Lean required")
     def test_actual_non_tcp_flow_and_tamper_rejection(self):
         with tempfile.TemporaryDirectory() as tmp:
             workspace = ROOT/'examples/mailbox'

@@ -1,5 +1,5 @@
 {
-  "schema": "spec-flow-task-v2",
+  "schema": "spec-flow-task-v8",
   "id": "bounded-mailbox",
   "model": "model.json",
   "sources": [
@@ -29,6 +29,24 @@
       "uri_aliases": [
         "seed.json"
       ]
+    },
+    {
+      "id": "TimedProof",
+      "path": "lean/TimedProof.lean",
+      "version": "1",
+      "sha256": "aca43a1af5cb5e8c0fd1f86e5ac45e9ab408cfd93f2b6723f166dac92075f705",
+      "uri_aliases": [
+        "lean/TimedProof.lean"
+      ]
+    },
+    {
+      "id": "manifest",
+      "path": "lean/manifest.json",
+      "version": "1",
+      "sha256": "af71263058d366707cef949a0f1b21b65c1a1e0280151fea3d8f7561f9f5f1a0",
+      "uri_aliases": [
+        "lean/manifest.json"
+      ]
     }
   ],
   "requirement_bindings": {
@@ -43,8 +61,9 @@
     "seed.json"
   ],
   "formal": {
-    "depth": 2,
-    "symbolic_initials": []
+    "strategy": "lean-timed",
+    "manifest": "lean/manifest.json",
+    "manifest_sha256": "af71263058d366707cef949a0f1b21b65c1a1e0280151fea3d8f7561f9f5f1a0"
   },
   "limits": {
     "stage_seconds": 60,

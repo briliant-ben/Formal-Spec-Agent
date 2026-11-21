@@ -4,41 +4,32 @@ The target is one Lean-centered acceptance path driven by Protocol IR. Providers
 propose proof data; actual kernel checking and a separate axiom audit decide
 acceptance. Changing a prover does not transfer old guarantees to a new backend.
 
-## Installation
+## Installation and active checks
 
-`pip install .` installs no solver. The Lean expression, C-expression, state-action
-and compiled-reference paths work in that installation. Install official Lean
-4.35.0 separately, not an unrelated Python package named `lean`. CI uses two
-independent environments: the base package with Z3 actually absent, and
-`pip install '.[z3]'` for all existing regressions. `requirements-formal.txt`
-remains an alternative for the optional backend.
+Install the Python package with `pip install .` and install official Lean
+4.35.0 separately. Current formal tasks use the timer-free Lean contract for
+integer or typed EFSMs (v6/v7), or the reviewed timed Lean contract (v8).
+C generation and reference execution use the same validated Protocol IR.
 
-Old versions of the ten-stage `run` task still request Z3 work. Without that extra
-they explicitly block their formal stage, never skipping it or falling back to
-Lean. New [task-v6](lean-efsm-flow.md) explicitly runs the full flow with Lean for
-the admitted timer-free integer EFSM fragment. Scoped Lean callers can also use
-`lean-check`, `lean-verify` and `lean-native`. Reference
-execution and C99 generation also work without importing Z3. Some internal code
-uses solver-free hashing/replay definitions in `symbolic.py`; Z3 itself is loaded
-only for a requested solver operation.
+The [mailbox](../examples/mailbox/task.json) exercises the full timed Lean
+strategy and C pipeline. The [timed contracts](lean-timed-contracts.md)
+describe exact initial admission, all-rule safety, guard disjointness,
+timer advance and transactional uncovered dispatch on the pinned TCP/IP
+case. Test generation and C comparisons keep independent scopes and verdicts.
 
-## Gates before retiring the optional backend
+## Historical solver tasks
 
-| Capability | Lean coverage | Remaining work |
-|---|---|---|
-| Pure expressions | Five types and all26 compact-case operators reified; complete case expression typing, 56 values and3 generic properties | Typed transition connection and broader proof automation; not universal interpreter equivalence |
-| Generated C correspondence | Independently parsed pure expression under runtime/ABI contracts | Ordered C statements, native failure and memory contracts |
-| IR state effects | Five types, all compact-case expressions, ordered set/emit/arm/cancel, target states and final-invariant rollback | Universal before-filter preservation and native arithmetic/memory correspondence |
-| EFSM validity | All-rule preservation, pairwise overlap, complete state/event coverage, initial validity and enabling witnesses in the integer fragment | Broader types/operators, reachability, temporal properties and an interpreter/dispatcher connection |
-| Time | Typed single steps, kernel-checked batch progress and replay, and [public exact timed replay](../examples/lean-timed-efsm/README.md) with explicit fault rollback | Public universal timed contracts, broader clock semantics and full-flow integration |
-| Test generation | Existing literal/exploration/native tests | Lean-backed witness/coverage generation and replay |
-| End-to-end flow | Explicit task-v6 Lean formal stage, complete snapshots, all ten stages and honest retained/fresh checks | Broader IR semantics and TCP/IP adaptation |
-| TCP/IP case | Existing model/C/demo and historical evidence | Pin the validated framework, regenerate and recheck covered claims |
+Task schemas v1–v5 are historical. Reproduce their receipts with the
+framework revision pinned by their original reports. The
+[transition revision](https://github.com/briliant-ben/Formal-Spec-Agent/tree/c5ef8e35fa2ed78c824a54911ec758c7d7782054)
+retains the old solver backend. New execution explicitly rejects these task
+schemas with migration guidance.
 
-Retire Z3 code only after every supported task has a Lean replacement or an
-explicitly reviewed retirement. Preserve old evidence and UNKNOWNs under their
-original checkers. Never delete an unmet obligation or promote an expression
-certificate to whole-protocol correctness.
+Existing reference execution retains rational arithmetic and the older clock
+IR profiles. Their legacy solver proofs remain with the historical framework.
+The current formal routes support the documented atomic Lean fragments.
+Broader clocks, directed reachability, and full native compiler correctness
+have separate proof obligations.
 
 ## Ordered action-block unit
 

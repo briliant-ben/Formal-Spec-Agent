@@ -18,7 +18,7 @@ class TimedFlowTests(unittest.TestCase):
     def test_reviewed_task_is_required_before_any_proof_execution(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)/'flow'
-            task = MAILBOX/'lean-task.json'
+            task = MAILBOX/'task.json'
             with self.assertRaisesRegex(ValueError, 'caller-pinned'):
                 run(task, MAILBOX, output)
             self.assertFalse(output.exists())
@@ -27,7 +27,7 @@ class TimedFlowTests(unittest.TestCase):
     def test_timed_proof_and_native_stages_check_and_bind_their_verdicts(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)/'flow'
-            task_path = MAILBOX/'lean-task.json'
+            task_path = MAILBOX/'task.json'
             pin = sha(task_path)
             result = run(task_path, MAILBOX, output, pin)
             self.assertEqual(result['assessment'], 'verified_event_slice')

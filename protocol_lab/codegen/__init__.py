@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 from ..ir import infer,validate,model_files,load
-from ..symbolic import model_hash
+from ..model_identity import model_hash
 
 HERE=Path(__file__).resolve().parent
 KINDS={'int':0,'bool':1,'seq32':2,'bytes':3,'string':4}
@@ -323,7 +323,7 @@ def generate(model_file,out,wire_binding_file=None):
     if wire_binding_file is not None:raise Unsupported("Legacy TCP wire codec is not a generic framework backend")
     model_file=Path(model_file).resolve();out=Path(out).resolve()
     if out.exists():raise ValueError('Fresh output directory required')
-    paths=model_files(model_file)+[HERE/'__init__.py',HERE/'__main__.py',HERE/'runtime.c',HERE/'harness.c',HERE/'execute.py',Path(__file__).parents[1]/'json_values.py',Path(__file__).parents[1]/'ir.py',Path(__file__).parents[1]/'symbolic.py']
+    paths=model_files(model_file)+[HERE/'__init__.py',HERE/'__main__.py',HERE/'runtime.c',HERE/'harness.c',HERE/'execute.py',Path(__file__).parents[1]/'json_values.py',Path(__file__).parents[1]/'ir.py',Path(__file__).parents[1]/'model_identity.py']
     wire=None
     if wire_binding_file is not None:
         wire_binding_file=Path(wire_binding_file).resolve();wire=json.loads(wire_binding_file.read_text())

@@ -78,8 +78,8 @@ rejects unknown timer keys rather than silently projecting them away. The older
 microstep task has a fresh adapter approval hash; its proposition source is
 byte-identical. Historical evidence requires its original checker.
 
-Optional Z3 and historical UNKNOWNs are retained. No entire timed protocol,
-TCPIP case, reachability, C compiler or English specification proof is claimed.
+This early microstep evidence covers the stated unit. The later endpoint
+proof and historical UNKNOWN receipts have separate input and scope bindings.
 
 
 ## Exact observation types
@@ -466,7 +466,7 @@ formal-spec-agent lean-timed-check model.json \
   --out /tmp/timed-proof-check
 ```
 
-The [mailbox timed flow](../examples/mailbox/lean-task.json) connects the
+The [mailbox timed flow](../examples/mailbox/task.json) connects the
 same check to the C generation and comparison stages. Its `formal` object contains `strategy: "lean-timed"`,
 `manifest` and `manifest_sha256`. Declare the manifest and each
 proof module under `sources` and pass the reviewed flow digest through

@@ -78,7 +78,7 @@ def stage(name,t,workspace,job,out):
                       None if all(r['expected']==r['observed']for r in rows)else'source_integrity',dict(sources=rows))
     model=load(model_file)
     if name=='ir':
-        from ..symbolic import model_hash
+        from ..model_identity import model_hash
         return result(data=dict(model_semantic_sha256=model_hash(model),model_scope=model['scope'],
                                 rules=len(model['transitions']),invariants=len(model['invariants'])))
     if name=='formal':
@@ -94,22 +94,7 @@ def stage(name,t,workspace,job,out):
                 checked=check(resolve(workspace,f['task']),workspace,out/'queries',resolve(workspace,f['proofs']),f['task_sha256'],lean)
             status='pass'if checked['status']==LEAN_RESULTS[t['schema']]else'blocked'if checked['status']=='blocked'else'unknown'if checked.get('classification')=='resource_unknown'else'fail'
             return result(status,None if status=='pass'else checked.get('classification',checked['status']),checked)
-        if t['schema']=='spec-flow-task-v5':
-            from ..initial_step import check, PASS, UNRESOLVED
-            r=check(model,out/'queries',solver_timeout_ms=t['formal'].get('solver_timeout_ms',10000))
-            status='pass' if r['status']==PASS else 'unknown' if r['status']==UNRESOLVED else 'fail'
-            return result(status,None if status=='pass' else r['status'],r)
-        if t['schema']=='spec-flow-task-v4':
-            from ..sequence_induction import prove
-            r=prove(model,out/'queries',solver_timeout_ms=t['formal'].get('solver_timeout_ms',10000))
-            good='inductive_invariants_pass'
-        else:
-            from ..symbolic import check
-            r=check(model,t['formal']['depth'],t['formal']['symbolic_initials'],out/'queries',solver_timeout_ms=t['formal'].get('solver_timeout_ms',10000),solver_preprocess=t['formal'].get('solver_preprocess','none'))
-            good='bounded_pass'
-        status='pass'if r['status']==good else'unknown'if r['status']in ('unknown','vacuous')else'fail'
-        kind=None if status=='pass'else r['status']
-        return result(status,kind,r)
+        raise ValueError('Unsupported Lean formal strategy')
     if name=='tests':
         r=generate_tests(model,read(resolve(workspace,t['exploration'])),out/'generated',t['limits']['max_prefixes'],t['limits']['max_cases'])
         rows=[]
@@ -224,9 +209,7 @@ def main():
     a=p.parse_args();job=a.job.resolve();config=read(job/'request.json');out=job/'stages'/a.name;out.mkdir(parents=True,exist_ok=False)
     try:r=stage(a.name,config['task'],Path(config.get('execution_workspace',config['workspace'])),job,out)
     except Unsupported as e:r=result('rejected','unsupported_semantics',dict(reason=str(e)))
-    except ModelError as e:
-        missing='Z3 is missing'in str(e)
-        r=result('blocked'if missing else'fail','environment'if missing else classification(e),dict(reason=str(e)))
+    except ModelError as e:r=result('fail',classification(e),dict(reason=str(e)))
     except (ImportError,OSError)as e:r=result('blocked','environment',dict(reason=str(e)))
     except subprocess.TimeoutExpired:r=result('fail','resource_limit',dict(reason='Stage child deadline exceeded'))
     except (ValueError,KeyError,TypeError)as e:r=result('rejected','invalid_input_or_evidence',dict(reason=str(e)))

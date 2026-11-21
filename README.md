@@ -25,7 +25,7 @@ and the explicitly transformed boundaries.
 | Directory | Role |
 |---|---|
 | `formal_spec_agent/` | Public CLI, optional independent proposal roles and provider adapter |
-| `protocol_lab/` | Generic IR, reference interpreter, Z3, C lowering/runtime and ten-stage pipeline |
+| `protocol_lab/` | Generic IR, reference interpreter, C lowering/runtime and ten-stage pipeline |
 | `examples/mailbox/` | Small non-network specification, IR, independent literal seed and task |
 | `tests/` | Semantic, execution, concurrency, tamper and rejection checks |
 | `docs/` | [IR overview](docs/ir-semantics.md), [role contract](docs/agent-contract.md), [extraction boundary](docs/extraction.md) |
@@ -54,25 +54,12 @@ for its timer-free integer fragment. It is not a full TCP/IP or compiler proof.
 Install official Lean separately. [Task-v6 and proof boundaries](docs/lean-efsm-flow.md)
 describe universal obligations, snapshots, explicit failures and fresh rechecking.
 
-Requirements: Python3.11+, a POSIX host and a C99 compiler. The base package has
-no solver dependency. Lean uses a separately pinned toolchain; the older Z3
-pipeline requires an optional extra. No API
-key, network privilege or existing network stack is needed for deterministic checks.
-
-```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -e '.[z3]'
-.venv/bin/python -m unittest discover -s tests -v
-```
-
-The optional extra above enables the complete old regression suite and mailbox
-pipeline. For Lean and C generation, install `.` instead. CI checks both an actual
-no-Z3 installation and the old backend: see [Lean-first migration](docs/lean-first.md).
-Requesting Z3 work without the extra blocks that formal stage; it never silently
-falls back to a passing Lean result.
+Requirements are Python 3.11+, a POSIX host, a C99 compiler and Lean 4.35.0
+for formal checks. Install with `pip install .`. Python package dependencies
+are empty. See [Lean migration and supported fragments](docs/lean-first.md).
 
 The example is a **finite byte mailbox**, not an Internet protocol. Its source,
-literal seed and finite exploration domain are pinned before execution. Use a
+literal seed, Lean proof and finite exploration domain are pinned before execution. Use a
 fresh output directory outside the tool tree:
 
 ```sh
@@ -116,7 +103,8 @@ contracts for a selected pure IR byte expression. It uses frozen definitions,
 restricted proof data, explicit positive witnesses and a separate axiom audit.
 The [byte example](examples/lean-bytes/README.md) includes DeepSeek-proposed
 proof data which still must pass actual Lean checking. Lean 4.35.0 is pinned.
-Z3 and the existing ten-stage flow remain available via the optional `z3` extra.
+Historical solver tasks can be reproduced using their original pinned Git
+revision. Current tasks use the Lean formal stage.
 Their old results are not relabeled as Lean proofs.
 
 `formal-spec-agent lean-plan` drafts statements for independent approval;
@@ -135,21 +123,21 @@ The [state transaction unit](examples/lean-state/README.md) derives ordered inte
 assignments, buffered emissions and final-invariant rollback from an IR action
 block. Its separate `checked_state_contract` result does not certify C statements,
 guard selection, timers or a complete EFSM. The migration guide lists the remaining
-capabilities before the optional Z3 backend can be retired.
+open proof and compiler correspondence work.
 
 The [typed value layer](docs/lean-typed-values.md) now covers all five types and
 26 operators of the pinned compact TCP/IP model. Its entire expression view can
 be typechecked, with explicit source bindings; this is distinct from proving the
 335-rule EFSM safe. A separate 59-obligation benchmark and compiled Lean reference
 exercise exact values, long buffers, wrap, checksum and Unicode/NUL. Typed
-transition and complete scheduler proofs still remain before whole-case migration.
+transition and scheduler properties are treated in the timed contracts.
 
 The [scheduled microstep layer](docs/lean-scheduled-microsteps.md) now derives
 all compact-case actions, unique guard selection, typed updates/messages and
 individual timer firings. A separate29-obligation kernel contract covers ordered
 effects, conflicts and rollback; compiled Lean matches18 benchmark operations and
 nine unchanged TCPIP transitions. Batch dispatch and all-rule typed preservation
-remain migration gates, so these scoped results do not retire Z3.
+are checked in the timed endpoint proof.
 
 The [timed replay certificate](examples/lean-timed-efsm/README.md) uses the
 public Lean checker to prove exact finite dispatch and tick results, including
@@ -196,7 +184,7 @@ source contract at its hash-pinned original bytes/language; the
 
 The [typed batch scheduler](docs/lean-batch-scheduling.md) now has checked generic
 termination/replay lemmas and a compiled input-only reference. Its 57-obligation literal
-certificate now checks and freshly rechecks; this does not yet replace all Z3 tasks.
+certificate checks and freshly rechecks against the pinned Lean semantics.
 
 The [universal typed EFSM gate](docs/lean-typed-efsm.md) now checks raw
 preservation, guard disjointness and coverage for all five IR value kinds in a
