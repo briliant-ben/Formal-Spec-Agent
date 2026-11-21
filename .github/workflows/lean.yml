@@ -56,6 +56,7 @@ jobs:
           FSA_TCPIP_MODEL: /tmp/tcpip-typed-input/model.json
           FSA_TCPIP_REQUIRED: '1'
           FSA_TCPIP_MACHINE_REQUIRED: '1'
+          FSA_TCPIP_EVIDENCE_OUT: /tmp/tcpip-timed-kernel
         run: |
           cd /tmp
           /tmp/lean-only-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
@@ -183,6 +184,7 @@ jobs:
             /tmp/lean-typed-values
             /tmp/lean-typed-values-recheck
             /tmp/lean-typed-native
+            /tmp/tcpip-timed-kernel
             /tmp/tcpip-typed-view
             /tmp/lean-machine-check
             /tmp/lean-machine-recheck

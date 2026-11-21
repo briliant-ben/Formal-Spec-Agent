@@ -323,12 +323,12 @@ example (ctx : Context) : eval (.seqLt zeroSerial maxSerial) ctx = false := by
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             manifest = prepare_tcpip_proofs(root, source, ids)
-            out = root/'checked'
+            out = Path(os.environ['FSA_TCPIP_EVIDENCE_OUT']) if os.environ.get('FSA_TCPIP_EVIDENCE_OUT') else root/'checked'
             result = check_timed(source, manifest, gate.sha(manifest), out, LEAN)
             if result['status'] != CHECKED:
                 name = result.get('failed_module')
                 log = ((out/f'{name}.stdout').read_text() + (out/f'{name}.stderr').read_text()) if name else str(result)
-                self.fail(log)
+                self.fail(str(result.get("failed_module")) + "\n" + log)
             self.assertEqual((result['raw_firings'], result['conflict_groups']), (335, 18))
             self.assertEqual(inspect(out, source, manifest, gate.sha(manifest)), result)
             result_file = out/'result.json'
