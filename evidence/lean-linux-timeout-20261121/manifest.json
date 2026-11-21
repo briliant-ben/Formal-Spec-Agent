@@ -1,0 +1,9 @@
+{
+  "run": 44916460801,
+  "job": 136883015477,
+  "artifact": 14712117465,
+  "commit": "96ae68a13fa808a1be23efcd93a23619316dfbf9",
+  "module": "TCPIPReceiveData",
+  "verdict": "resource_unknown",
+  "archive_sha256": "4666cdecf6c8d1e4a9657cf5a52aa4a5a7bef1031e333e37130c35a97bc79314"
+}
