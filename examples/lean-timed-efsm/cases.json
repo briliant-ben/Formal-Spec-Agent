@@ -1,0 +1,787 @@
+[
+  {
+    "id": "timed-cell-deadline-refresh-and-rollback",
+    "initial": {
+      "state": "COLD",
+      "now_ms": 0,
+      "variables": {
+        "buf": [],
+        "n": 0,
+        "cursor": 0,
+        "label": "",
+        "accepted": false
+      },
+      "timers": {}
+    },
+    "steps": [
+      {
+        "kind": "dispatch",
+        "at_ms": 0,
+        "event": "app.put",
+        "expected": {
+          "status": "ok",
+          "after": {
+            "state": "HOT",
+            "now_ms": 0,
+            "variables": {
+              "buf": [
+                0,
+                128,
+                255,
+                7
+              ],
+              "n": 4,
+              "cursor": 0,
+              "label": "开\n\u0000",
+              "accepted": true
+            },
+            "timers": {
+              "expiry": 10
+            }
+          },
+          "trace": [
+            {
+              "rule": "PUT.ACCEPT.COLD",
+              "event": {
+                "name": "app.put",
+                "fields": {
+                  "payload": [
+                    0,
+                    128,
+                    255,
+                    7
+                  ],
+                  "sequence": 4294967295,
+                  "delta": 1,
+                  "label": "开\n\u0000",
+                  "allow": true
+                }
+              },
+              "at_ms": 0,
+              "after": {
+                "state": "HOT",
+                "now_ms": 0,
+                "variables": {
+                  "buf": [
+                    0,
+                    128,
+                    255,
+                    7
+                  ],
+                  "n": 4,
+                  "cursor": 0,
+                  "label": "开\n\u0000",
+                  "accepted": true
+                },
+                "timers": {
+                  "expiry": 10
+                }
+              },
+              "emitted": [
+                {
+                  "message": "cell.accept",
+                  "fields": {
+                    "buf": [
+                      0,
+                      128,
+                      255,
+                      7
+                    ],
+                    "n": 4,
+                    "cursor": 0,
+                    "label": "开\n\u0000",
+                    "accepted": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fields": {
+          "payload": [
+            0,
+            128,
+            255,
+            7
+          ],
+          "sequence": 4294967295,
+          "delta": 1,
+          "label": "开\n\u0000",
+          "allow": true
+        }
+      },
+      {
+        "kind": "dispatch",
+        "at_ms": 5,
+        "event": "app.put",
+        "expected": {
+          "status": "ok",
+          "after": {
+            "state": "HOT",
+            "now_ms": 5,
+            "variables": {
+              "buf": [
+                0,
+                128,
+                255,
+                7
+              ],
+              "n": 4,
+              "cursor": 0,
+              "label": "开\n\u0000",
+              "accepted": false
+            },
+            "timers": {
+              "expiry": 10
+            }
+          },
+          "trace": [
+            {
+              "rule": "PUT.REJECT.HOT",
+              "event": {
+                "name": "app.put",
+                "fields": {
+                  "payload": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16
+                  ],
+                  "sequence": 123,
+                  "delta": 0,
+                  "label": "ignored",
+                  "allow": true
+                }
+              },
+              "at_ms": 5,
+              "after": {
+                "state": "HOT",
+                "now_ms": 5,
+                "variables": {
+                  "buf": [
+                    0,
+                    128,
+                    255,
+                    7
+                  ],
+                  "n": 4,
+                  "cursor": 0,
+                  "label": "开\n\u0000",
+                  "accepted": false
+                },
+                "timers": {
+                  "expiry": 10
+                }
+              },
+              "emitted": [
+                {
+                  "message": "cell.reject",
+                  "fields": {
+                    "buf": [
+                      0,
+                      128,
+                      255,
+                      7
+                    ],
+                    "n": 4,
+                    "cursor": 0,
+                    "label": "开\n\u0000",
+                    "accepted": false
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fields": {
+          "payload": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16
+          ],
+          "sequence": 123,
+          "delta": 0,
+          "label": "ignored",
+          "allow": true
+        }
+      },
+      {
+        "kind": "dispatch",
+        "at_ms": 10,
+        "event": "app.put",
+        "expected": {
+          "status": "ok",
+          "after": {
+            "state": "HOT",
+            "now_ms": 10,
+            "variables": {
+              "buf": [],
+              "n": 0,
+              "cursor": 4294967295,
+              "label": "",
+              "accepted": true
+            },
+            "timers": {
+              "expiry": 20
+            }
+          },
+          "trace": [
+            {
+              "rule": "EXPIRY.HOT",
+              "event": {
+                "name": "timer.expiry",
+                "fields": {}
+              },
+              "at_ms": 10,
+              "after": {
+                "state": "COLD",
+                "now_ms": 10,
+                "variables": {
+                  "buf": [],
+                  "n": 0,
+                  "cursor": 0,
+                  "label": "",
+                  "accepted": false
+                },
+                "timers": {}
+              },
+              "emitted": [
+                {
+                  "message": "cell.expired",
+                  "fields": {
+                    "buf": [],
+                    "n": 0,
+                    "cursor": 0,
+                    "label": "",
+                    "accepted": false
+                  }
+                }
+              ]
+            },
+            {
+              "rule": "PUT.ACCEPT.COLD",
+              "event": {
+                "name": "app.put",
+                "fields": {
+                  "payload": [],
+                  "sequence": 0,
+                  "delta": -1,
+                  "label": "",
+                  "allow": true
+                }
+              },
+              "at_ms": 10,
+              "after": {
+                "state": "HOT",
+                "now_ms": 10,
+                "variables": {
+                  "buf": [],
+                  "n": 0,
+                  "cursor": 4294967295,
+                  "label": "",
+                  "accepted": true
+                },
+                "timers": {
+                  "expiry": 20
+                }
+              },
+              "emitted": [
+                {
+                  "message": "cell.accept",
+                  "fields": {
+                    "buf": [],
+                    "n": 0,
+                    "cursor": 4294967295,
+                    "label": "",
+                    "accepted": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fields": {
+          "payload": [],
+          "sequence": 0,
+          "delta": -1,
+          "label": "",
+          "allow": true
+        }
+      },
+      {
+        "kind": "tick",
+        "at_ms": 20,
+        "expected": {
+          "status": "ok",
+          "after": {
+            "state": "COLD",
+            "now_ms": 20,
+            "variables": {
+              "buf": [],
+              "n": 0,
+              "cursor": 4294967295,
+              "label": "",
+              "accepted": false
+            },
+            "timers": {}
+          },
+          "trace": [
+            {
+              "rule": "EXPIRY.HOT",
+              "event": {
+                "name": "timer.expiry",
+                "fields": {}
+              },
+              "at_ms": 20,
+              "after": {
+                "state": "COLD",
+                "now_ms": 20,
+                "variables": {
+                  "buf": [],
+                  "n": 0,
+                  "cursor": 4294967295,
+                  "label": "",
+                  "accepted": false
+                },
+                "timers": {}
+              },
+              "emitted": [
+                {
+                  "message": "cell.expired",
+                  "fields": {
+                    "buf": [],
+                    "n": 0,
+                    "cursor": 4294967295,
+                    "label": "",
+                    "accepted": false
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "dispatch",
+        "at_ms": 20,
+        "event": "app.put",
+        "expected": {
+          "status": "ok",
+          "after": {
+            "state": "COLD",
+            "now_ms": 20,
+            "variables": {
+              "buf": [],
+              "n": 0,
+              "cursor": 4294967295,
+              "label": "",
+              "accepted": false
+            },
+            "timers": {}
+          },
+          "trace": [
+            {
+              "rule": "PUT.REJECT.COLD",
+              "event": {
+                "name": "app.put",
+                "fields": {
+                  "payload": [
+                    9
+                  ],
+                  "sequence": 7,
+                  "delta": 0,
+                  "label": "disabled",
+                  "allow": false
+                }
+              },
+              "at_ms": 20,
+              "after": {
+                "state": "COLD",
+                "now_ms": 20,
+                "variables": {
+                  "buf": [],
+                  "n": 0,
+                  "cursor": 4294967295,
+                  "label": "",
+                  "accepted": false
+                },
+                "timers": {}
+              },
+              "emitted": [
+                {
+                  "message": "cell.reject",
+                  "fields": {
+                    "buf": [],
+                    "n": 0,
+                    "cursor": 4294967295,
+                    "label": "",
+                    "accepted": false
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fields": {
+          "payload": [
+            9
+          ],
+          "sequence": 7,
+          "delta": 0,
+          "label": "disabled",
+          "allow": false
+        }
+      },
+      {
+        "kind": "dispatch",
+        "at_ms": 21,
+        "event": "app.put",
+        "expected": {
+          "status": "ok",
+          "after": {
+            "state": "HOT",
+            "now_ms": 21,
+            "variables": {
+              "buf": [
+                0,
+                255,
+                1,
+                254,
+                2,
+                253,
+                3,
+                252,
+                4,
+                251,
+                5,
+                250,
+                6,
+                249,
+                7,
+                248
+              ],
+              "n": 16,
+              "cursor": 4294967295,
+              "label": "sixteen",
+              "accepted": true
+            },
+            "timers": {
+              "expiry": 31
+            }
+          },
+          "trace": [
+            {
+              "rule": "PUT.ACCEPT.COLD",
+              "event": {
+                "name": "app.put",
+                "fields": {
+                  "payload": [
+                    0,
+                    255,
+                    1,
+                    254,
+                    2,
+                    253,
+                    3,
+                    252,
+                    4,
+                    251,
+                    5,
+                    250,
+                    6,
+                    249,
+                    7,
+                    248
+                  ],
+                  "sequence": 1,
+                  "delta": -2,
+                  "label": "sixteen",
+                  "allow": true
+                }
+              },
+              "at_ms": 21,
+              "after": {
+                "state": "HOT",
+                "now_ms": 21,
+                "variables": {
+                  "buf": [
+                    0,
+                    255,
+                    1,
+                    254,
+                    2,
+                    253,
+                    3,
+                    252,
+                    4,
+                    251,
+                    5,
+                    250,
+                    6,
+                    249,
+                    7,
+                    248
+                  ],
+                  "n": 16,
+                  "cursor": 4294967295,
+                  "label": "sixteen",
+                  "accepted": true
+                },
+                "timers": {
+                  "expiry": 31
+                }
+              },
+              "emitted": [
+                {
+                  "message": "cell.accept",
+                  "fields": {
+                    "buf": [
+                      0,
+                      255,
+                      1,
+                      254,
+                      2,
+                      253,
+                      3,
+                      252,
+                      4,
+                      251,
+                      5,
+                      250,
+                      6,
+                      249,
+                      7,
+                      248
+                    ],
+                    "n": 16,
+                    "cursor": 4294967295,
+                    "label": "sixteen",
+                    "accepted": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fields": {
+          "payload": [
+            0,
+            255,
+            1,
+            254,
+            2,
+            253,
+            3,
+            252,
+            4,
+            251,
+            5,
+            250,
+            6,
+            249,
+            7,
+            248
+          ],
+          "sequence": 1,
+          "delta": -2,
+          "label": "sixteen",
+          "allow": true
+        }
+      },
+      {
+        "kind": "dispatch",
+        "at_ms": 25,
+        "event": "app.put",
+        "expected": {
+          "status": "ok",
+          "after": {
+            "state": "HOT",
+            "now_ms": 25,
+            "variables": {
+              "buf": [],
+              "n": 0,
+              "cursor": 0,
+              "label": "wrap",
+              "accepted": true
+            },
+            "timers": {
+              "expiry": 35
+            }
+          },
+          "trace": [
+            {
+              "rule": "PUT.ACCEPT.HOT",
+              "event": {
+                "name": "app.put",
+                "fields": {
+                  "payload": [],
+                  "sequence": 0,
+                  "delta": 4294967296,
+                  "label": "wrap",
+                  "allow": true
+                }
+              },
+              "at_ms": 25,
+              "after": {
+                "state": "HOT",
+                "now_ms": 25,
+                "variables": {
+                  "buf": [],
+                  "n": 0,
+                  "cursor": 0,
+                  "label": "wrap",
+                  "accepted": true
+                },
+                "timers": {
+                  "expiry": 35
+                }
+              },
+              "emitted": [
+                {
+                  "message": "cell.accept",
+                  "fields": {
+                    "buf": [],
+                    "n": 0,
+                    "cursor": 0,
+                    "label": "wrap",
+                    "accepted": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fields": {
+          "payload": [],
+          "sequence": 0,
+          "delta": 4294967296,
+          "label": "wrap",
+          "allow": true
+        }
+      },
+      {
+        "kind": "tick",
+        "at_ms": 31,
+        "expected": {
+          "status": "ok",
+          "after": {
+            "state": "HOT",
+            "now_ms": 31,
+            "variables": {
+              "buf": [],
+              "n": 0,
+              "cursor": 0,
+              "label": "wrap",
+              "accepted": true
+            },
+            "timers": {
+              "expiry": 35
+            }
+          },
+          "trace": []
+        }
+      },
+      {
+        "kind": "tick",
+        "at_ms": 35,
+        "expected": {
+          "status": "ok",
+          "after": {
+            "state": "COLD",
+            "now_ms": 35,
+            "variables": {
+              "buf": [],
+              "n": 0,
+              "cursor": 0,
+              "label": "",
+              "accepted": false
+            },
+            "timers": {}
+          },
+          "trace": [
+            {
+              "rule": "EXPIRY.HOT",
+              "event": {
+                "name": "timer.expiry",
+                "fields": {}
+              },
+              "at_ms": 35,
+              "after": {
+                "state": "COLD",
+                "now_ms": 35,
+                "variables": {
+                  "buf": [],
+                  "n": 0,
+                  "cursor": 0,
+                  "label": "",
+                  "accepted": false
+                },
+                "timers": {}
+              },
+              "emitted": [
+                {
+                  "message": "cell.expired",
+                  "fields": {
+                    "buf": [],
+                    "n": 0,
+                    "cursor": 0,
+                    "label": "",
+                    "accepted": false
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "tick",
+        "at_ms": 34,
+        "expected": {
+          "status": "error",
+          "fault": "time",
+          "after": {
+            "state": "COLD",
+            "now_ms": 35,
+            "variables": {
+              "buf": [],
+              "n": 0,
+              "cursor": 0,
+              "label": "",
+              "accepted": false
+            },
+            "timers": {}
+          },
+          "trace": []
+        }
+      }
+    ]
+  }
+]

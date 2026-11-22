@@ -1,0 +1,98 @@
+{
+  "schema": "spec-flow-task-v7",
+  "id": "lean-typed-cell",
+  "model": "model.json",
+  "sources": [
+    {
+      "id": "spec-md",
+      "path": "spec.md",
+      "sha256": "c86a9a9144a6cdbb9cae939234c8fed2fe1023b8bf2fcda61219bc775e0c1a4c",
+      "version": "typed-cell-v1",
+      "uri_aliases": [
+        "spec.md"
+      ]
+    },
+    {
+      "id": "cases-json",
+      "path": "cases.json",
+      "sha256": "2e6f5a87da2814e50488248590d64c927d913552afe9d81b4bde14ef3f054ace",
+      "version": "typed-cell-v1",
+      "uri_aliases": [
+        "cases.json"
+      ]
+    },
+    {
+      "id": "seed-json",
+      "path": "seed.json",
+      "sha256": "2961d09d8c6ba235de2c6a76c36a499d3088268492458cebe8b5c441af0e4ff6",
+      "version": "typed-cell-v1",
+      "uri_aliases": [
+        "seed.json"
+      ]
+    },
+    {
+      "id": "exploration-json",
+      "path": "exploration.json",
+      "sha256": "f5fe0c09f1c48e28d16da6ac9e47099367599a36042483f4dbb89fe9a1facdba",
+      "version": "typed-cell-v1",
+      "uri_aliases": [
+        "exploration.json"
+      ]
+    },
+    {
+      "id": "task-json",
+      "path": "task.json",
+      "sha256": "1f6a26b17c89724932bf6e98eecd96b17506b7021ffee64476015f5cf78081be",
+      "version": "typed-cell-v1",
+      "uri_aliases": [
+        "task.json"
+      ]
+    },
+    {
+      "id": "proofs-json",
+      "path": "proofs.json",
+      "sha256": "3d15c9adfe9b73535311331b712384857c168141736607f07bb512dfaef6ccbc",
+      "version": "typed-cell-v1",
+      "uri_aliases": [
+        "proofs.json"
+      ]
+    }
+  ],
+  "requirement_bindings": {
+    "CELL": {
+      "source": "spec-md",
+      "clause": "typed-cell-v1",
+      "reference": "spec.md#typed-cell-v1"
+    }
+  },
+  "exploration": "exploration.json",
+  "seeds": [
+    "seed.json"
+  ],
+  "formal": {
+    "strategy": "lean-typed-efsm",
+    "task": "task.json",
+    "task_sha256": "1f6a26b17c89724932bf6e98eecd96b17506b7021ffee64476015f5cf78081be",
+    "proofs": "proofs.json"
+  },
+  "limits": {
+    "stage_seconds": 120,
+    "max_prefixes": 64,
+    "max_cases": 30
+  },
+  "scope": {
+    "purpose": "Universal typed timer-free contracts plus standalone C finite-execution correspondence",
+    "assumptions": [
+      "Authoritative IR interpretation, Lean kernel/translation and C toolchain trusted",
+      "Complete typed stores/fields for raw preservation/guards/coverage; native signed64/4096bytes/64text intern capacity explicitly separate"
+    ],
+    "excluded": [
+      "timers",
+      "reachability",
+      "compiler or native arithmetic/memory proof",
+      "English specification correctness",
+      "network evidence",
+      "whole TCPIP correctness"
+    ]
+  }
+}

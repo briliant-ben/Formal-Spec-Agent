@@ -61,6 +61,25 @@ class BatchFixtureTests(unittest.TestCase):
         bad=copy.deepcopy(self.cases[2]);bad['steps'][2]['expected']=dict(status='ok',after=expected['trace'][0]['after'],trace=[expected['trace'][0]])
         self.assertNotEqual(observe_reference(self.model,bad),[s['expected']for s in bad['steps']])
 
+    def test_explicit_error_snapshot_is_compared_without_entering_runtime_source(self):
+        from formal_spec_agent.lean_batch import BatchView
+        from formal_spec_agent.lean_batch_native import expected_values, input_cases, render_runtime
+
+        timed_cell = EX.parent/'lean-timed-efsm'
+        frozen = json.loads((timed_cell/'cases.json').read_text())
+        view = BatchView(load(timed_cell/'model.json'))
+        baseline = expected_values(view, frozen)
+        self.assertEqual(baseline[9]['status'], 'error')
+        self.assertEqual(baseline[9]['after']['now_ms'], 35)
+        wrong_clock = copy.deepcopy(frozen)
+        wrong_clock[0]['steps'][9]['expected']['after']['now_ms'] = 34
+        self.assertNotEqual(expected_values(view, wrong_clock), baseline)
+        self.assertEqual(render_runtime(view, input_cases(wrong_clock)),
+                         render_runtime(view, input_cases(frozen)))
+        wrong_clock[0]['steps'][9]['expected']['trace'] = [baseline[8]['trace'][0]]
+        with self.assertRaisesRegex(ValueError, 'empty trace'):
+            expected_values(view, wrong_clock)
+
     @unittest.skipUnless(shutil.which('cc'),'C99 compiler required')
     def test_standalone_C_matches_all_frozen_operation_prefixes(self):
         with tempfile.TemporaryDirectory()as temp:

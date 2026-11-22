@@ -1,0 +1,14 @@
+{
+  "schema": "fsa-case-resource-plan-observation-v1",
+  "model_sha256": "7d5a82541ea55cde3ff39b2e1cf883f6c9f942f5dc535a2736e69044d9e154a5",
+  "serial_local_seconds": 357.523,
+  "eight_pair_local_seconds": 349.067,
+  "serial_frame_section_seconds": 72.9,
+  "eight_pair_frame_section_seconds": 51.36,
+  "interpretation": "Small whole-run gain prompted a broader case-only grouping of adjacent independent modules, keeping expensive reductions sequential. Not a portable speed guarantee.",
+  "new_case_pairs": 29,
+  "all_85_caller_module_hashes_equal_prior_plan": true,
+  "reviewed_import_dependency_admission": "passed before output/Lean execution",
+  "limits_changed": false,
+  "new_plan_full_kernel": "pending fresh immutable run and CI"
+}

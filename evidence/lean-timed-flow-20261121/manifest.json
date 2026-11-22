@@ -1,0 +1,43 @@
+{
+  "schema": "fsa-tcpip-timed-flow-evidence-v1",
+  "framework_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054",
+  "task_sha256": "52e607222d00b180eae46c2796ecf696035712781f712283102e7efa92346030",
+  "formal": "checked_timed_dispatch_contract",
+  "raw_firings": 335,
+  "conflict_groups": 18,
+  "native_cases": 77,
+  "exploration_rules": 10,
+  "assessment": "unresolved",
+  "retained_audit": {
+    "schema": "spec-flow-verification-v1",
+    "status": "retained_evidence_consistent",
+    "assessment": "unresolved",
+    "run_id": "4593749f-aee5-46d1-a63e-cec12b7efd59",
+    "inputs_checked": 223,
+    "artifacts_checked": 1052,
+    "fresh_execution": false,
+    "authenticity_established": false,
+    "scope": "retained file/source/dependency/verdict integrity only; rerun flow for fresh execution"
+  },
+  "archive_sha256": "5fd22ae9026defd13826a7e3159ce7f71a6d73bf0210e24088b4f4ec82ad3143",
+  "members": {
+    "flow.json": "d8faf89d74d7a06f1e7ade134526d7f15f03284e956e922cad666d8f056695c8",
+    "rejected/TimedProof.lean": "ec9eb75293514179548db5429b305c81c79a17da391c2dc67e77f79ef219844d",
+    "rejected/TimedProof.stdout": "2c016a7ced4b1d1d4ef365655ed3cdebdda3aae26ab42761bfa1e2caa4c53700",
+    "rejected/result.json": "675afb826845b910a252ae5613c96dcf4333fab2ae2fe7bd2b420a3d7908db6f",
+    "request.json": "7a8848eb60bb852a932712215797ba988f4b38d85ca285207358a77eb21286a6",
+    "stages/build/result.json": "6a345a38298250743da593ef6fc38f9c4053af748bec37082f2550ec26920a80",
+    "stages/compare/result.json": "6bc457aefe56a5f1a3c3d98b637999a293118092596aed35725a8d0f98fdc2a1",
+    "stages/formal/queries/Approved.lean": "0414c3556e177c99bfd533a84facb5842f28ffa3206ddfec49ec23576b087a8b",
+    "stages/formal/queries/TimedAudit.lean": "7788479aaf560c72c5a1732059a595edb8552b20712fe232ae67430357e68e27",
+    "stages/formal/queries/TimedAudit.stdout": "b3715040ed2e0ae39998e2178c5100316bde1bb15143f04d2afeaa2d10ddd2ed",
+    "stages/formal/queries/TimedProof.lean": "ae3a22384ac45fa33a76ded19d8740de0de6773a47552cc98c485023a0bb8a15",
+    "stages/formal/queries/proof-manifest.json": "e368262c4b18c7ddca3c992fd24c8107c6d159003424715e4153fab18ae4997b",
+    "stages/formal/queries/result.json": "ac6848f941eaf611cce9543c5c628042cd86d368f0baba544c8ec72074e110af",
+    "stages/tests/result.json": "8bc47be36c014fa2a295d36339b9ce7a4dd7196c502ee791de2703cb26e29caa",
+    "stages/traceability/result.json": "e50b8af03b195e3e9a0e9e0bf3d48da44b57a054a128bcc58d89b506aee049a2",
+    "tests/scheduler.log": "af53e6fd4b7dba3c020327ed60a1a1f54ea785bf815c12a5ddbb38a391266ba7",
+    "tests/timed-mailbox.log": "b5671469eeefca9046f2f809eb25e4d192b006de411e214fb75a3b399079edcf",
+    "verifier.json": "2136623c88e85bd4bffb2cd5a17e9849eab46e8889d1bb69f626a7a56a5b5d2e"
+  }
+}

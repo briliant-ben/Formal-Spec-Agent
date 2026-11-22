@@ -82,5 +82,7 @@ exact length/append lemmas repaired the proof without increasing limits, shrinki
 the data, changing expected output or approximating the checksum. Restricted
 `rewrite`, `attempt` and `simp_only` instructions cannot bypass kernel acceptance.
 
-Existing Z3 results/UNKNOWNs remain under their original checkers. Next migration
-gates are typed transition effects, timers and honest whole-case model contracts.
+Existing Z3 results/UNKNOWNs remain under their original checkers. The later
+[timed endpoint contracts](lean-timed-contracts.md) cover typed effects, timers
+and all-rule model invariant preservation. C compiler correctness and broader
+protocol behavior remain separate obligations.

@@ -25,7 +25,7 @@ An approved candidate is submitted through the independently pinned ten-stage
 Multiple callers use independent candidate and output directories, with a shared
 ledger only for the provider. This is process/source isolation, not a security
 sandbox for arbitrary hostile native code. The current POSIX worker boundary,
-compiler, Python, Z3, source interpretation and code translation remain trusted
+Lean, the C compiler, Python, source interpretation and code translation remain trusted
 components. Credentials and private provider records never belong in Git.
 
 ## Optional Lean proof-data role

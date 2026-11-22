@@ -1,31 +1,92 @@
 {
-  "schema": "framework-source-evolution-v1",
+  "schema": "framework-source-evolution-v2",
   "baseline": "provenance/extraction.json",
   "files": {
     "protocol_lab/codegen/__init__.py": {
       "extracted_sha256": "ba9c94b903acd7a7894b9a33ebef4fcd6a571088da0ff31aa15b6c4a0b6a8485",
-      "current_sha256": "a3c2801884732d44f8b33711fca25b56c1a9aa7bf888367d11c568aa4713f081",
-      "change": "compact-c-generation-v5"
+      "current_sha256": "5a24f4cd02278175917b5656ef5f7e3ae2f9be84d46e41acee77fbf35fec7351",
+      "change": "native-counted-text-v6+typed-observation-v1+model-identity"
     },
     "protocol_lab/codegen/execute.py": {
       "extracted_sha256": "355a90badcb18aecd8217755e03d5f290cfd758b3fa3f3a4224db7928a8b3895",
-      "current_sha256": "0f344fa7d7934dcdb29ae9eacebf6ad79bd339d277a3e7593784321e1cca741f",
-      "change": "compact-c-generation-v5"
+      "current_sha256": "28e3f31d8bf2ea090346512c24342133d035af7d14c891ea9f72e9c7e7159622",
+      "change": "native-counted-text-v6+typed-observation-v1+model-identity"
     },
     "protocol_lab/pipeline/task.py": {
       "extracted_sha256": "059cf6e401837ae74042c37907a0673e7b05f26f9232b9e5cb3e3c0091f4980e",
-      "current_sha256": "67b264bef873f66bd6553df6dc290a90b086510b2b1ebea8425b65529b0cf1f8",
-      "change": "lean-efsm-flow-v6"
+      "current_sha256": "3ed3c46a1942c5ad52f395dec79f9393516d870b870eebf84184db8bf034caf8",
+      "change": "lean-timed-flow-v8"
     },
     "protocol_lab/pipeline/worker.py": {
       "extracted_sha256": "cab78a75d197fd9def988aaf5f1584bac501e2c04ea989d99cd55e3b1b109879",
-      "current_sha256": "b848c9851525795a6a6fe0b17714ae35476e9d3dcc908bf98b67b51c2708da11",
-      "change": "lean-efsm-flow-v6"
+      "current_sha256": "d15bfd689b9421748f7e8c570580c3627d77d5e39bb23aa322ad19ea68825f1b",
+      "change": "lean-timed-flow-v8"
     },
     "protocol_lab/pipeline/runner.py": {
       "extracted_sha256": "cbd78b3749b3368ba39fbd4a1fa1f89e69cc7212feb7af4dd196b97404a65750",
-      "current_sha256": "b0c1c290d3ccc5c70f186de41ae6522c0e967716993e4cab1ffca3ed3046a940",
-      "change": "lean-efsm-flow-v6"
+      "current_sha256": "e933b53c00da57efdeadb9ef54990d280ecb3f7f60ac1e441c6c50b26df8102c",
+      "change": "lean-timed-flow-v8"
+    },
+    "protocol_lab/codegen/harness.c": {
+      "extracted_sha256": "2458df5d56d386fe086b4988f8a8efddff0d62b52009556382e3e9e6f4b02e07",
+      "current_sha256": "7c81fc4b789a32ddcd8236cd8efd639029a4b38f48109183abdc2d08074a0838",
+      "change": "native-counted-text-v6"
+    },
+    "protocol_lab/flow.py": {
+      "extracted_sha256": "1a35ee2988a65b8ef12fafcbd434d65e7b07b4a60745a59e185d2ac688c873fe",
+      "current_sha256": "92f367ea8d6c90efe3f9b15ddf18a8825a1f343ffe8f9170088e5d22c4166264",
+      "change": "typed-observation-v1"
+    },
+    "tests/test_rational_clock.py": {
+      "extracted_sha256": "ae461d096fbceb9f8a6600a739cad243bcfbd170943e283723f51e497a1e6d7e",
+      "current_sha256": "18adc846c2984c41fb59a0ca0be02f6a32c89b5fd1a824a744675b05bef4880d",
+      "change": "rational-reference-and-lean-scope"
+    }
+  },
+  "retired": {
+    "protocol_lab/symbolic.py": {
+      "extracted_sha256": "c0a603e005ef8cb969cb62ddf2d1cc1860f38b36fa93b908793d1a48a3126d5c",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
+    },
+    "protocol_lab/sequence_induction.py": {
+      "extracted_sha256": "0ef2fba21ddb6aebd1a0ccdfe8f9f3ebc3aa0c073cf6b26a70aaf3f26a92bcae",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
+    },
+    "protocol_lab/initial_step.py": {
+      "extracted_sha256": "70d78b82e5daa068ef0663738fc24c5d2d3cbe0c6b16de42df0421c16e4c859a",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
+    },
+    "protocol_lab/initial_plan.py": {
+      "extracted_sha256": "2651be58a75ff345b235947756bf671eecf2fc39e2bc07ff5f789e30d3e25a85",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
+    },
+    "protocol_lab/initial_units.py": {
+      "extracted_sha256": "bc2ff693f79bc3b86ae9e61605e95f0ed262fc6e59c74c778f5131af67587899",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
+    },
+    "protocol_lab/initial_overlap.py": {
+      "extracted_sha256": "d9eb3cab389a80053f4222449d9ba181e81c80f2f89938ad425575f77ce50d04",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
+    },
+    "tests/test_initial_units.py": {
+      "extracted_sha256": "f939bfd48826a0a8ebb7c610eefb6c8df44947f6c1ce92d163023e3fd7aac5a4",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
+    },
+    "tests/test_initial_units_independent.py": {
+      "extracted_sha256": "6e05131b38c06c39ab2464a21c51849edee84ddbedb659c16caddf9d3ea57e38",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
+    },
+    "tests/test_initial_overlap.py": {
+      "extracted_sha256": "5959707118e2d8b1ba90bd3997620757aa6122cf55c1cf6cba0663116ef3219f",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
+    },
+    "tests/test_symbolic_timer_replay.py": {
+      "extracted_sha256": "265c7ba0dae2203726c33d6ad2b4cc70eadc4f0db3b230885cd2caed0e16cf3a",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
+    },
+    "requirements-formal.txt": {
+      "extracted_sha256": "a7f518176888216007f17633869baaeb93fa3e23b2e8e72c4d24d271992e988a",
+      "historical_commit": "c5ef8e35fa2ed78c824a54911ec758c7d7782054"
     }
   }
 }

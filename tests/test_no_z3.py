@@ -38,37 +38,20 @@ print(json.dumps(dict(goals=len(goals),solver_imported=False)))
             self.assertEqual(p.returncode, 0, p.stderr)
             self.assertFalse(json.loads(p.stdout)['solver_imported'])
 
-    def test_base_environment_and_explicit_missing_Z3_failure(self):
+    def test_base_environment_and_explicit_historical_solver_rejection(self):
         if os.environ.get('FSA_Z3_ABSENT_REQUIRED') == '1':
-            self.assertIsNone(importlib.util.find_spec('z3'), 'Lean-only installation must not contain Z3')
-            with tempfile.TemporaryDirectory() as tmp:
-                # Real public CLI, not an import mock: the independent native
-                # stages remain runnable but the requested Z3 stage must block.
-                from protocol_lab.pipeline.task import sha
-                task = ROOT/'examples/mailbox/task.json'; output = Path(tmp)/'flow'
-                p = subprocess.run([sys.executable,'-m','formal_spec_agent','run',str(task),'--workspace',str(task.parent),'--task-sha256',sha(task),'--out',str(output)],capture_output=True,text=True,timeout=60,cwd='/tmp')
-                self.assertEqual(p.returncode,1,p.stderr)
-                report = json.loads((output/'flow.json').read_text())
-                self.assertEqual(report['assessment'],'blocked')
-                self.assertEqual(report['stages']['formal']['classification'],'environment')
-                self.assertEqual(report['stages']['formal']['status'],'blocked')
-                self.assertEqual(report['stages']['compare']['status'],'pass')
-                self.assertFalse(report['protocol_correctness_proved'])
-        program = '''
-import sys,importlib.abc
-from pathlib import Path
-class Block(importlib.abc.MetaPathFinder):
- def find_spec(self,fullname,path=None,target=None):
-  if fullname.split('.')[0]=='z3':raise ModuleNotFoundError('deliberately absent z3')
-sys.meta_path.insert(0,Block())
-from protocol_lab.ir import load,ModelError
-from protocol_lab.symbolic import Encoding
-try: Encoding(load(Path(sys.argv[1])),1,[])
-except ModelError as e:
- assert 'Z3 is missing' in str(e),str(e)
- print('explicit missing-solver rejection; no fallback or proof')
-else:raise AssertionError('missing solver silently accepted')
-'''
-        p = subprocess.run([sys.executable, '-c', program, str(ROOT/'examples/mailbox/model.json')], capture_output=True, text=True, timeout=15)
-        self.assertEqual(p.returncode, 0, p.stderr)
-        self.assertIn('no fallback', p.stdout)
+            self.assertIsNone(importlib.util.find_spec('z3'), 'Lean installation must not contain Z3')
+        from protocol_lab.pipeline.runner import run
+        from protocol_lab.pipeline.task import sha
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mail = ROOT/'examples/mailbox'
+            historical = json.loads((mail/'task.json').read_text())
+            historical.update(schema='spec-flow-task-v2',
+                              formal=dict(depth=1, symbolic_initials=[]))
+            task = root/'historical.json'
+            task.write_text(json.dumps(historical))
+            output = root/'flow'
+            with self.assertRaisesRegex(ValueError, 'Historical solver task'):
+                run(task, root, output, sha(task))
+            self.assertFalse(output.exists())

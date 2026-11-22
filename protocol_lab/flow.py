@@ -1,6 +1,7 @@
 """Protocol-neutral fixed-input reference contracts; network adapters stay with benchmarks."""
 import copy
 from .ir import Machine, ModelError, require, value_ok
+from .json_values import same_value
 
 class TraceContractMismatch(ModelError):
     """A reference execution violates an independent fixed-input output contract."""
@@ -42,7 +43,7 @@ def run_scenario(model, scenario, *, snapshots=None):
             snapshots.append(copy.deepcopy(machine.snapshot()))
         if "expect_trace" in step:
             observed = [{"at_ms": row["time_ms"], "emitted": row["emitted"]} for row in machine.trace[trace_start:]]
-            if observed != step["expect_trace"]:
+            if not same_value(observed, step["expect_trace"]):
                 raise TraceContractMismatch(scenario["id"], step["at_ms"], step["expect_trace"], observed)
     if "settle_ms" in scenario:
         machine.tick(scenario["settle_ms"])
@@ -51,6 +52,7 @@ def run_scenario(model, scenario, *, snapshots=None):
     expected = scenario["expect"]
     require(machine.state == expected["state"], "Scenario final state mismatch")
     for key, value in expected.get("variables", {}).items():
-        require(machine.values.get(key) == value, f"Scenario variable mismatch: {key}")
+        require(key in model["variables"] and value_ok(value, model["variables"][key]["type"]), f"Bad scenario variable field/type: {key}")
+        require(same_value(machine.values.get(key), value), f"Scenario variable mismatch: {key}")
     require(machine.timers == expected["timers"], "Scenario timer mismatch")
     return machine
