@@ -1,6 +1,7 @@
 """Kernel-check raw model obligations before the successful scheduler bridges."""
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -414,9 +415,24 @@ def prepare_tcpip_proofs(root, model_file, absent_ids):
         'end TimedProof\n')
     manifest = root/'manifest.json'
     names = [*tcpip_modules, *blocks, 'FrameCatalogExact', 'TCPIPAudit', 'TimedProof']
-    groups = [[name] for name in tcpip_modules]
-    groups += [blocks[index:index + 2] for index in range(0, len(blocks), 2)]
-    groups += [['FrameCatalogExact'], ['TCPIPAudit'], ['TimedProof']]
+    # This is a reviewed case resource plan, not protocol behavior or checker policy.
+    # Keep the expensive reductions alone; pair only adjacent independent modules.
+    sequential = {'TimedProof', 'TCPIPAudit', 'TCPIPApplicationRead', 'TCPIPEmptyResponses',
+                  'TCPIPControlReplies', 'TCPIPTransmitFirstEmptyAlign2', 'FrameBlock2',
+                  'TCPIPUdpSend', 'TCPIPReceiveInOrderEmpty', 'TCPIPReceiveOverlapEmpty'}
+    imports = {name: set(re.findall(r'^import ([A-Za-z][A-Za-z0-9_]*)$',
+                                   (root/f'{name}.lean').read_text(), re.M)) for name in names}
+    groups = []
+    index = 0
+    while index < len(names):
+        group = names[index:index + 2]
+        if (len(group) == 2 and not sequential.intersection(group)
+                and group[0] not in imports[group[1]] and group[1] not in imports[group[0]]):
+            groups.append(group)
+            index += 2
+        else:
+            groups.append([names[index]])
+            index += 1
     manifest.write_text(json.dumps(dict(
         schema='fsa-lean-timed-proof-manifest-v2', model={model_file.name: gate.sha(model_file)},
         modules=[dict(module=name, sha256=gate.sha(root/f'{name}.lean')) for name in names],
