@@ -475,3 +475,28 @@ proof module under `sources` and pass the reviewed flow digest through
 proof sources and compiler receipts. Run the pinned flow again for a
 fresh kernel check. Test generation reports reachable observations
 within its declared exploration independently of the proof verdict.
+
+## Reviewed compilation groups
+
+Manifest `fsa-lean-timed-proof-manifest-v2` adds `compile_groups` to the
+v1 fields. Each group contains one or two caller module names; flattening the
+groups must reproduce the complete ordered `modules` list exactly. `TimedProof`
+is a final singleton. The caller-reviewed manifest digest binds the schedule.
+V1 remains sequential.
+
+The fixed library and generated `Approved` module compile sequentially, followed
+by the reviewed groups and a final singleton `TimedAudit`. At most two compiler
+processes run concurrently. Every module still compiles from fresh source with
+the same per-module deadline; no compiled-object cache or proof omission is used.
+V2 requires simple single-line import headers and rejects known imports from
+the same or a later group. Unsupported import headers are explicitly refused.
+Executable Lean sources and their suitability for concurrent execution remain
+caller-reviewed trust assumptions; this is not a sandbox for hostile Lean code.
+
+The v2 result binds the complete schedule and records every started sibling in
+canonical source order. If a compiler exits unsuccessfully or times out, its
+sibling result is retained and no later group starts. Read-only inspection
+requires a complete prefix of groups and rejects failures hidden by a successful
+sibling, altered schedules, missing or reordered receipts, and Boolean/numeric
+exit-code aliases. A pass still requires every source and the axiom audit.
+An interrupted worker without a final report is not a checked proof.

@@ -1,0 +1,11 @@
+test_bad_groups_reject_before_compiler_or_output (__main__.FrozenWaves.test_bad_groups_reject_before_compiler_or_output) ... ok
+test_failed_parallel_sibling_retained_and_no_later_group (__main__.FrozenWaves.test_failed_parallel_sibling_retained_and_no_later_group) ... ok
+test_intra_wave_and_unsupported_imports_reject (__main__.FrozenWaves.test_intra_wave_and_unsupported_imports_reject) ... ok
+test_legacy_three_value_api_and_sequential_receipts (__main__.FrozenWaves.test_legacy_three_value_api_and_sequential_receipts) ... ok
+test_success_receipt_and_group_tampering_reject (__main__.FrozenWaves.test_success_receipt_and_group_tampering_reject) ... ok
+test_v2_really_concurrent_and_fully_audited (__main__.FrozenWaves.test_v2_really_concurrent_and_fully_audited) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.140s
+
+OK

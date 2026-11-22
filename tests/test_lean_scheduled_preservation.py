@@ -413,9 +413,13 @@ def prepare_tcpip_proofs(root, model_file, absent_ids):
         '(rawChecks model declaredTimers) := TCPIPAudit.endpoint_all_preservation\n'
         'end TimedProof\n')
     manifest = root/'manifest.json'
+    names = [*tcpip_modules, *blocks, 'FrameCatalogExact', 'TCPIPAudit', 'TimedProof']
+    groups = [[name] for name in tcpip_modules]
+    groups += [blocks[index:index + 2] for index in range(0, len(blocks), 2)]
+    groups += [['FrameCatalogExact'], ['TCPIPAudit'], ['TimedProof']]
     manifest.write_text(json.dumps(dict(
-        schema=SCHEMA, model={model_file.name: gate.sha(model_file)},
-        modules=[dict(module=name, sha256=gate.sha(root/f'{name}.lean'))
-                 for name in [*tcpip_modules, *blocks, 'FrameCatalogExact', 'TCPIPAudit', 'TimedProof']],
+        schema='fsa-lean-timed-proof-manifest-v2', model={model_file.name: gate.sha(model_file)},
+        modules=[dict(module=name, sha256=gate.sha(root/f'{name}.lean')) for name in names],
+        compile_groups=groups,
     )))
     return manifest

@@ -1,0 +1,14 @@
+{
+  "status": "rejected_complete_API_response",
+  "frozen_contract_unchanged": true,
+  "observed_proof_inputs_return_tuple_sizes": [
+    4
+  ],
+  "blocking": [
+    "proof_inputs returns four values, violating frozen public three-value API and breaking check/inspect unpacking.",
+    "No compiler concurrency implementation; existing check loop remains sequential.",
+    "No v2 result identity, grouped command receipts, or v2 read-only validation.",
+    "No TCP/IP compile-group integration or new scheduling/negative tests."
+  ],
+  "automatic_API_retry": false
+}
