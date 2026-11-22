@@ -1,0 +1,87 @@
+{
+  "depth": 2,
+  "initials": [
+    {}
+  ],
+  "cases": [
+    {
+      "states": [
+        "COLD",
+        "HOT"
+      ],
+      "event": "app.put",
+      "fields": {
+        "payload": {
+          "bytes": [
+            0,
+            128,
+            255,
+            7
+          ]
+        },
+        "sequence": {
+          "seq": 4294967295
+        },
+        "delta": 1,
+        "label": "开\n\u0000",
+        "allow": true
+      }
+    },
+    {
+      "states": [
+        "COLD",
+        "HOT"
+      ],
+      "event": "app.put",
+      "fields": {
+        "payload": {
+          "bytes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16
+          ]
+        },
+        "sequence": {
+          "seq": 123
+        },
+        "delta": 0,
+        "label": "ignored",
+        "allow": true
+      }
+    },
+    {
+      "states": [
+        "COLD",
+        "HOT"
+      ],
+      "event": "app.put",
+      "fields": {
+        "payload": {
+          "bytes": [
+            9
+          ]
+        },
+        "sequence": {
+          "seq": 7
+        },
+        "delta": 0,
+        "label": "disabled",
+        "allow": false
+      }
+    }
+  ]
+}

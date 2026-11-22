@@ -17,8 +17,21 @@ through later observable timer and backward-time behavior. The source/task
 compiler and universal timed model are not proved by those finite observations.
 
 [Raw firing and scheduled bridges](../../docs/lean-timed-contracts.md) explain the
-generic kernel-checked foundation and remaining model-specific obligations.
-A universal timed-EFSM task/certificate and full flow integration are pending.
+generic kernel-checked foundation and model-specific obligations. `flow.json`
+completes the universal timed-EFSM `spec-flow-task-v8` flow against
+`lean/TimedProof.lean` and `lean/manifest.json`, connecting Lean 4.35.0
+preservation, guard-disjointness and timer dispatch contracts with bounded
+test generation (`exploration.json`), the positive trace seed (`seed.json`),
+C generation and execution comparison:
+
+```sh
+FLOW_SHA=$(shasum -a 256 examples/lean-timed-efsm/flow.json | cut -d ' ' -f 1)
+formal-spec-agent run examples/lean-timed-efsm/flow.json \
+  --workspace examples/lean-timed-efsm --task-sha256 "$FLOW_SHA" \
+  --out /tmp/timed-cell-flow
+formal-spec-agent verify /tmp/timed-cell-flow \
+  --workspace examples/lean-timed-efsm --task-sha256 "$FLOW_SHA"
+```
 
 The public timed replay certificate binds the original oracle by hash and
 checks 21 obligations in Lean 4.35.0: initial validity, exact batch execution

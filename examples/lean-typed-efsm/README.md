@@ -31,8 +31,8 @@ explicit task-v7 to run all ten stages with no Z3, including generated tests,
 actual C compilation/execution and retained Difference/traceability checks.
 `flow-projection.json` records the seed projection; `cases.json` stays unchanged
 and the Lean contract checks its full snapshots. This does not claim timers,
-reachability, compiler correctness or TCPIP-wide verification. The optional Z3 backend remains
-available until the remaining migration requirements are met.
+reachability, compiler correctness or TCPIP-wide verification. Maintained
+formal workflows run exclusively on Lean 4.35.0 with no Z3 backend.
 
 Run the kernel contract with a separately installed pinned Lean 4.35.0:
 

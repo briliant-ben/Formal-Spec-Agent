@@ -83,5 +83,5 @@ Lean runtime's entire store/timers/outputs. Its provenance file binds unchanged
 source literals; it is not an independent RFC oracle or a new network run. This
 execution check does not prove reachability, all-rule safety, compiler correctness
 or English/RFC interpretation. Historical UNKNOWNs remain under their original
-checkers. Next gates are complete scheduling, all-rule typed obligations and case
-integration. The maintained timed flow is documented in [timed contracts](lean-timed-contracts.md).
+checkers. The maintained complete timed flow, all-rule preservation and case
+integration are documented in [timed contracts](lean-timed-contracts.md).

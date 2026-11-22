@@ -12,6 +12,7 @@ from flow_diagnostics import record_flow
 
 ROOT = Path(__file__).resolve().parents[1]
 MAILBOX = ROOT/'examples/mailbox'
+TIMED_CELL = ROOT/'examples/lean-timed-efsm'
 LEAN = os.environ.get('FSA_LEAN') or shutil.which('lean')
 
 
@@ -45,3 +46,24 @@ class TimedFlowTests(unittest.TestCase):
             write(bundle/'result.json', dict(formal, raw_firings=1))
             with self.assertRaisesRegex(ValueError, 'claim or input identity'):
                 inspect(bundle, MAILBOX/task['model'], manifest, task['formal']['manifest_sha256'])
+
+    @unittest.skipUnless(LEAN, 'Pinned Lean required')
+    def test_timed_cell_universal_flow_and_tamper_rejection(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)/'timed-cell-flow'
+            task_path = TIMED_CELL/'flow.json'
+            pin = sha(task_path)
+            result = run(task_path, TIMED_CELL, output, pin)
+            diagnostic = record_flow(output, 'timed-cell-flow', result)
+            self.assertEqual(result['assessment'], 'verified_event_slice', diagnostic)
+            self.assertEqual({k: v['status'] for k, v in result['stages'].items()},
+                             dict.fromkeys(STAGES, 'pass'))
+            formal = result['stages']['formal']['data']
+            self.assertEqual((formal['status'], formal['raw_firings'], formal['conflict_groups']),
+                             (CHECKED, 5, 3))
+            self.assertEqual(result['stages']['tests']['data']['uncovered_rules'], [])
+            self.assertEqual(verify(output, TIMED_CELL, pin)['status'], 'retained_evidence_consistent')
+
+            write(output/'stages/compare/result.json', {})
+            with self.assertRaises(ValueError):
+                verify(output, TIMED_CELL, pin)

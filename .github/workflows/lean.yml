@@ -1,7 +1,7 @@
 name: Lean expression contracts and acceptance gates
 on:
   push:
-    branches: [main, 'codex/**']
+    branches: [main, 'codex/**', 'gemini/**']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -94,6 +94,12 @@ jobs:
           /tmp/lean-only-venv/bin/formal-spec-agent lean-verify /tmp/lean-efsm-flow/stages/formal/queries \
             --task examples/lean-efsm/task.json --workspace examples/lean-efsm \
             --task-sha256 "$CONTRACT_SHA" --lean "$FSA_LEAN" --out /tmp/lean-efsm-recheck
+          TIMED_FLOW_SHA=$(sha256sum examples/lean-timed-efsm/flow.json | cut -d ' ' -f 1)
+          /tmp/lean-only-venv/bin/formal-spec-agent run examples/lean-timed-efsm/flow.json \
+            --workspace examples/lean-timed-efsm --task-sha256 "$TIMED_FLOW_SHA" \
+            --out /tmp/lean-timed-cell-flow > lean-timed-cell-flow.log
+          /tmp/lean-only-venv/bin/formal-spec-agent verify /tmp/lean-timed-cell-flow \
+            --workspace examples/lean-timed-efsm --task-sha256 "$TIMED_FLOW_SHA" > lean-timed-cell-audit.log
       - name: Check actual C-expression correspondence and compiled Lean reference
         if: matrix.track == 'cli'
         run: |
@@ -175,6 +181,9 @@ jobs:
             lean-mailbox-audit.log
             /tmp/lean-mailbox-flow
             lean-flow-audit.log
+            lean-timed-cell-flow.log
+            lean-timed-cell-audit.log
+            /tmp/lean-timed-cell-flow
             /tmp/lean-byte-check
             /tmp/lean-byte-recheck
             /tmp/lean-c-read-check

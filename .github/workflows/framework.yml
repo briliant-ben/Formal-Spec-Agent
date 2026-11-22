@@ -1,7 +1,7 @@
 name: Framework extraction and installed package
 on:
   push:
-    branches: [main, 'codex/**']
+    branches: [main, 'codex/**', 'gemini/**']
   pull_request:
   workflow_dispatch:
 permissions:

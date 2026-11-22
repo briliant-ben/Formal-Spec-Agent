@@ -1,7 +1,8 @@
-# Lean-first migration
+# Lean-only formal architecture
 
-The target is one Lean-centered acceptance path driven by Protocol IR. Providers
-propose proof data; actual kernel checking and a separate axiom audit decide
+All maintained formal workflows run exclusively on Lean 4.35.0 driven by
+Protocol IR, with no Z3 dependency or solver fallback. Providers propose proof
+or model data; actual kernel checking and a separate axiom audit decide
 acceptance. Changing a prover does not transfer old guarantees to a new backend.
 
 ## Installation and active checks
@@ -11,11 +12,13 @@ Install the Python package with `pip install .` and install official Lean
 integer or typed EFSMs (v6/v7), or the reviewed timed Lean contract (v8).
 C generation and reference execution use the same validated Protocol IR.
 
-The [mailbox](../examples/mailbox/task.json) exercises the full timed Lean
-strategy and C pipeline. The [timed contracts](lean-timed-contracts.md)
-describe exact initial admission, all-rule safety, guard disjointness,
-timer advance and transactional uncovered dispatch on the pinned TCP/IP
-case. Test generation and C comparisons keep independent scopes and verdicts.
+Both [the mailbox task](../examples/mailbox/task.json) and
+[the Timed Cell flow](../examples/lean-timed-efsm/flow.json) exercise the full
+ten-stage timed Lean strategy (`spec-flow-task-v8`) and C pipeline. The
+[timed contracts](lean-timed-contracts.md) describe exact initial admission,
+all-rule safety, guard disjointness, timer advance and transactional uncovered
+dispatch on the pinned TCP/IP case. Test generation and C comparisons keep
+independent scopes and verdicts.
 
 ## Historical solver tasks
 

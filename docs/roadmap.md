@@ -4,8 +4,9 @@
 
 - Declarative Protocol IR, independent reference and formal checks, generated tests,
   standalone C, exact observations/Difference and source traceability.
-- Optional independent DeepSeek proposal roles, pinned inputs and a persistent
-  request ledger. Responses cannot self-approve or execute model-returned code.
+- Optional independent proposal roles (`gemini` and `deepseek` adapters), pinned
+  inputs and a persistent request ledger. Responses cannot self-approve or
+  execute model-returned code.
 - Compact C expression factoring with retained semantics/failure regressions.
 - Lean expression contracts: frozen source/statement hashes,
   proof-data-only workers, actual Lean 4.35.0 checks, a separate axiom audit,
@@ -95,7 +96,10 @@ kinds. Typed Cell's 14 obligations and fresh kernel recheck pass; eight new test
 also reject wrong-byte execution, incomplete witnesses/oracles and certificate
 mutations. The independent base installation checks this without importing Z3.
 Explicit task-v7 now runs the full typed flow and bounded native text input.
-Timer composition, native/compiler refinement and whole TCPIP migration remain open.
+Timed Cell's universal timed flow (`examples/lean-timed-efsm/flow.json`) runs
+all ten `spec-flow-task-v8` stages, and the pinned TCP/IP endpoint proof is
+checked on Lean 4.35.0; native/compiler refinement and complete TCP/IP protocol
+reachability remain separate obligations.
 The 64-message-per-literal, 128-case/128-step and 512-total-step limits are
 explicit witness-generation resource limits; they do not restrict the universal
 store/field quantifiers in preservation or coverage.
@@ -103,8 +107,9 @@ store/field quantifiers in preservation or coverage.
 ## Timed contracts checkpoint
 
 Generic raw firing and actual fire/external/timer preservation bridges are now
-kernel-checked. Timed Cell has independent ten-operation reference/native checks
-and meaningful timer faults. Its universal raw-rule, coverage and repeated-batch
-model obligations still need a strict task adapter and accepted proof data.
-Unknown timer fields are explicitly rejected by typed machine admission. The
-microstep approval epoch changes only its adapter pin, not its propositions.
+kernel-checked. Timed Cell has independent ten-operation reference/native checks,
+a finite `checked_timed_replay` certificate, and the complete ten-stage
+`spec-flow-task-v8` universal flow (`examples/lean-timed-efsm/flow.json`) with
+checked initial admission, raw rule preservation, guard disjointness and timer
+coverage. Unknown timer fields are explicitly rejected by typed machine admission.
+The microstep approval epoch changes only its adapter pin, not its propositions.

@@ -1,0 +1,317 @@
+{
+  "scenario_version": "0.2",
+  "id": "frozen-timed-cell-positive-projection",
+  "initial": {},
+  "steps": [
+    {
+      "at_ms": 0,
+      "event": "app.put",
+      "fields": {
+        "payload": [
+          0,
+          128,
+          255,
+          7
+        ],
+        "sequence": 4294967295,
+        "delta": 1,
+        "label": "开\n\u0000",
+        "allow": true
+      },
+      "expect_trace": [
+        {
+          "at_ms": 0,
+          "emitted": [
+            {
+              "message": "cell.accept",
+              "fields": {
+                "buf": [
+                  0,
+                  128,
+                  255,
+                  7
+                ],
+                "n": 4,
+                "cursor": 0,
+                "label": "开\n\u0000",
+                "accepted": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 5,
+      "event": "app.put",
+      "fields": {
+        "payload": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "sequence": 123,
+        "delta": 0,
+        "label": "ignored",
+        "allow": true
+      },
+      "expect_trace": [
+        {
+          "at_ms": 5,
+          "emitted": [
+            {
+              "message": "cell.reject",
+              "fields": {
+                "buf": [
+                  0,
+                  128,
+                  255,
+                  7
+                ],
+                "n": 4,
+                "cursor": 0,
+                "label": "开\n\u0000",
+                "accepted": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 10,
+      "event": "app.put",
+      "fields": {
+        "payload": [],
+        "sequence": 0,
+        "delta": -1,
+        "label": "",
+        "allow": true
+      },
+      "expect_trace": [
+        {
+          "at_ms": 10,
+          "emitted": [
+            {
+              "message": "cell.expired",
+              "fields": {
+                "buf": [],
+                "n": 0,
+                "cursor": 0,
+                "label": "",
+                "accepted": false
+              }
+            }
+          ]
+        },
+        {
+          "at_ms": 10,
+          "emitted": [
+            {
+              "message": "cell.accept",
+              "fields": {
+                "buf": [],
+                "n": 0,
+                "cursor": 4294967295,
+                "label": "",
+                "accepted": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 20,
+      "tick": true,
+      "expect_trace": [
+        {
+          "at_ms": 20,
+          "emitted": [
+            {
+              "message": "cell.expired",
+              "fields": {
+                "buf": [],
+                "n": 0,
+                "cursor": 4294967295,
+                "label": "",
+                "accepted": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 20,
+      "event": "app.put",
+      "fields": {
+        "payload": [
+          9
+        ],
+        "sequence": 7,
+        "delta": 0,
+        "label": "disabled",
+        "allow": false
+      },
+      "expect_trace": [
+        {
+          "at_ms": 20,
+          "emitted": [
+            {
+              "message": "cell.reject",
+              "fields": {
+                "buf": [],
+                "n": 0,
+                "cursor": 4294967295,
+                "label": "",
+                "accepted": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 21,
+      "event": "app.put",
+      "fields": {
+        "payload": [
+          0,
+          255,
+          1,
+          254,
+          2,
+          253,
+          3,
+          252,
+          4,
+          251,
+          5,
+          250,
+          6,
+          249,
+          7,
+          248
+        ],
+        "sequence": 1,
+        "delta": -2,
+        "label": "sixteen",
+        "allow": true
+      },
+      "expect_trace": [
+        {
+          "at_ms": 21,
+          "emitted": [
+            {
+              "message": "cell.accept",
+              "fields": {
+                "buf": [
+                  0,
+                  255,
+                  1,
+                  254,
+                  2,
+                  253,
+                  3,
+                  252,
+                  4,
+                  251,
+                  5,
+                  250,
+                  6,
+                  249,
+                  7,
+                  248
+                ],
+                "n": 16,
+                "cursor": 4294967295,
+                "label": "sixteen",
+                "accepted": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 25,
+      "event": "app.put",
+      "fields": {
+        "payload": [],
+        "sequence": 0,
+        "delta": 4294967296,
+        "label": "wrap",
+        "allow": true
+      },
+      "expect_trace": [
+        {
+          "at_ms": 25,
+          "emitted": [
+            {
+              "message": "cell.accept",
+              "fields": {
+                "buf": [],
+                "n": 0,
+                "cursor": 0,
+                "label": "wrap",
+                "accepted": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at_ms": 31,
+      "tick": true,
+      "expect_trace": []
+    },
+    {
+      "at_ms": 35,
+      "tick": true,
+      "expect_trace": [
+        {
+          "at_ms": 35,
+          "emitted": [
+            {
+              "message": "cell.expired",
+              "fields": {
+                "buf": [],
+                "n": 0,
+                "cursor": 0,
+                "label": "",
+                "accepted": false
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "state": "COLD",
+    "variables": {
+      "buf": [],
+      "n": 0,
+      "cursor": 0,
+      "label": "",
+      "accepted": false
+    },
+    "timers": {}
+  }
+}

@@ -24,7 +24,7 @@ and the explicitly transformed boundaries.
 
 | Directory | Role |
 |---|---|
-| `formal_spec_agent/` | Public CLI, optional independent proposal roles and provider adapter |
+| `formal_spec_agent/` | Public CLI, optional independent proposal roles and provider adapters |
 | `protocol_lab/` | Generic IR, reference interpreter, C lowering/runtime and ten-stage pipeline |
 | `examples/mailbox/` | Small non-network specification, IR, independent literal seed and task |
 | `tests/` | Semantic, execution, concurrency, tamper and rejection checks |
@@ -122,8 +122,8 @@ Lean's runtime. Neither route implies native compiler or whole-protocol correctn
 The [state transaction unit](examples/lean-state/README.md) derives ordered integer
 assignments, buffered emissions and final-invariant rollback from an IR action
 block. Its separate `checked_state_contract` result does not certify C statements,
-guard selection, timers or a complete EFSM. The migration guide lists the remaining
-open proof and compiler correspondence work.
+guard selection, timers or a complete EFSM. See [supported fragments](docs/lean-first.md)
+for the active Lean-only scopes and open compiler-correspondence work.
 
 The [typed value layer](docs/lean-typed-values.md) now covers all five types and
 26 operators of the pinned compact TCP/IP model. Its entire expression view can
@@ -148,15 +148,17 @@ universal scheduler and model obligations.
 ## Optional independent proposal roles
 
 `formal-spec-agent propose` executes one to four independent JSON roles with
-pinned specification/job inputs and the original shared request ledger. The
-included provider adapter supports DeepSeek; the operator supplies a model name.
+pinned specification/job inputs and the original shared request ledger. Included
+provider adapters support Gemini (`--provider gemini`, default) and DeepSeek
+(`--provider deepseek`); the operator supplies a model name.
 The controller does not execute model-returned code, edit models/oracles, retry
 failed paid requests or let a role approve its own protocol.
 
 ```sh
 .venv/bin/formal-spec-agent propose --job /candidate/job.json --workspace /candidate \
   --job-sha256 APPROVED_JOB_SHA --out /runs/proposal-001 \
-  --ledger /private/shared-ledger --credential-file /private/deepseek.key --model YOUR_MODEL
+  --ledger /private/shared-ledger --credential-file /private/gemini.key \
+  --provider gemini --model gemini-2.5-flash
 ```
 
 `requires_controller_review` means proposals were received, not accepted. A trusted

@@ -1,0 +1,96 @@
+{
+  "schema": "spec-flow-task-v8",
+  "id": "timed-cell",
+  "model": "model.json",
+  "sources": [
+    {
+      "id": "spec",
+      "path": "spec.md",
+      "sha256": "75456866515159edabc2998a97585d1bd891a3c694c83d65f7dd8fbb3f12fdb9",
+      "version": "timed-cell-v1",
+      "uri_aliases": [
+        "spec.md"
+      ]
+    },
+    {
+      "id": "cases",
+      "path": "cases.json",
+      "sha256": "3eefe8ccf5ddaf5940fbf92d3f45ec1caf7b6d605e0c7cd5809851d4f06a9888",
+      "version": "timed-cell-v1",
+      "uri_aliases": [
+        "cases.json"
+      ]
+    },
+    {
+      "id": "exploration",
+      "path": "exploration.json",
+      "sha256": "ca3b4067dc6b8d6d3af105477d0c3e4c0d7b20f4e99b7fb16b67b85bdbdad239",
+      "version": "timed-cell-v1",
+      "uri_aliases": [
+        "exploration.json"
+      ]
+    },
+    {
+      "id": "seed",
+      "path": "seed.json",
+      "sha256": "07974c6eadf8c5568cb3af6d82089c73dc50dbeb307bd5575968b10b5a42aadb",
+      "version": "timed-cell-v1",
+      "uri_aliases": [
+        "seed.json"
+      ]
+    },
+    {
+      "id": "TimedProof",
+      "path": "lean/TimedProof.lean",
+      "sha256": "0045c4db214291590d245e16de39e41a8eb9b117f6d980348490b687a2849fbe",
+      "version": "1",
+      "uri_aliases": [
+        "lean/TimedProof.lean"
+      ]
+    },
+    {
+      "id": "manifest",
+      "path": "lean/manifest.json",
+      "sha256": "8cdf8a45ac171201774da4baeddf2fe995cec5b583f39674922f436433b58d6c",
+      "version": "1",
+      "uri_aliases": [
+        "lean/manifest.json"
+      ]
+    }
+  ],
+  "requirement_bindings": {
+    "TIMED_CELL": {
+      "source": "spec",
+      "clause": "timed-cell-v1",
+      "reference": "spec.md#timed-cell-v1"
+    }
+  },
+  "exploration": "exploration.json",
+  "seeds": [
+    "seed.json"
+  ],
+  "formal": {
+    "strategy": "lean-timed",
+    "manifest": "lean/manifest.json",
+    "manifest_sha256": "8cdf8a45ac171201774da4baeddf2fe995cec5b583f39674922f436433b58d6c"
+  },
+  "limits": {
+    "stage_seconds": 180,
+    "max_prefixes": 64,
+    "max_cases": 30
+  },
+  "scope": {
+    "purpose": "Universal timed EFSM dispatch contracts plus standalone C finite-execution correspondence",
+    "assumptions": [
+      "Authoritative IR interpretation, Lean kernel/translation and C toolchain trusted",
+      "Complete typed stores/fields for raw preservation/guards/timers; native signed64/4096bytes/64text intern capacity explicitly separate"
+    ],
+    "excluded": [
+      "reachability",
+      "compiler or native arithmetic/memory proof",
+      "English specification correctness",
+      "network evidence",
+      "whole TCPIP correctness"
+    ]
+  }
+}

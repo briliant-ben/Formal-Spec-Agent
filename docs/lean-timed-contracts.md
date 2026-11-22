@@ -99,8 +99,10 @@ A concrete kernel regression reifies the Timed Cell IR through the existing
 batch view. It checks initial validity, declared timer and target IDs, unique
 rule IDs, guard disjointness, timer and external coverage, and raw preservation
 for all five rules. It then applies the generic dispatch theorem to the
-generated initial snapshot with arbitrary typed event fields. The public
-timed task certificate and its finite batch replay integration are still open.
+generated initial snapshot with arbitrary typed event fields. The full
+ten-stage universal timed flow (`examples/lean-timed-efsm/flow.json`) and finite
+batch replay certificate (`examples/lean-timed-efsm/task.json`) both pass on
+Lean 4.35.0.
 
 The compiled Lean batch interpreter matched the ten original frozen
 operations directly. An error expectation can specify the fault, exact
@@ -467,8 +469,9 @@ formal-spec-agent lean-timed-check model.json \
   --out /tmp/timed-proof-check
 ```
 
-The [mailbox timed flow](../examples/mailbox/task.json) connects the
-same check to the C generation and comparison stages. Its `formal` object contains `strategy: "lean-timed"`,
+Both the [mailbox timed flow](../examples/mailbox/task.json) and the
+[Timed Cell flow](../examples/lean-timed-efsm/flow.json) connect the same check
+to the C generation and comparison stages. Its `formal` object contains `strategy: "lean-timed"`,
 `manifest` and `manifest_sha256`. Declare the manifest and each
 proof module under `sources` and pass the reviewed flow digest through
 `--task-sha256`. Flow verification revalidates the retained model,

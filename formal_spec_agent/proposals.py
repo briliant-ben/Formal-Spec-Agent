@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 import time
 
-from .providers.deepseek import request
+from .providers import DEFAULT_PROVIDER, PROVIDERS, get_provider
 
 
 def sha(path):
@@ -20,9 +20,10 @@ def write(path, value):
 
 
 def run(job_file, workspace, out, ledger, credential_file, model, job_sha256,
-        max_calls=12, max_tokens=4096, provider=None):
+        max_calls=12, max_tokens=4096, provider=None, provider_name=DEFAULT_PROVIDER):
     """Controller-owned job digest, shared request ledger, independent roles."""
-    provider = provider or request
+    custom_provider = provider is not None
+    provider = provider if custom_provider else get_provider(provider_name)
     workspace, job_file, out = (Path(p).resolve() for p in (workspace, job_file, out))
     ledger, credential_file = Path(ledger).resolve(), Path(credential_file).resolve()
     if not job_file.is_relative_to(workspace):
@@ -77,7 +78,8 @@ def run(job_file, workspace, out, ledger, credential_file, model, job_sha256,
     out.mkdir(parents=True, exist_ok=False)
     state = dict(schema='formal-spec-proposal-result-v1', job_id=job['id'], pid=os.getpid(),
                  status='running', started_at=time.time(), independently_approved=False,
-                 protocol_accepted=False, model=model, job_sha256=job_sha256,
+                 protocol_accepted=False, provider='custom' if custom_provider else provider_name,
+                 model=model, job_sha256=job_sha256,
                  source_bindings=bindings, roles={})
     write(out / 'status.json', state)
     write(out / 'messages.json', messages)
@@ -116,6 +118,7 @@ def main(argv=None):
     for name in ('job', 'workspace', 'out', 'ledger', 'credential-file'):
         p.add_argument('--' + name, type=Path, required=True)
     p.add_argument('--job-sha256', required=True)
+    p.add_argument('--provider', choices=tuple(PROVIDERS), default=DEFAULT_PROVIDER)
     p.add_argument('--model', required=True)
     p.add_argument('--max-tokens', type=int, default=4096)
     p.add_argument('--max-calls', type=int, default=12)
@@ -123,7 +126,8 @@ def main(argv=None):
     a = p.parse_args(argv)
     try:
         r = run(a.job, a.workspace, a.out, a.ledger, a.credential_file, a.model,
-                a.job_sha256, None if a.uncapped_calls else a.max_calls, a.max_tokens)
+                a.job_sha256, None if a.uncapped_calls else a.max_calls, a.max_tokens,
+                provider_name=a.provider)
     except (ValueError, OSError, KeyError, TypeError) as error:
         print(json.dumps(dict(status='rejected', error_type=type(error).__name__)))
         return 2

@@ -11,7 +11,9 @@ roles receive the same pinned specification data. A typical pair is a modeler
 and an independent interpretation reviewer. They do not share evolving memory,
 edit workspaces, execute source or count their own claims as validation.
 
-The operator supplies the job digest, model name, credential location, immutable
+The operator supplies the provider (`--provider gemini` by default, or
+`--provider deepseek`), job digest, model name, credential location (`GEMINI_API_KEY` /
+`GOOGLE_API_KEY` / `DEEPSEEK_API_KEY` or `--credential-file`), immutable
 candidate workspace, fresh output directory and shared original request ledger.
 The controller rejects path escapes, changing inputs, duplicate roles/sources,
 invalid messages and oversized prompts. Input changes during a call invalidate
