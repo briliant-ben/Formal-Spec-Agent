@@ -21,6 +21,12 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] in ('lean-plan', 'lean-check', 'lean-verify'):
         from .lean_backend import main as check, verify_main, plan_main
         return {'lean-plan':plan_main, 'lean-check':check, 'lean-verify':verify_main}[sys.argv[1]](sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == 'compose':
+        from .compose import main as compose
+        return compose(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == 'campaign':
+        from .campaign import main as campaign
+        return campaign(sys.argv[2:])
     if len(sys.argv) > 1 and sys.argv[1] == 'propose':
         from .proposals import main as propose
         return propose(sys.argv[2:])

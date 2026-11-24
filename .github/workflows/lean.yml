@@ -100,6 +100,56 @@ jobs:
             --out /tmp/lean-timed-cell-flow > lean-timed-cell-flow.log
           /tmp/lean-only-venv/bin/formal-spec-agent verify /tmp/lean-timed-cell-flow \
             --workspace examples/lean-timed-efsm --task-sha256 "$TIMED_FLOW_SHA" > lean-timed-cell-audit.log
+      - name: Smoke-test compose and parallel campaign CLI on generic examples
+        if: matrix.track == 'cli'
+        run: |
+          /tmp/lean-only-venv/bin/formal-spec-agent campaign init \
+            --workspace examples/lean-timed-efsm --model examples/lean-timed-efsm/model.json \
+            --campaign /tmp/cli-campaign-smoke --skip-precompile --shard-size 2
+          /tmp/lean-only-venv/bin/formal-spec-agent campaign status --campaign /tmp/cli-campaign-smoke
+          /tmp/lean-only-venv/bin/formal-spec-agent campaign claim --campaign /tmp/cli-campaign-smoke --worker cli-agent-1
+          /tmp/lean-only-venv/bin/formal-spec-agent campaign release --campaign /tmp/cli-campaign-smoke \
+            --unit core_contracts --worker cli-agent-1
+          /tmp/lean-only-venv/bin/python - <<'PY'
+          import hashlib, json, subprocess
+          from pathlib import Path
+          ws = Path('/tmp/cli-compose-smoke')
+          ws.mkdir(parents=True)
+          comp = {
+              'requirements': {'R': {'source': 's.md#r', 'interpretation': 'counter'}},
+              'variables': {'cnt': {'type': 'int', 'initial': 0}},
+              'events': {'inc': {'origin': 'application', 'fields': {}}},
+              'messages': {'out': {'fields': {'v': 'int'}}},
+              'timers': {},
+              'transitions': [{
+                  'id': 'STEP', 'from': 'S0', 'to': 'S0', 'event': 'inc', 'guard': True,
+                  'actions': [
+                      {'set': {'var': 'cnt', 'value': {'op': 'add', 'args': [{'var': 'cnt'}, 1]}}},
+                      {'emit': {'message': 'out', 'fields': {'v': {'var': 'cnt'}}}},
+                  ],
+                  'requirements': ['R'],
+              }],
+              'invariants': [{'id': 'NONNEG', 'assert': {'op': 'ge', 'args': [{'var': 'cnt'}, 0]}, 'requirements': ['R']}],
+          }
+          cpath = ws / 'part.json'
+          cpath.write_text(json.dumps(comp))
+          sha = hashlib.sha256(cpath.read_bytes()).hexdigest()
+          recipe = ws / 'compose.json'
+          recipe.write_text(json.dumps({
+              'schema': 'fsa-compose-v1', 'protocol': 'cli-compose-smoke',
+              'ir_version': '0.6', 'semantics': 'flat-efsm-atomic-ordered-v1',
+              'states': ['S0'], 'initial_state': 'S0',
+              'scope': {'terminal_states': [], 'excluded': ['smoke']},
+              'components': [
+                  {'id': 'a', 'path': 'part.json', 'sha256': sha, 'prefix': 'a.'},
+                  {'id': 'b', 'path': 'part.json', 'sha256': sha, 'prefix': 'b.'},
+              ],
+          }))
+          subprocess.run([
+              '/tmp/lean-only-venv/bin/formal-spec-agent', 'compose', str(recipe),
+              '--workspace', str(ws), '--out', str(ws / 'model.json'), '--receipt', str(ws / 'receipt.json'),
+          ], check=True)
+          PY
       - name: Check actual C-expression correspondence and compiled Lean reference
         if: matrix.track == 'cli'
         run: |
@@ -184,6 +234,8 @@ jobs:
             lean-timed-cell-flow.log
             lean-timed-cell-audit.log
             /tmp/lean-timed-cell-flow
+            /tmp/cli-campaign-smoke
+            /tmp/cli-compose-smoke
             /tmp/lean-byte-check
             /tmp/lean-byte-recheck
             /tmp/lean-c-read-check

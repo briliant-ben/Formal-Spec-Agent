@@ -27,8 +27,9 @@ and the explicitly transformed boundaries.
 | `formal_spec_agent/` | Public CLI, optional independent proposal roles and provider adapters |
 | `protocol_lab/` | Generic IR, reference interpreter, C lowering/runtime and ten-stage pipeline |
 | `examples/mailbox/` | Small non-network specification, IR, independent literal seed and task |
+| `examples/lean-timed-efsm/` | Timed EFSM benchmark (`TimedProof.lean` + ten-stage verified C99 flow) |
 | `tests/` | Semantic, execution, concurrency, tamper and rejection checks |
-| `docs/` | [IR overview](docs/ir-semantics.md), [role contract](docs/agent-contract.md), [extraction boundary](docs/extraction.md) |
+| `docs/` | [IR overview](docs/ir-semantics.md), [parallel-agent workflow](docs/parallel-agents.md), [role contract](docs/agent-contract.md), [extraction boundary](docs/extraction.md) |
 | `provenance/`, `evidence/` | Source origin and retained validation/review records |
 
 The internal package name `protocol_lab` is retained to avoid gratuitous semantic
@@ -144,6 +145,19 @@ public Lean checker to prove exact finite dispatch and tick results, including
 timer order, emitted data and an explicit rollback snapshot on failure.
 The [timed contracts](docs/lean-timed-contracts.md) track the separate
 universal scheduler and model obligations.
+
+## Scaling protocols with `compose` & `campaign`
+
+For multi-component protocols whose rule/proof count exceeds single-prompt
+context limits and single-module Lean elaboration budgets, `compose` merges
+hash-pinned IR components (with optional namespace prefixes) into a validated IR
+model, and `campaign` precompiles core `.olean`s once, decomposes `Approved` into
+independent `core_contracts`, `conflict_shard_NNN`, and `firing_shard_NNN` units
+under POSIX locks, runs parallel workers (`claim`/`submit` for any external agent
+harness or `run-workers --backend command|provider`), caches verified shards by
+input digest, and assembles `TimedProof.lean` + standalone C99 via the ten-stage
+pipeline. See [the parallel-agent workflow guide](docs/parallel-agents.md) and
+the generic timed benchmark in [examples/lean-timed-efsm](examples/lean-timed-efsm/README.md).
 
 ## Optional independent proposal roles
 

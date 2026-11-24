@@ -1,5 +1,9 @@
 # Framework documentation
 
+- [Parallel multi-agent workflow](parallel-agents.md): modular IR composition
+  (`compose`), sharded proof workgraphs (`campaign`), shared `.olean` /
+  content-addressed caches, and external agent (`claim`/`submit`) or provider
+  (`--backend provider|command`) worker orchestration.
 - [Timed contracts](lean-timed-contracts.md): raw firing, actual scheduler bridges,
   an independently frozen timed benchmark (`examples/lean-timed-efsm/flow.json`) and
   all-rule preservation for the pinned endpoint.
