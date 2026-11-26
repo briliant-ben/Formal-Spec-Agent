@@ -205,9 +205,9 @@ static inline fsa_slice_t fsa_slice_sub(fsa_slice_t a, int64_t offset, int64_t c
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
         return empty;
     }
-    size_t start = offset < 0 ? 0 : ((uint64_t)offset > a.len ? a.len : (size_t)offset);
-    size_t avail = a.len - start;
-    size_t n = count < 0 ? 0 : ((uint64_t)count > avail ? avail : (size_t)count);
+    size_t start = offset < 0 ? 0U : ((uint64_t)offset > (uint64_t)a.len ? (size_t)a.len : (size_t)offset);
+    size_t avail = (size_t)a.len - start;
+    size_t n = count < 0 ? 0U : ((uint64_t)count > (uint64_t)avail ? avail : (size_t)count);
     return fsa_slice_make(n ? (a.ptr + start) : NULL, (uint16_t)n);
 }
 
@@ -216,7 +216,7 @@ static inline int64_t fsa_slice_at_or_zero(fsa_slice_t a, int64_t offset, uint16
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
         return 0;
     }
-    if (offset < 0 || (uint64_t)offset >= a.len) return 0;
+    if (offset < 0 || (uint64_t)offset >= (uint64_t)a.len) return 0;
     return (int64_t)a.ptr[(size_t)offset];
 }
 
@@ -290,11 +290,12 @@ static inline int64_t fsa_checksum16(fsa_slice_t a, uint16_t byte_cap, int *err)
     }
     uint32_t sum = 0;
     size_t i = 0;
+    size_t alen = (size_t)a.len;
     const uint8_t *p = a.ptr;
-    for (; i + 1 < a.len; i += 2) {
-        sum += ((uint32_t)p[i] << 8) | (uint32_t)p[i + 1];
+    for (; i + 1U < alen; i += 2U) {
+        sum += ((uint32_t)p[i] << 8) | (uint32_t)p[i + 1U];
     }
-    if (i < a.len) {
+    if (i < alen) {
         sum += ((uint32_t)p[i] << 8);
     }
     while (sum >> 16) {

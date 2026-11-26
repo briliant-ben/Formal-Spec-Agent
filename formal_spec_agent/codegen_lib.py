@@ -474,7 +474,7 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
             f'    if (!fsa_valid_utf8(s, n)) {{ if (!*err) *err = FSA_ERR_INVALID_ARG; return -1; }}',
             f'    int idx = {pfx}_text_find(pool, s, n);',
             '    if (idx >= 0) return idx;',
-            f'    if (n > {PFX}_TEXT_CAP || pool->count >= {PFX}_TEXT_POOL_CAP) {{ if (!*err) *err = FSA_ERR_TEXT_CAP; return -1; }}',
+            f'    if (n > (size_t){PFX}_TEXT_CAP || pool->count >= {PFX}_TEXT_POOL_CAP) {{ if (!*err) *err = FSA_ERR_TEXT_CAP; return -1; }}',
             '    if (n) memcpy(pool->data[pool->count], s, n);',
             '    pool->len[pool->count] = (uint16_t)n;',
             '    return pool->count++;',
@@ -647,7 +647,7 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
                     val_c = exp(p['fields'][fname], ev)
                     if fkind == 'bytes':
                         c.append(f'{indent}    {{ fsa_slice_t _bs = {val_c};')
-                        c.append(f'{indent}      if (_bs.len > {PFX}_BYTE_CAP) {{ if (!*err) *err = FSA_ERR_BYTE_CAP; }}')
+                        c.append(f'{indent}      if ((size_t)_bs.len > (size_t){PFX}_BYTE_CAP) {{ if (!*err) *err = FSA_ERR_BYTE_CAP; }}')
                         c.append(
                             f'{indent}      else if (on_emit) {{ pe->fields[{j}] = fsa_val_bytes(NULL, 0); '
                             f'pe->fields[{j}].bytes = fsa_arena_copy(arena, _bs, {PFX}_BYTE_CAP, err); }}'
@@ -899,7 +899,7 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
     c.append(f'            uint8_t k = {pfx}_event_kinds[event][i];')
     c.append('            if (args[i].kind != k) { err = FSA_ERR_INVALID_ARG; goto fail; }')
     c.append('            ev_norm[i] = args[i];')
-    c.append(f'            if (k == FSA_KIND_BYTES) {{ if (args[i].bytes.len > 0 && !args[i].bytes.ptr) {{ err = FSA_ERR_INVALID_ARG; goto fail; }} if (args[i].bytes.len > {PFX}_BYTE_CAP) {{ err = FSA_ERR_BYTE_CAP; goto fail; }} }}')
+    c.append(f'            if (k == FSA_KIND_BYTES) {{ if (args[i].bytes.len > 0 && !args[i].bytes.ptr) {{ err = FSA_ERR_INVALID_ARG; goto fail; }} if ((size_t)args[i].bytes.len > (size_t){PFX}_BYTE_CAP) {{ err = FSA_ERR_BYTE_CAP; goto fail; }} }}')
     c.append('            else if (k == FSA_KIND_BOOL) { if (args[i].i64 != 0 && args[i].i64 != 1) { err = FSA_ERR_INVALID_ARG; goto fail; } }')
     c.append('            else if (k == FSA_KIND_SEQ32) { if (args[i].i64 < 0 || args[i].i64 >= FSA_SEQ_MOD) { err = FSA_ERR_INVALID_ARG; goto fail; } }')
     if has_text:
