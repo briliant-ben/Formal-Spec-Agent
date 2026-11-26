@@ -96,8 +96,12 @@ class CodegenLibTests(unittest.TestCase):
             nm = shutil.which('nm')
             if nm:
                 undef = subprocess.check_output([nm, '-u', str(obj)], text=True)
+                undef_syms = {
+                    line.strip().split()[-1].lstrip('_').split('@')[0]
+                    for line in undef.splitlines() if line.strip()
+                }
                 for bad in ('printf', 'malloc', 'free', 'calloc', 'fopen', 'snprintf'):
-                    self.assertNotIn(bad, undef)
+                    self.assertNotIn(bad, undef_syms)
 
             driver = root / 'drv.c'
             driver.write_text('''

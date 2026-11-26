@@ -63,7 +63,7 @@ jobs:
           PARTITION=core
           if [ '${{ matrix.track }}' = tcpip-timed ]; then PARTITION=tcpip-timed; fi
           if [ '${{ matrix.track }}' = campaign ]; then PARTITION=campaign; fi
-          /tmp/lean-only-venv/bin/python "$GITHUB_WORKSPACE/tests/run_lean_ci.py" "$PARTITION" > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1
+          /tmp/lean-only-venv/bin/python "$GITHUB_WORKSPACE/tests/run_lean_ci.py" "$PARTITION" > "$GITHUB_WORKSPACE/lean-only-tests.log" 2>&1 || (tail -n 120 "$GITHUB_WORKSPACE/lean-only-tests.log" && exit 1)
       - name: Check and recheck ordered state transaction without Z3
         if: matrix.track == 'cli'
         run: |

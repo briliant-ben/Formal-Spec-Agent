@@ -451,8 +451,12 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
     c.append('')
     c.append(f'const char *{pfx}_string_literal(int64_t str_id) {{')
     c.append(f'    (void){pfx}_str_len;')
-    c.append(f'    if (str_id < 0 || str_id >= {PFX}_NUM_STRINGS) return "";')
-    c.append(f'    return {pfx}_str_table[str_id];')
+    if strings:
+        c.append(f'    if (str_id < 0 || str_id >= {PFX}_NUM_STRINGS) return "";')
+        c.append(f'    return {pfx}_str_table[str_id];')
+    else:
+        c.append(f'    (void)str_id; (void){pfx}_str_table;')
+        c.append('    return "";')
     c.append('}')
     c.append('')
 
@@ -517,8 +521,9 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
     if nt > 0:
         c.append(f'static const int {pfx}_timer_events[{nt}] = {{ ' +
                  ', '.join(str(events.index(model['timers'][t]['event'])) for t in timers) + ' };')
-        c.append(f'static const char *const {pfx}_timer_names[{nt}] = {{ ' +
-                 ', '.join(cstr(t) for t in timers) + ' };')
+        if nt > 1:
+            c.append(f'static const char *const {pfx}_timer_names[{nt}] = {{ ' +
+                     ', '.join(cstr(t) for t in timers) + ' };')
     c.append('')
 
     # Non-inline shared pure helpers reduce code bloat dramatically under -Os
@@ -619,6 +624,7 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         if rule_emits > 0:
             c.append(f'    {pfx}_pending_emit_t emits[{rule_emits}];')
             c.append('    int nemits = 0;')
+            c.append('    memset(emits, 0, sizeof(emits));')
         for act in r['actions']:
             k, p = next(iter(act.items()))
             if k == 'set':
@@ -639,8 +645,7 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
                 mid = messages.index(msg_name)
                 mfields = model['messages'][msg_name]['fields']
                 c.append(f'{indent}if (!*err) {{')
-                c.append(f'{indent}    {pfx}_pending_emit_t tmp_pe;')
-                c.append(f'{indent}    {pfx}_pending_emit_t *pe = on_emit ? &emits[nemits++] : &tmp_pe;')
+                c.append(f'{indent}    {pfx}_pending_emit_t *pe = &emits[nemits++];')
                 c.append(f'{indent}    pe->msg_id = {mid};')
                 c.append(f'{indent}    pe->nfields = {len(mfields)};')
                 for j, (fname, fkind) in enumerate(mfields.items()):
@@ -758,67 +763,71 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
             lines_out.append(f'{ind}    }}')
         lines_out.append(f'{ind}}}')
 
-    # Fast O(1) decision-tree fire dispatcher
-    c.append(
-        f'static int {pfx}_fire({pfx}_machine_t *m, int event, const fsa_val_t *ev, '
-        f'int expiring, fsa_arena_t *arena, {pfx}_emit_fn on_emit, void *ctx, int *last_rule_out, int *err) {{'
-    )
-    c.append('    (void)event; (void)ev; (void)on_emit; (void)ctx; (void)last_rule_out;')
-    c.append('    int match = -1;')
-    c.append(f'#if {PFX}_CHECK_CONFLICTS')
-    c.append('    int count = 0;')
-    c.append('#endif')
-    c.append('    uint32_t saved_used = arena->used;')
-    c.append('    switch (m->state) {')
-    for sidx, sname in enumerate(states):
-        c.append(f'        case {sidx}: {{')
-        ev_keys = sorted(ev_i for (st_i, ev_i) in buckets_se if st_i == sidx)
-        if ev_keys:
-            c.append('            switch (event) {')
-            for ev_i in ev_keys:
-                rules_list = buckets_se[(sidx, ev_i)]
-                tree = _partition_rules(rules_list, constraints_by_rule, set())
-                c.append(f'                case {ev_i}: {{')
-                emit_tree(c, tree, '                    ')
-                c.append('                    break;')
-                c.append('                }')
-            c.append('                default: break;')
-            c.append('            }')
-        c.append('            break;')
-        c.append('        }')
-    c.append('        default: break;')
-    c.append('    }')
-    if model['transitions']:
-        c.append(f'#if !{PFX}_CHECK_CONFLICTS')
-        c.append('    goto done_scan;')
-        c.append('matched:')
-        c.append('    (void)0;')
-        c.append('done_scan:')
+    if events or nt > 0:
+        # Fast O(1) decision-tree fire dispatcher
+        c.append(
+            f'static int {pfx}_fire({pfx}_machine_t *m, int event, const fsa_val_t *ev, '
+            f'int expiring, fsa_arena_t *arena, {pfx}_emit_fn on_emit, void *ctx, int *last_rule_out, int *err) {{'
+        )
+        c.append('    (void)event; (void)ev; (void)on_emit; (void)ctx; (void)last_rule_out;')
+        c.append('    int match = -1;')
+        c.append(f'#if {PFX}_CHECK_CONFLICTS')
+        c.append('    int count = 0;')
         c.append('#endif')
-    c.append('    if (*err) return 0;')
-    c.append(f'#if {PFX}_CHECK_CONFLICTS')
-    c.append('    if (count != 1) { *err = count ? FSA_ERR_CONFLICT : FSA_ERR_UNCOVERED; return 0; }')
-    c.append('#else')
-    c.append('    if (match < 0) { *err = FSA_ERR_UNCOVERED; return 0; }')
-    c.append('#endif')
-    if nt > 0:
-        c.append('    if (expiring >= 0) m->active[expiring] = 0U;')
-    else:
-        c.append('    (void)expiring;')
-    c.append('    if (last_rule_out) *last_rule_out = match;')
-    c.append('    arena->used = saved_used;')
-    c.append('    switch (match) {')
-    for i in range(len(model['transitions'])):
-        c.append(f'        case {i}: return {pfx}_action_{i}(m, ev, arena, on_emit, ctx, err);')
-    c.append('        default: *err = FSA_ERR_INVALID_ARG; return 0;')
-    c.append('    }')
-    c.append('}')
-    c.append('')
+        c.append('    uint32_t saved_used = arena->used;')
+        c.append('    switch (m->state) {')
+        for sidx, sname in enumerate(states):
+            c.append(f'        case {sidx}: {{')
+            ev_keys = sorted(ev_i for (st_i, ev_i) in buckets_se if st_i == sidx)
+            if ev_keys:
+                c.append('            switch (event) {')
+                for ev_i in ev_keys:
+                    rules_list = buckets_se[(sidx, ev_i)]
+                    tree = _partition_rules(rules_list, constraints_by_rule, set())
+                    c.append(f'                case {ev_i}: {{')
+                    emit_tree(c, tree, '                    ')
+                    c.append('                    break;')
+                    c.append('                }')
+                c.append('                default: break;')
+                c.append('            }')
+            c.append('            break;')
+            c.append('        }')
+        c.append('        default: break;')
+        c.append('    }')
+        if model['transitions']:
+            c.append(f'#if !{PFX}_CHECK_CONFLICTS')
+            c.append('    goto done_scan;')
+            c.append('matched:')
+            c.append('    (void)0;')
+            c.append('done_scan:')
+            c.append('#endif')
+        c.append('    if (*err) return 0;')
+        c.append(f'#if {PFX}_CHECK_CONFLICTS')
+        c.append('    if (count != 1) { *err = count ? FSA_ERR_CONFLICT : FSA_ERR_UNCOVERED; return 0; }')
+        c.append('#else')
+        c.append('    if (match < 0) { *err = FSA_ERR_UNCOVERED; return 0; }')
+        c.append('#endif')
+        if nt > 0:
+            c.append('    if (expiring >= 0) m->active[expiring] = 0U;')
+        else:
+            c.append('    (void)expiring;')
+        c.append('    if (last_rule_out) *last_rule_out = match;')
+        c.append('    arena->used = saved_used;')
+        c.append('    switch (match) {')
+        for i in range(len(model['transitions'])):
+            c.append(f'        case {i}: return {pfx}_action_{i}(m, ev, arena, on_emit, ctx, err);')
+        c.append('        default: *err = FSA_ERR_INVALID_ARG; return 0;')
+        c.append('    }')
+        c.append('}')
+        c.append('')
 
     # Timer query & advance
     c.append(f'int64_t {pfx}_next_due_ms(const {pfx}_machine_t *m) {{')
     if nt == 0:
         c.append('    (void)m; return -1;')
+    elif nt == 1:
+        c.append('    if (!m) return -1;')
+        c.append('    return m->active[0] ? m->due[0] : -1;')
     else:
         c.append('    int next = -1;')
         c.append('    if (!m) return -1;')
@@ -838,6 +847,15 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         c.append('    (void)arena; (void)on_emit; (void)ctx; (void)last_rule_out; (void)err;')
         c.append('    m->now_ms = at_ms;')
         c.append('    return 0;')
+    elif nt == 1:
+        c.append('    if (!m->active[0] || m->due[0] > at_ms) {')
+        c.append('        m->now_ms = at_ms;')
+        c.append('        return 0;')
+        c.append('    }')
+        c.append('    m->now_ms = m->due[0];')
+        c.append('    arena->used = 0U;')
+        c.append(f'    if (!{pfx}_fire(m, {pfx}_timer_events[0], NULL, 0, arena, on_emit, ctx, last_rule_out, err)) return -1;')
+        c.append('    return 1;')
     else:
         c.append('    int next = -1;')
         c.append(f'    for (int i = 0; i < {nt}; i++) {{')
@@ -881,53 +899,65 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         f'fsa_arena_t *arena, int *last_rule_out) {{'
     )
     c.append('    int err = FSA_OK;')
-    c.append(f'    fsa_val_t ev_norm[{max(max_ef, 1)}];')
+    if events:
+        c.append(f'    fsa_val_t ev_norm[{max(max_ef, 1)}];')
+        c.append('    memset(ev_norm, 0, sizeof(ev_norm));')
     c.append('    if (!m || !arena || !arena->buf) return -FSA_ERR_INVALID_ARG;')
     c.append('    if (last_rule_out) *last_rule_out = -1;')
-    c.append(f'    if (event >= 0) {{')
-    c.append(f'        if (event >= {PFX}_NUM_EVENTS) return -FSA_ERR_INVALID_ARG;')
-    c.append(f'        if ({pfx}_event_origin[event]) return -FSA_ERR_INVALID_ARG;')
-    c.append(f'        if (nargs != {pfx}_event_nfields[event] || (nargs > 0 && !args)) return -FSA_ERR_INVALID_ARG;')
-    c.append('    } else if (nargs != 0) {')
-    c.append('        return -FSA_ERR_INVALID_ARG;')
-    c.append('    }')
+    if not events:
+        c.append(f'    (void){pfx}_event_origin; (void){pfx}_event_nfields; (void){pfx}_event_kinds; (void)args;')
+        c.append('    if (event >= 0 || nargs != 0) return -FSA_ERR_INVALID_ARG;')
+    else:
+        c.append('    if (event >= 0) {')
+        c.append(f'        if (event >= {PFX}_NUM_EVENTS) return -FSA_ERR_INVALID_ARG;')
+        c.append(f'        if ({pfx}_event_origin[event]) return -FSA_ERR_INVALID_ARG;')
+        c.append(f'        if (nargs != {pfx}_event_nfields[event] || (nargs > 0 && !args)) return -FSA_ERR_INVALID_ARG;')
+        c.append('    } else if (nargs != 0) {')
+        c.append('        return -FSA_ERR_INVALID_ARG;')
+        c.append('    }')
     c.append(f'#if {PFX}_ATOMIC_ROLLBACK')
     c.append(f'    {pfx}_machine_t saved = *m;')
     c.append('#endif')
-    c.append('    if (event >= 0) {')
-    c.append('        for (int i = 0; i < nargs; i++) {')
-    c.append(f'            uint8_t k = {pfx}_event_kinds[event][i];')
-    c.append('            if (args[i].kind != k) { err = FSA_ERR_INVALID_ARG; goto fail; }')
-    c.append('            ev_norm[i] = args[i];')
-    c.append(f'            if (k == FSA_KIND_BYTES) {{ if (args[i].bytes.len > 0 && !args[i].bytes.ptr) {{ err = FSA_ERR_INVALID_ARG; goto fail; }} if ((size_t)args[i].bytes.len > (size_t){PFX}_BYTE_CAP) {{ err = FSA_ERR_BYTE_CAP; goto fail; }} }}')
-    c.append('            else if (k == FSA_KIND_BOOL) { if (args[i].i64 != 0 && args[i].i64 != 1) { err = FSA_ERR_INVALID_ARG; goto fail; } }')
-    c.append('            else if (k == FSA_KIND_SEQ32) { if (args[i].i64 < 0 || args[i].i64 >= FSA_SEQ_MOD) { err = FSA_ERR_INVALID_ARG; goto fail; } }')
-    if has_text:
-        c.append('            else if (k == FSA_KIND_STRING) {')
-        c.append('                if (args[i].bytes.ptr) {')
-        c.append(f'                    int sid = {pfx}_text_add(&m->texts, args[i].bytes.ptr, args[i].bytes.len, &err);')
-        c.append('                    if (err) goto fail;')
-        c.append('                    ev_norm[i].i64 = (int64_t)sid;')
-        c.append('                } else if (args[i].bytes.len > 0) {')
-        c.append('                    err = FSA_ERR_INVALID_ARG; goto fail;')
-        c.append('                } else if (args[i].i64 < 0 || args[i].i64 >= m->texts.count) {')
-        c.append('                    err = FSA_ERR_STRING_DOMAIN; goto fail;')
-        c.append('                }')
-        c.append('            }')
-    else:
-        c.append('            else if (k == FSA_KIND_STRING) { err = FSA_ERR_STRING_DOMAIN; goto fail; }')
-    c.append('        }')
-    c.append('    }')
+    if events:
+        c.append('    if (event >= 0) {')
+        c.append('        for (int i = 0; i < nargs; i++) {')
+        c.append(f'            uint8_t k = {pfx}_event_kinds[event][i];')
+        c.append('            if (args[i].kind != k) { err = FSA_ERR_INVALID_ARG; goto fail; }')
+        c.append('            ev_norm[i] = args[i];')
+        c.append(f'            if (k == FSA_KIND_BYTES) {{ if (args[i].bytes.len > 0 && !args[i].bytes.ptr) {{ err = FSA_ERR_INVALID_ARG; goto fail; }} if ((size_t)args[i].bytes.len > (size_t){PFX}_BYTE_CAP) {{ err = FSA_ERR_BYTE_CAP; goto fail; }} }}')
+        c.append('            else if (k == FSA_KIND_BOOL) { if (args[i].i64 != 0 && args[i].i64 != 1) { err = FSA_ERR_INVALID_ARG; goto fail; } }')
+        c.append('            else if (k == FSA_KIND_SEQ32) { if (args[i].i64 < 0 || args[i].i64 >= FSA_SEQ_MOD) { err = FSA_ERR_INVALID_ARG; goto fail; } }')
+        if has_text:
+            c.append('            else if (k == FSA_KIND_STRING) {')
+            c.append('                if (args[i].bytes.ptr) {')
+            c.append(f'                    int sid = {pfx}_text_add(&m->texts, args[i].bytes.ptr, args[i].bytes.len, &err);')
+            c.append('                    if (err) goto fail;')
+            c.append('                    ev_norm[i].i64 = (int64_t)sid;')
+            c.append('                } else if (args[i].bytes.len > 0) {')
+            c.append('                    err = FSA_ERR_INVALID_ARG; goto fail;')
+            c.append('                } else if (args[i].i64 < 0 || args[i].i64 >= m->texts.count) {')
+            c.append('                    err = FSA_ERR_STRING_DOMAIN; goto fail;')
+            c.append('                }')
+            c.append('            }')
+        else:
+            c.append('            else if (k == FSA_KIND_STRING) { err = FSA_ERR_STRING_DOMAIN; goto fail; }')
+        c.append('        }')
+        c.append('    }')
     c.append(f'    if (!{pfx}_advance(m, now_ms, arena, on_emit, ctx, &err)) goto fail;')
     c.append('    arena->used = 0U;')
-    c.append('    if (event >= 0) {')
-    c.append(f'        if (!{pfx}_fire(m, event, ev_norm, -1, arena, on_emit, ctx, last_rule_out, &err)) goto fail;')
-    c.append('    }')
-    c.append(f'#if {PFX}_CHECK_INVARIANTS')
-    c.append('    else {')
-    c.append(f'        if (!{pfx}_check_inv_err(m, arena, &err)) goto fail;')
-    c.append('    }')
-    c.append('#endif')
+    if events:
+        c.append('    if (event >= 0) {')
+        c.append(f'        if (!{pfx}_fire(m, event, ev_norm, -1, arena, on_emit, ctx, last_rule_out, &err)) goto fail;')
+        c.append('    }')
+        c.append(f'#if {PFX}_CHECK_INVARIANTS')
+        c.append('    else {')
+        c.append(f'        if (!{pfx}_check_inv_err(m, arena, &err)) goto fail;')
+        c.append('    }')
+        c.append('#endif')
+    else:
+        c.append(f'#if {PFX}_CHECK_INVARIANTS')
+        c.append(f'    if (!{pfx}_check_inv_err(m, arena, &err)) goto fail;')
+        c.append('#endif')
     c.append('    return FSA_OK;')
     c.append('fail:')
     c.append(f'#if {PFX}_ATOMIC_ROLLBACK')
