@@ -21,7 +21,7 @@ jobs:
       - name: Test installed package from unrelated directory, without provider calls
         run: |
           cd /tmp
-          /tmp/framework-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/framework-tests.log" 2>&1
+          /tmp/framework-venv/bin/python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v > "$GITHUB_WORKSPACE/framework-tests.log" 2>&1 || (cat "$GITHUB_WORKSPACE/framework-tests.log" && exit 1)
       - name: Preserve actual test output
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
