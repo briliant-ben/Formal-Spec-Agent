@@ -91,7 +91,9 @@ the Git versions named in the extraction evidence; the command above expects a
 caller-supplied, independently approved workspace/task.
 
 [C generation](docs/c-code-generation.md) shares repeated expressions and emits
-readable string literals while retaining strict traces and failure checks.
+readable string literals while retaining strict traces and failure checks; for
+embeddable zero-heap C99 protocol stacks (such as `libtcpip.a`), use the
+`codegen-lib` backend ([C99 library backend](docs/c99-library-backend.md)).
 
 Protocol byte layout should be expressed in IR. The old TCP-specific `wire` codec
 was not extracted into the generic backend: requesting it is explicitly rejected.

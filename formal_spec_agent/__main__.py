@@ -24,6 +24,9 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == 'compose':
         from .compose import main as compose
         return compose(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == 'codegen-lib':
+        from .codegen_lib import main as codegen_lib
+        return codegen_lib(sys.argv[2:])
     if len(sys.argv) > 1 and sys.argv[1] == 'campaign':
         from .campaign import main as campaign
         return campaign(sys.argv[2:])

@@ -9,6 +9,8 @@
   all-rule preservation for the pinned endpoint.
 - [Typed EFSM flow](lean-typed-efsm.md): all five value kinds, universal raw-rule
   contracts, finite test generation and independent C execution through task-v7.
+- [C99 library backend](c99-library-backend.md): `codegen-lib` (`c99-lib-v1`)
+  freestanding zero-heap library lowering, decision-tree dispatch, and size/speed metrics.
 - [IR overview](ir-semantics.md): explicit behavior and backend boundaries.
 - [Proposal-role contract](agent-contract.md): provider isolation, shared ledger,
   input pinning and controller-owned acceptance.

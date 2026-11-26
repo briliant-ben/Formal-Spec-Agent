@@ -151,6 +151,10 @@ jobs:
               '--workspace', str(ws), '--out', str(ws / 'model.json'), '--receipt', str(ws / 'receipt.json'),
           ], check=True)
           PY
+          /tmp/lean-only-venv/bin/formal-spec-agent codegen-lib /tmp/cli-compose-smoke/model.json \
+            --out /tmp/cli-compose-smoke/lib --prefix smoke_fsm --fast-dispatch
+          cc -std=c99 -Wall -Wextra -Werror -Os -c /tmp/cli-compose-smoke/lib/smoke_fsm.c \
+            -o /tmp/cli-compose-smoke/lib/smoke_fsm.o
       - name: Check actual C-expression correspondence and compiled Lean reference
         if: matrix.track == 'cli'
         run: |
