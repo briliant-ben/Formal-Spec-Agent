@@ -92,8 +92,10 @@ caller-supplied, independently approved workspace/task.
 
 [C generation](docs/c-code-generation.md) shares repeated expressions and emits
 readable string literals while retaining strict traces and failure checks; for
-embeddable zero-heap C99 protocol stacks (such as `libtcpip.a`), use the
-`codegen-lib` backend ([C99 library backend](docs/c99-library-backend.md)).
+embeddable zero-heap C99 protocol stacks, use the `codegen-lib` single-module backend
+([C99 library backend](docs/c99-library-backend.md)) together with `ir_builder`
+and `system-codegen` (`fsa-system-v1`, multi-instance composition with typed routing
+and optional software-architecture hooks).
 
 Protocol byte layout should be expressed in IR. The old TCP-specific `wire` codec
 was not extracted into the generic backend: requesting it is explicitly rejected.

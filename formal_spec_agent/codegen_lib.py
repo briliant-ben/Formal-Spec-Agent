@@ -320,7 +320,8 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         for inv in model['invariants']:
             render_expr(inv['assert'], None)
 
-        candidates = sorted((k for k, n in counts.items() if n >= 2 and len(k[1]) >= 80),
+        min_expr_len = 52 if fast_dispatch else 80
+        candidates = sorted((k for k, n in counts.items() if n >= 2 and len(k[1]) >= min_expr_len),
                             key=lambda k: (len(k[1]), k))
         shared = {k: f'{pfx}_expr_{i}' for i, k in enumerate(candidates)}
         planning = False
@@ -348,13 +349,25 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         f'#define {PFX}_NUM_RULES {len(model["transitions"])}',
         '',
         f'#ifndef {PFX}_CHECK_CONFLICTS',
+        f'#ifdef FSA_STRICT',
+        f'#define {PFX}_CHECK_CONFLICTS 1',
+        f'#else',
         f'#define {PFX}_CHECK_CONFLICTS {0 if fast_dispatch else 1}',
+        f'#endif',
         '#endif',
         f'#ifndef {PFX}_ATOMIC_ROLLBACK',
+        f'#ifdef FSA_STRICT',
+        f'#define {PFX}_ATOMIC_ROLLBACK 1',
+        f'#else',
         f'#define {PFX}_ATOMIC_ROLLBACK {0 if fast_dispatch else 1}',
+        f'#endif',
         '#endif',
         f'#ifndef {PFX}_CHECK_INVARIANTS',
+        f'#ifdef FSA_STRICT',
+        f'#define {PFX}_CHECK_INVARIANTS 1',
+        f'#else',
         f'#define {PFX}_CHECK_INVARIANTS {0 if fast_dispatch else 1}',
+        f'#endif',
         '#endif',
         f'#define {PFX}_HAS_TEXT_EVENTS {1 if has_text else 0}',
         '',
@@ -409,6 +422,9 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         f'int {pfx}_init({pfx}_machine_t *m);',
         f'int {pfx}_check_invariants(const {pfx}_machine_t *m);',
         f'int64_t {pfx}_next_due_ms(const {pfx}_machine_t *m);',
+        f'int {pfx}_step_ws({pfx}_machine_t *m, int64_t now_ms, int event, '
+        f'const fsa_val_t *args, int nargs, {pfx}_emit_fn on_emit, void *ctx, '
+        f'fsa_arena_t *arena, {pfx}_machine_t *saved_buf, int *last_rule_out);',
         f'int {pfx}_step_with_arena({pfx}_machine_t *m, int64_t now_ms, int event, '
         f'const fsa_val_t *args, int nargs, {pfx}_emit_fn on_emit, void *ctx, '
         f'fsa_arena_t *arena, int *last_rule_out);',
@@ -416,6 +432,8 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         f'const fsa_val_t *args, int nargs, {pfx}_emit_fn on_emit, void *ctx, '
         f'int *last_rule_out);',
         f'int {pfx}_tick({pfx}_machine_t *m, int64_t now_ms, {pfx}_emit_fn on_emit, void *ctx);',
+        f'int {pfx}_tick_one_ws({pfx}_machine_t *m, int64_t up_to_ms, {pfx}_emit_fn on_emit, void *ctx, '
+        f'fsa_arena_t *arena, {pfx}_machine_t *saved_buf, int *last_rule_out);',
         f'int {pfx}_tick_one({pfx}_machine_t *m, int64_t up_to_ms, {pfx}_emit_fn on_emit, void *ctx, int *last_rule_out);',
         f'const char *{pfx}_string_literal(int64_t str_id);',
     ])
@@ -894,9 +912,9 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
 
     # Step & tick entrypoints
     c.append(
-        f'int {pfx}_step_with_arena({pfx}_machine_t *m, int64_t now_ms, int event, '
+        f'int {pfx}_step_ws({pfx}_machine_t *m, int64_t now_ms, int event, '
         f'const fsa_val_t *args, int nargs, {pfx}_emit_fn on_emit, void *ctx, '
-        f'fsa_arena_t *arena, int *last_rule_out) {{'
+        f'fsa_arena_t *arena, {pfx}_machine_t *saved_buf, int *last_rule_out) {{'
     )
     c.append('    int err = FSA_OK;')
     if events:
@@ -916,7 +934,10 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         c.append('        return -FSA_ERR_INVALID_ARG;')
         c.append('    }')
     c.append(f'#if {PFX}_ATOMIC_ROLLBACK')
-    c.append(f'    {pfx}_machine_t saved = *m;')
+    c.append('    if (!saved_buf) return -FSA_ERR_INVALID_ARG;')
+    c.append('    *saved_buf = *m;')
+    c.append('#else')
+    c.append('    (void)saved_buf;')
     c.append('#endif')
     if events:
         c.append('    if (event >= 0) {')
@@ -961,13 +982,24 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
     c.append('    return FSA_OK;')
     c.append('fail:')
     c.append(f'#if {PFX}_ATOMIC_ROLLBACK')
-    c.append('    *m = saved;')
+    c.append('    *m = *saved_buf;')
     c.append('#endif')
     c.append('    return err ? -err : -FSA_ERR_INVALID_ARG;')
     c.append('}')
     c.append('')
 
     c.extend([
+        f'int {pfx}_step_with_arena({pfx}_machine_t *m, int64_t now_ms, int event, '
+        f'const fsa_val_t *args, int nargs, {pfx}_emit_fn on_emit, void *ctx, '
+        f'fsa_arena_t *arena, int *last_rule_out) {{',
+        f'#if {PFX}_ATOMIC_ROLLBACK',
+        f'    {pfx}_machine_t saved_local;',
+        f'    return {pfx}_step_ws(m, now_ms, event, args, nargs, on_emit, ctx, arena, &saved_local, last_rule_out);',
+        '#else',
+        f'    return {pfx}_step_ws(m, now_ms, event, args, nargs, on_emit, ctx, arena, NULL, last_rule_out);',
+        '#endif',
+        '}',
+        '',
         f'int {pfx}_step({pfx}_machine_t *m, int64_t now_ms, int event, '
         f'const fsa_val_t *args, int nargs, {pfx}_emit_fn on_emit, void *ctx, int *last_rule_out) {{',
         f'    uint8_t scratch[{PFX}_STEP_SCRATCH_BYTES];',
@@ -979,23 +1011,36 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         f'    return {pfx}_step(m, now_ms, -1, NULL, 0, on_emit, ctx, NULL);',
         '}',
         '',
-        f'int {pfx}_tick_one({pfx}_machine_t *m, int64_t up_to_ms, {pfx}_emit_fn on_emit, void *ctx, int *last_rule_out) {{',
+        f'int {pfx}_tick_one_ws({pfx}_machine_t *m, int64_t up_to_ms, {pfx}_emit_fn on_emit, void *ctx, '
+        f'fsa_arena_t *arena, {pfx}_machine_t *saved_buf, int *last_rule_out) {{',
         '    int err = FSA_OK;',
-        f'    uint8_t scratch[{PFX}_STEP_SCRATCH_BYTES];',
-        f'    fsa_arena_t arena = {{ scratch, 0U, {PFX}_STEP_SCRATCH_BYTES }};',
-        '    if (!m) return -FSA_ERR_INVALID_ARG;',
+        '    if (!m || !arena || !arena->buf) return -FSA_ERR_INVALID_ARG;',
         '    if (last_rule_out) *last_rule_out = -1;',
         f'#if {PFX}_ATOMIC_ROLLBACK',
-        f'    {pfx}_machine_t saved = *m;',
+        '    if (!saved_buf) return -FSA_ERR_INVALID_ARG;',
+        '    *saved_buf = *m;',
+        '#else',
+        '    (void)saved_buf;',
         '#endif',
-        f'    int rc = {pfx}_advance_one(m, up_to_ms, &arena, on_emit, ctx, last_rule_out, &err);',
+        f'    int rc = {pfx}_advance_one(m, up_to_ms, arena, on_emit, ctx, last_rule_out, &err);',
         '    if (rc < 0) {',
         f'#if {PFX}_ATOMIC_ROLLBACK',
-        '        *m = saved;',
+        '        *m = *saved_buf;',
         '#endif',
         '        return err ? -err : -FSA_ERR_INVALID_ARG;',
         '    }',
         '    return rc;',
+        '}',
+        '',
+        f'int {pfx}_tick_one({pfx}_machine_t *m, int64_t up_to_ms, {pfx}_emit_fn on_emit, void *ctx, int *last_rule_out) {{',
+        f'    uint8_t scratch[{PFX}_STEP_SCRATCH_BYTES];',
+        f'    fsa_arena_t arena = {{ scratch, 0U, {PFX}_STEP_SCRATCH_BYTES }};',
+        f'#if {PFX}_ATOMIC_ROLLBACK',
+        f'    {pfx}_machine_t saved_local;',
+        f'    return {pfx}_tick_one_ws(m, up_to_ms, on_emit, ctx, &arena, &saved_local, last_rule_out);',
+        '#else',
+        f'    return {pfx}_tick_one_ws(m, up_to_ms, on_emit, ctx, &arena, NULL, last_rule_out);',
+        '#endif',
         '}',
         '',
     ])

@@ -288,20 +288,26 @@ static inline int64_t fsa_checksum16(fsa_slice_t a, uint16_t byte_cap, int *err)
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
         return 0;
     }
-    uint32_t sum = 0;
+    uint64_t acc = 0;
     size_t i = 0;
     size_t alen = (size_t)a.len;
     const uint8_t *p = a.ptr;
+    for (; i + 8U <= alen; i += 8U) {
+        acc += (((uint64_t)p[i] << 8) | (uint64_t)p[i + 1U]) +
+               (((uint64_t)p[i + 2U] << 8) | (uint64_t)p[i + 3U]) +
+               (((uint64_t)p[i + 4U] << 8) | (uint64_t)p[i + 5U]) +
+               (((uint64_t)p[i + 6U] << 8) | (uint64_t)p[i + 7U]);
+    }
     for (; i + 1U < alen; i += 2U) {
-        sum += ((uint32_t)p[i] << 8) | (uint32_t)p[i + 1U];
+        acc += ((uint64_t)p[i] << 8) | (uint64_t)p[i + 1U];
     }
     if (i < alen) {
-        sum += ((uint32_t)p[i] << 8);
+        acc += ((uint64_t)p[i] << 8);
     }
-    while (sum >> 16) {
-        sum = (sum & UINT32_C(0xFFFF)) + (sum >> 16);
+    while (acc >> 16) {
+        acc = (acc & UINT64_C(0xFFFF)) + (acc >> 16);
     }
-    return (int64_t)(UINT32_C(0xFFFF) - sum);
+    return (int64_t)(UINT64_C(0xFFFF) - acc);
 }
 
 static inline void fsa_buf_assign(uint8_t *dst, uint16_t *dst_len, uint16_t cap, fsa_slice_t src, int *err) {
