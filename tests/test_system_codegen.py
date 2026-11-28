@@ -183,6 +183,7 @@ class SystemCodegenTests(unittest.TestCase):
                                 'kind': 'match',
                                 'target': 'conn',
                                 'in_states': ['ESTAB'],
+                                'when_field_eq': [{'field': 'is_syn', 'bool': False}],
                                 'match_vars': [{'var': 'port', 'from_field': 'port'}],
                                 'event': 'data',
                                 'args': [{'from_field': 'payload'}],

@@ -105,48 +105,8 @@ static inline fsa_val_t fsa_val_str_id(int64_t id) {
     return out;
 }
 
-static inline int64_t fsa_add(int64_t a, int64_t b, int *err) {
-    if ((b > 0 && a > INT64_MAX - b) || (b < 0 && a < INT64_MIN - b)) {
-        if (!*err) *err = FSA_ERR_OVERFLOW;
-        return 0;
-    }
-    return a + b;
-}
-
-static inline int64_t fsa_sub(int64_t a, int64_t b, int *err) {
-    if ((b > 0 && a < INT64_MIN + b) || (b < 0 && a > INT64_MAX + b)) {
-        if (!*err) *err = FSA_ERR_OVERFLOW;
-        return 0;
-    }
-    return a - b;
-}
-
-static inline int64_t fsa_mul(int64_t a, int64_t b, int *err) {
-    if (a == 0 || b == 0) return 0;
-    if ((a == -1 && b == INT64_MIN) || (b == -1 && a == INT64_MIN)) {
-        if (!*err) *err = FSA_ERR_OVERFLOW;
-        return 0;
-    }
-    if ((a > 0 && b > 0 && a > INT64_MAX / b) ||
-        (a > 0 && b < 0 && b < INT64_MIN / a) ||
-        (a < 0 && b > 0 && a < INT64_MIN / b) ||
-        (a < 0 && b < 0 && a < INT64_MAX / b)) {
-        if (!*err) *err = FSA_ERR_OVERFLOW;
-        return 0;
-    }
-    return a * b;
-}
-
 static inline int64_t fsa_min(int64_t a, int64_t b) {
     return a < b ? a : b;
-}
-
-static inline int64_t fsa_seq_add(int64_t a, int64_t b) {
-    int64_t rem = b % FSA_SEQ_MOD;
-    if (rem < 0) rem += FSA_SEQ_MOD;
-    uint64_t ua = (uint64_t)a & UINT64_C(0xFFFFFFFF);
-    uint64_t ur = (uint64_t)rem;
-    return (int64_t)((ua + ur) % UINT64_C(4294967296));
 }
 
 static inline int64_t fsa_seq_dist(int64_t a, int64_t b) {
@@ -175,7 +135,86 @@ static inline fsa_slice_t fsa_slice_make(const uint8_t *ptr, uint16_t len) {
     return s;
 }
 
-static inline uint8_t *fsa_arena_alloc(fsa_arena_t *arena, size_t n, int *err) {
+#ifdef FSA_RUNTIME_SHARED
+#define FSA_RT_DECL extern
+#else
+#define FSA_RT_DECL static inline
+#endif
+
+FSA_RT_DECL int64_t fsa_add(int64_t a, int64_t b, int *err);
+FSA_RT_DECL int64_t fsa_sub(int64_t a, int64_t b, int *err);
+FSA_RT_DECL int64_t fsa_mul(int64_t a, int64_t b, int *err);
+FSA_RT_DECL int64_t fsa_seq_add(int64_t a, int64_t b);
+FSA_RT_DECL uint8_t *fsa_arena_alloc(fsa_arena_t *arena, size_t n, int *err);
+FSA_RT_DECL fsa_slice_t fsa_arena_copy(fsa_arena_t *arena, fsa_slice_t s, uint16_t byte_cap, int *err);
+FSA_RT_DECL fsa_slice_t fsa_slice_sub(fsa_slice_t a, int64_t offset, int64_t count, uint16_t byte_cap, int *err);
+FSA_RT_DECL int64_t fsa_slice_at_or_zero(fsa_slice_t a, int64_t offset, uint16_t byte_cap, int *err);
+FSA_RT_DECL int64_t fsa_read_u16be(fsa_slice_t a, int64_t offset, uint16_t byte_cap, int *err);
+FSA_RT_DECL int64_t fsa_read_u32be(fsa_slice_t a, int64_t offset, uint16_t byte_cap, int *err);
+FSA_RT_DECL int fsa_slice_eq(fsa_slice_t a, fsa_slice_t b);
+FSA_RT_DECL fsa_slice_t fsa_concat(fsa_arena_t *arena, fsa_slice_t a, fsa_slice_t b, uint16_t byte_cap, int *err);
+FSA_RT_DECL fsa_slice_t fsa_concat3(fsa_arena_t *arena, fsa_slice_t a, fsa_slice_t b, fsa_slice_t c, uint16_t byte_cap, int *err);
+FSA_RT_DECL fsa_slice_t fsa_concat4(fsa_arena_t *arena, fsa_slice_t a, fsa_slice_t b, fsa_slice_t c, fsa_slice_t d, uint16_t byte_cap, int *err);
+FSA_RT_DECL fsa_slice_t fsa_pack8(fsa_arena_t *arena, int64_t n, uint16_t byte_cap, int *err);
+FSA_RT_DECL fsa_slice_t fsa_pack16be(fsa_arena_t *arena, int64_t n, uint16_t byte_cap, int *err);
+FSA_RT_DECL fsa_slice_t fsa_pack32be(fsa_arena_t *arena, int64_t n, uint16_t byte_cap, int *err);
+FSA_RT_DECL int64_t fsa_checksum16(fsa_slice_t a, uint16_t byte_cap, int *err);
+FSA_RT_DECL void fsa_buf_assign(uint8_t *dst, uint16_t *dst_len, uint16_t cap, fsa_slice_t src, int *err);
+FSA_RT_DECL int fsa_valid_utf8(const uint8_t *s, size_t n);
+FSA_RT_DECL int fsa_norm_event_args(
+    int event, int num_events, const uint8_t *ev_origin, const int *ev_nfields,
+    const uint8_t *ev_kinds_flat, int kinds_stride,
+    const fsa_val_t *args, int nargs, uint16_t byte_cap, fsa_val_t *ev_norm);
+
+#if !defined(FSA_RUNTIME_SHARED) || defined(FSA_RUNTIME_IMPLEMENTATION)
+
+#ifdef FSA_RUNTIME_SHARED
+#define FSA_RT_DEF
+#else
+#define FSA_RT_DEF static inline
+#endif
+
+FSA_RT_DEF int64_t fsa_add(int64_t a, int64_t b, int *err) {
+    if ((b > 0 && a > INT64_MAX - b) || (b < 0 && a < INT64_MIN - b)) {
+        if (!*err) *err = FSA_ERR_OVERFLOW;
+        return 0;
+    }
+    return a + b;
+}
+
+FSA_RT_DEF int64_t fsa_sub(int64_t a, int64_t b, int *err) {
+    if ((b > 0 && a < INT64_MIN + b) || (b < 0 && a > INT64_MAX + b)) {
+        if (!*err) *err = FSA_ERR_OVERFLOW;
+        return 0;
+    }
+    return a - b;
+}
+
+FSA_RT_DEF int64_t fsa_mul(int64_t a, int64_t b, int *err) {
+    if (a == 0 || b == 0) return 0;
+    if ((a == -1 && b == INT64_MIN) || (b == -1 && a == INT64_MIN)) {
+        if (!*err) *err = FSA_ERR_OVERFLOW;
+        return 0;
+    }
+    if ((a > 0 && b > 0 && a > INT64_MAX / b) ||
+        (a > 0 && b < 0 && b < INT64_MIN / a) ||
+        (a < 0 && b > 0 && a < INT64_MIN / b) ||
+        (a < 0 && b < 0 && a < INT64_MAX / b)) {
+        if (!*err) *err = FSA_ERR_OVERFLOW;
+        return 0;
+    }
+    return a * b;
+}
+
+FSA_RT_DEF int64_t fsa_seq_add(int64_t a, int64_t b) {
+    int64_t rem = b % FSA_SEQ_MOD;
+    if (rem < 0) rem += FSA_SEQ_MOD;
+    uint64_t ua = (uint64_t)a & UINT64_C(0xFFFFFFFF);
+    uint64_t ur = (uint64_t)rem;
+    return (int64_t)((ua + ur) % UINT64_C(4294967296));
+}
+
+FSA_RT_DEF uint8_t *fsa_arena_alloc(fsa_arena_t *arena, size_t n, int *err) {
     if (n == 0) return arena ? arena->buf : NULL;
     if (!arena || !arena->buf || arena->used > arena->cap || n > (size_t)(arena->cap - arena->used)) {
         if (err && !*err) *err = FSA_ERR_ARENA_CAP;
@@ -186,7 +225,7 @@ static inline uint8_t *fsa_arena_alloc(fsa_arena_t *arena, size_t n, int *err) {
     return p;
 }
 
-static inline fsa_slice_t fsa_arena_copy(fsa_arena_t *arena, fsa_slice_t s, uint16_t byte_cap, int *err) {
+FSA_RT_DEF fsa_slice_t fsa_arena_copy(fsa_arena_t *arena, fsa_slice_t s, uint16_t byte_cap, int *err) {
     fsa_slice_t empty = {NULL, 0};
     if (s.len > byte_cap) {
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
@@ -199,7 +238,7 @@ static inline fsa_slice_t fsa_arena_copy(fsa_arena_t *arena, fsa_slice_t s, uint
     return fsa_slice_make(p, s.len);
 }
 
-static inline fsa_slice_t fsa_slice_sub(fsa_slice_t a, int64_t offset, int64_t count, uint16_t byte_cap, int *err) {
+FSA_RT_DEF fsa_slice_t fsa_slice_sub(fsa_slice_t a, int64_t offset, int64_t count, uint16_t byte_cap, int *err) {
     fsa_slice_t empty = {NULL, 0};
     if (a.len > byte_cap) {
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
@@ -211,7 +250,7 @@ static inline fsa_slice_t fsa_slice_sub(fsa_slice_t a, int64_t offset, int64_t c
     return fsa_slice_make(n ? (a.ptr + start) : NULL, (uint16_t)n);
 }
 
-static inline int64_t fsa_slice_at_or_zero(fsa_slice_t a, int64_t offset, uint16_t byte_cap, int *err) {
+FSA_RT_DEF int64_t fsa_slice_at_or_zero(fsa_slice_t a, int64_t offset, uint16_t byte_cap, int *err) {
     if (a.len > byte_cap) {
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
         return 0;
@@ -220,13 +259,28 @@ static inline int64_t fsa_slice_at_or_zero(fsa_slice_t a, int64_t offset, uint16
     return (int64_t)a.ptr[(size_t)offset];
 }
 
-static inline int fsa_slice_eq(fsa_slice_t a, fsa_slice_t b) {
+FSA_RT_DEF int64_t fsa_read_u16be(fsa_slice_t a, int64_t offset, uint16_t byte_cap, int *err) {
+    int64_t b0 = fsa_slice_at_or_zero(a, offset, byte_cap, err);
+    int64_t off1 = fsa_add(offset, INT64_C(1), err);
+    int64_t b1 = fsa_slice_at_or_zero(a, off1, byte_cap, err);
+    return (b0 << 8) | b1;
+}
+
+FSA_RT_DEF int64_t fsa_read_u32be(fsa_slice_t a, int64_t offset, uint16_t byte_cap, int *err) {
+    int64_t b0 = fsa_slice_at_or_zero(a, offset, byte_cap, err);
+    int64_t b1 = fsa_slice_at_or_zero(a, fsa_add(offset, INT64_C(1), err), byte_cap, err);
+    int64_t b2 = fsa_slice_at_or_zero(a, fsa_add(offset, INT64_C(2), err), byte_cap, err);
+    int64_t b3 = fsa_slice_at_or_zero(a, fsa_add(offset, INT64_C(3), err), byte_cap, err);
+    return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+}
+
+FSA_RT_DEF int fsa_slice_eq(fsa_slice_t a, fsa_slice_t b) {
     if (a.len != b.len) return 0;
     if (a.len == 0) return 1;
     return memcmp(a.ptr, b.ptr, a.len) == 0;
 }
 
-static inline fsa_slice_t fsa_concat(fsa_arena_t *arena, fsa_slice_t a, fsa_slice_t b, uint16_t byte_cap, int *err) {
+FSA_RT_DEF fsa_slice_t fsa_concat(fsa_arena_t *arena, fsa_slice_t a, fsa_slice_t b, uint16_t byte_cap, int *err) {
     fsa_slice_t empty = {NULL, 0};
     if (a.len > byte_cap || b.len > byte_cap || b.len > byte_cap - a.len) {
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
@@ -241,7 +295,44 @@ static inline fsa_slice_t fsa_concat(fsa_arena_t *arena, fsa_slice_t a, fsa_slic
     return fsa_slice_make(p, total);
 }
 
-static inline fsa_slice_t fsa_pack8(fsa_arena_t *arena, int64_t n, uint16_t byte_cap, int *err) {
+FSA_RT_DEF fsa_slice_t fsa_concat3(fsa_arena_t *arena, fsa_slice_t a, fsa_slice_t b, fsa_slice_t c, uint16_t byte_cap, int *err) {
+    fsa_slice_t empty = {NULL, 0};
+    if (a.len > byte_cap || b.len > (uint16_t)(byte_cap - a.len) || c.len > (uint16_t)(byte_cap - a.len - b.len)) {
+        if (err && !*err) *err = FSA_ERR_BYTE_CAP;
+        return empty;
+    }
+    uint16_t total = (uint16_t)(a.len + b.len + c.len);
+    if (total == 0) return empty;
+    uint8_t *p = fsa_arena_alloc(arena, total, err);
+    if (!p) return empty;
+    uint16_t off = 0;
+    if (a.len) { memcpy(p + off, a.ptr, a.len); off = (uint16_t)(off + a.len); }
+    if (b.len) { memcpy(p + off, b.ptr, b.len); off = (uint16_t)(off + b.len); }
+    if (c.len) { memcpy(p + off, c.ptr, c.len); }
+    return fsa_slice_make(p, total);
+}
+
+FSA_RT_DEF fsa_slice_t fsa_concat4(fsa_arena_t *arena, fsa_slice_t a, fsa_slice_t b, fsa_slice_t c, fsa_slice_t d, uint16_t byte_cap, int *err) {
+    fsa_slice_t empty = {NULL, 0};
+    if (a.len > byte_cap || b.len > (uint16_t)(byte_cap - a.len) ||
+        c.len > (uint16_t)(byte_cap - a.len - b.len) ||
+        d.len > (uint16_t)(byte_cap - a.len - b.len - c.len)) {
+        if (err && !*err) *err = FSA_ERR_BYTE_CAP;
+        return empty;
+    }
+    uint16_t total = (uint16_t)(a.len + b.len + c.len + d.len);
+    if (total == 0) return empty;
+    uint8_t *p = fsa_arena_alloc(arena, total, err);
+    if (!p) return empty;
+    uint16_t off = 0;
+    if (a.len) { memcpy(p + off, a.ptr, a.len); off = (uint16_t)(off + a.len); }
+    if (b.len) { memcpy(p + off, b.ptr, b.len); off = (uint16_t)(off + b.len); }
+    if (c.len) { memcpy(p + off, c.ptr, c.len); off = (uint16_t)(off + c.len); }
+    if (d.len) { memcpy(p + off, d.ptr, d.len); }
+    return fsa_slice_make(p, total);
+}
+
+FSA_RT_DEF fsa_slice_t fsa_pack8(fsa_arena_t *arena, int64_t n, uint16_t byte_cap, int *err) {
     fsa_slice_t empty = {NULL, 0};
     if (byte_cap < 1) {
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
@@ -253,7 +344,7 @@ static inline fsa_slice_t fsa_pack8(fsa_arena_t *arena, int64_t n, uint16_t byte
     return fsa_slice_make(p, 1);
 }
 
-static inline fsa_slice_t fsa_pack16be(fsa_arena_t *arena, int64_t n, uint16_t byte_cap, int *err) {
+FSA_RT_DEF fsa_slice_t fsa_pack16be(fsa_arena_t *arena, int64_t n, uint16_t byte_cap, int *err) {
     fsa_slice_t empty = {NULL, 0};
     if (byte_cap < 2) {
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
@@ -267,7 +358,7 @@ static inline fsa_slice_t fsa_pack16be(fsa_arena_t *arena, int64_t n, uint16_t b
     return fsa_slice_make(p, 2);
 }
 
-static inline fsa_slice_t fsa_pack32be(fsa_arena_t *arena, int64_t n, uint16_t byte_cap, int *err) {
+FSA_RT_DEF fsa_slice_t fsa_pack32be(fsa_arena_t *arena, int64_t n, uint16_t byte_cap, int *err) {
     fsa_slice_t empty = {NULL, 0};
     if (byte_cap < 4) {
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
@@ -283,7 +374,7 @@ static inline fsa_slice_t fsa_pack32be(fsa_arena_t *arena, int64_t n, uint16_t b
     return fsa_slice_make(p, 4);
 }
 
-static inline int64_t fsa_checksum16(fsa_slice_t a, uint16_t byte_cap, int *err) {
+FSA_RT_DEF int64_t fsa_checksum16(fsa_slice_t a, uint16_t byte_cap, int *err) {
     if (a.len > byte_cap) {
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
         return 0;
@@ -310,7 +401,7 @@ static inline int64_t fsa_checksum16(fsa_slice_t a, uint16_t byte_cap, int *err)
     return (int64_t)(UINT64_C(0xFFFF) - acc);
 }
 
-static inline void fsa_buf_assign(uint8_t *dst, uint16_t *dst_len, uint16_t cap, fsa_slice_t src, int *err) {
+FSA_RT_DEF void fsa_buf_assign(uint8_t *dst, uint16_t *dst_len, uint16_t cap, fsa_slice_t src, int *err) {
     if (src.len > cap) {
         if (err && !*err) *err = FSA_ERR_BYTE_CAP;
         return;
@@ -325,7 +416,7 @@ static inline void fsa_buf_assign(uint8_t *dst, uint16_t *dst_len, uint16_t cap,
     *dst_len = src.len;
 }
 
-static inline int fsa_valid_utf8(const uint8_t *s, size_t n) {
+FSA_RT_DEF int fsa_valid_utf8(const uint8_t *s, size_t n) {
     size_t i = 0;
     while (i < n) {
         uint8_t c = s[i];
@@ -353,5 +444,37 @@ static inline int fsa_valid_utf8(const uint8_t *s, size_t n) {
     }
     return 1;
 }
+
+FSA_RT_DEF int fsa_norm_event_args(
+    int event, int num_events, const uint8_t *ev_origin, const int *ev_nfields,
+    const uint8_t *ev_kinds_flat, int kinds_stride,
+    const fsa_val_t *args, int nargs, uint16_t byte_cap, fsa_val_t *ev_norm) {
+    if (event >= 0) {
+        if (event >= num_events || ev_origin[event] || nargs != ev_nfields[event] || (nargs > 0 && !args)) {
+            return FSA_ERR_INVALID_ARG;
+        }
+        const uint8_t *krow = ev_kinds_flat + (size_t)event * (size_t)kinds_stride;
+        for (int i = 0; i < nargs; i++) {
+            uint8_t k = krow[i];
+            if (args[i].kind != k) return FSA_ERR_INVALID_ARG;
+            ev_norm[i] = args[i];
+            if (k == FSA_KIND_BYTES) {
+                if (args[i].bytes.len > 0U && !args[i].bytes.ptr) return FSA_ERR_INVALID_ARG;
+                if (args[i].bytes.len > byte_cap) return FSA_ERR_BYTE_CAP;
+            } else if (k == FSA_KIND_BOOL) {
+                if (args[i].i64 != 0 && args[i].i64 != 1) return FSA_ERR_INVALID_ARG;
+            } else if (k == FSA_KIND_SEQ32) {
+                if (args[i].i64 < 0 || args[i].i64 >= FSA_SEQ_MOD) return FSA_ERR_INVALID_ARG;
+            } else if (k == FSA_KIND_STRING) {
+                return FSA_ERR_STRING_DOMAIN;
+            }
+        }
+    } else if (nargs != 0) {
+        return FSA_ERR_INVALID_ARG;
+    }
+    return FSA_OK;
+}
+
+#endif /* !FSA_RUNTIME_SHARED || FSA_RUNTIME_IMPLEMENTATION */
 
 #endif /* FSA_LIB_RUNTIME_H */
