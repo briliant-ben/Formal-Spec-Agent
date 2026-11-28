@@ -1160,6 +1160,8 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
     c.append('    int err = FSA_OK;')
     c.append('    if (!m) return -FSA_ERR_INVALID_ARG;')
     c.append('    memset(m, 0, sizeof(*m));')
+    if strings:
+        c.append(f'    (void){pfx}_str_table; (void){pfx}_str_len;')
     c.append(f'    m->state = {states.index(model["initial_state"])};')
     if has_text:
         for s in strings:
@@ -1189,12 +1191,18 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
     # Emit helpers & Guard / Action functions (deduplicated)
     push_msg_helpers = {}
     if max_emits > 0:
+        used_msg_names = {
+            next(iter(a.values()))['message']
+            for r in model['transitions']
+            for a in r['actions']
+            if next(iter(a)) in ('emit', 'emit_if')
+        }
         c.append('typedef struct {')
         c.append('    int msg_id;')
         c.append('    int nfields;')
         c.append(f'    fsa_val_t fields[{max(max_msg_fields, 1)}];')
         c.append(f'}} {pfx}_pending_emit_t;')
-        if any(fkind == 'bytes' for mspec in model['messages'].values() for fkind in mspec['fields'].values()):
+        if any(fkind == 'bytes' for mname in used_msg_names for fkind in model['messages'][mname]['fields'].values()):
             c.extend([
                 f'static void {pfx}_pe_bytes({pfx}_pending_emit_t *pe, int j, fsa_slice_t bs, int has_cb, fsa_arena_t *arena, int *err) {{',
                 f'    if ((size_t)bs.len > (size_t){PFX}_BYTE_CAP) {{ if (!*err) *err = FSA_ERR_BYTE_CAP; }}',
@@ -1209,12 +1217,6 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
             '    }',
             '}',
         ])
-        used_msg_names = {
-            next(iter(a.values()))['message']
-            for r in model['transitions']
-            for a in r['actions']
-            if next(iter(a)) in ('emit', 'emit_if')
-        }
         for mid, msg_name in enumerate(messages):
             if msg_name not in used_msg_names:
                 continue
@@ -1534,6 +1536,7 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         if max_emits > 0:
             c.append(f'    {pfx}_pending_emit_t emits[{max_emits}];')
             c.append('    int nemits = 0;')
+            c.append('    memset(emits, 0, sizeof(emits));')
             c.append(f'    {pfx}_pending_emit_t *emits_p = emits;')
             c.append('    int *nemits_p = &nemits;')
             c.append('    int has_cb = (on_emit != NULL);')
@@ -1848,6 +1851,7 @@ def render(model, *, prefix='fsa_proto', byte_cap=DEFAULT_BYTE_CAP, arena_cap=DE
         c.append('    (void)saved_buf;')
         c.append('#endif')
     elif not has_text:
+        c.append('    memset(ev_norm, 0, sizeof(ev_norm));')
         c.append(
             f'    err = fsa_norm_event_args(event, {PFX}_NUM_EVENTS, {pfx}_event_origin, '
             f'{pfx}_event_nfields, &{pfx}_event_kinds[0][0], {max(max_ef, 1)}, args, nargs, {PFX}_BYTE_CAP, ev_norm);'
